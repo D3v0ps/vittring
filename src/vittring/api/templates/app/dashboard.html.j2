@@ -1,0 +1,174 @@
+{% extends "_layout.html.j2" %}
+{% block content %}
+<div class="app-shell">
+  {# --- Header: welcome + plan --- #}
+  <header class="app-header">
+    <div class="app-header-copy">
+      <div class="eyebrow">Översikt</div>
+      <h1>Hej {{ (user.full_name or user.email).split(" ")[0] }}</h1>
+      <p class="muted app-header-lead">
+        {% if subscriptions %}
+          Här är vad som hänt sedan senaste digest.
+        {% else %}
+          Välkommen till Vittring. Skapa din första prenumeration för att börja få dagliga signaler.
+        {% endif %}
+      </p>
+    </div>
+    <div class="app-header-meta">
+      <span class="badge badge-accent plan-badge">
+        {% if user.plan == "trial" %}Provperiod
+        {% elif user.plan == "solo" %}Solo
+        {% elif user.plan == "team" %}Team
+        {% elif user.plan == "pro" %}Pro
+        {% else %}{{ user.plan|capitalize }}{% endif %}
+      </span>
+      {% if user.trial_ends_at %}
+        <span class="subtle mono">slutar {{ user.trial_ends_at.strftime("%Y-%m-%d") }}</span>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if not subscriptions %}
+    {# --- Empty state for first-time users --- #}
+    <section class="empty-state">
+      <div class="empty-state-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16v6H4z"/>
+          <path d="M4 14h10v6H4z"/>
+          <path d="M18 14h2v6h-2z"/>
+        </svg>
+      </div>
+      <h2>Skapa din första prenumeration</h2>
+      <p class="muted">
+        Definiera vilka yrken, regioner och signaltyper du vill bevaka.
+        Vi levererar matchande upphandlingar, jobbannonser och bolagshändelser
+        i ett enda mejl varje morgon kl 06:30.
+      </p>
+      <div class="empty-state-actions">
+        <a href="/app/subscriptions/new" class="btn btn-accent">Kom igång</a>
+        <a href="/pricing" class="btn btn-ghost">Se planer</a>
+      </div>
+      <ul class="empty-state-tips">
+        <li><span class="dot"></span>Tre offentliga datakällor — Arbetsförmedlingen, TED, Bolagsverket</li>
+        <li><span class="dot"></span>Daglig digest 06:30, lagom innan första kaffet</li>
+        <li><span class="dot"></span>Avregistrera när du vill — inget fördolt</li>
+      </ul>
+    </section>
+  {% else %}
+    {# --- Metric cards --- #}
+    {% set delivered_7 = recent_alerts|selectattr("delivered_at")|list %}
+    {% set opened = recent_alerts|selectattr("opened_at")|list %}
+    {% set last = recent_alerts[0] if recent_alerts else None %}
+    <section class="metric-grid">
+      <div class="metric-card">
+        <div class="metric-card-label">Aktiva prenumerationer</div>
+        <div class="metric-card-value mono">{{ subscriptions|length }}</div>
+        <div class="metric-card-meta subtle">av {% if user.plan == "pro" %}obegränsat{% elif user.plan == "team" %}20{% else %}5{% endif %} på din plan</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-card-label">Levererade signaler</div>
+        <div class="metric-card-value mono">{{ delivered_7|length }}</div>
+        <div class="metric-card-meta subtle">senaste 7 dagar</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-card-label">Öppnade</div>
+        <div class="metric-card-value mono">{{ opened|length }}</div>
+        <div class="metric-card-meta subtle">{% if delivered_7|length %}{{ ((opened|length / delivered_7|length) * 100)|round(0)|int }}% öppningsfrekvens{% else %}—{% endif %}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-card-label">Senaste digest</div>
+        <div class="metric-card-value mono">
+          {% if last %}{{ last.delivered_at.strftime("%d %b") }}{% else %}—{% endif %}
+        </div>
+        <div class="metric-card-meta subtle">
+          {% if last %}{{ last.delivered_at.strftime("kl %H:%M") }}{% else %}Levereras 06:30{% endif %}
+        </div>
+      </div>
+    </section>
+
+    {# --- Two columns: signals feed + quick actions --- #}
+    <section class="dashboard-grid">
+      <div class="card card-flush dashboard-feed">
+        <div class="card-section dashboard-feed-head">
+          <div>
+            <h3>Senaste signaler</h3>
+            <p class="muted dashboard-feed-meta">Levererade till {{ user.email }}</p>
+          </div>
+          <a href="/app/subscriptions" class="btn btn-ghost btn-sm">Hantera filter</a>
+        </div>
+        {% if recent_alerts %}
+          <ul class="signal-list">
+            {% for alert in recent_alerts[:8] %}
+              <li class="signal-row">
+                <div class="signal-row-meta">
+                  <span class="badge badge-{% if alert.signal_type == 'procurement' %}accent{% elif alert.signal_type == 'job_ad' %}neutral{% else %}highlight{% endif %}">
+                    {% if alert.signal_type == "procurement" %}Upphandling
+                    {% elif alert.signal_type == "job_ad" %}Jobbannons
+                    {% elif alert.signal_type == "company_event" %}Bolagshändelse
+                    {% else %}{{ alert.signal_type }}{% endif %}
+                  </span>
+                  <span class="signal-row-date mono">{{ alert.delivered_at.strftime("%d %b · %H:%M") }}</span>
+                </div>
+                <div class="signal-row-id mono subtle">#{{ alert.signal_id }}</div>
+                <div class="signal-row-status">
+                  {% if alert.opened_at %}
+                    <span class="signal-row-pip signal-row-pip-on" aria-label="Öppnad"></span>
+                    <span class="subtle">öppnad</span>
+                  {% else %}
+                    <span class="signal-row-pip" aria-label="Olevererad"></span>
+                    <span class="subtle">levererad</span>
+                  {% endif %}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="card-section signal-list-empty">
+            <p class="muted">Inga signaler levererade ännu — nästa digest kl 06:30.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <aside class="dashboard-aside">
+        <div class="card quick-action-card">
+          <div class="eyebrow">Snabbåtgärd</div>
+          <h3>Skapa ny prenumeration</h3>
+          <p class="muted">
+            Lägg till ett nytt filter för en ny region, yrkesgrupp eller signaltyp.
+          </p>
+          <a href="/app/subscriptions/new" class="btn btn-accent">Ny prenumeration</a>
+        </div>
+
+        <div class="card subs-summary">
+          <div class="eyebrow">Aktiva filter</div>
+          <ul class="subs-summary-list">
+            {% for sub in subscriptions[:5] %}
+              <li class="subs-summary-row">
+                <span class="subs-summary-name">{{ sub.name }}</span>
+                <span class="subs-summary-types">
+                  {% for st in sub.signal_types[:2] %}
+                    <span class="badge badge-neutral">
+                      {% if st == "procurement" %}Upph.
+                      {% elif st == "job_ad" %}Jobb
+                      {% elif st == "company_event" %}Bolag
+                      {% else %}{{ st }}{% endif %}
+                    </span>
+                  {% endfor %}
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+          {% if subscriptions|length > 5 %}
+            <a href="/app/subscriptions" class="subs-summary-link">
+              Visa alla {{ subscriptions|length }} →
+            </a>
+          {% else %}
+            <a href="/app/subscriptions" class="subs-summary-link">Hantera alla →</a>
+          {% endif %}
+        </div>
+      </aside>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

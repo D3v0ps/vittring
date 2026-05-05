@@ -1,0 +1,12 @@
+/var/log/vittring/*.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    sharedscripts
+    postrotate
+        systemctl reload vittring-api.service > /dev/null 2>&1 || true
+    endscript
+}

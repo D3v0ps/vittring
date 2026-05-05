@@ -1,54 +1,88 @@
-{# Email base layout — table-based for client compatibility, follows design-system.md. #}
+{# Email base layout — table-based, inline styles. Tested in Gmail web,
+   Apple Mail desktop, Outlook 2021. See ./README.md for the data shape. #}
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="sv">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="color-scheme" content="light only" />
+  <meta name="supported-color-schemes" content="light" />
   <title>{{ subject }}</title>
+  <!--[if mso]>
+  <style type="text/css">
+    table, td, div, h1, h2, h3, p, a { font-family: 'Segoe UI', Arial, sans-serif !important; }
+  </style>
+  <![endif]-->
   <style>
-    body { margin: 0; padding: 0; background: #FAFAF7; }
-    table { border-collapse: collapse; }
-    img { border: 0; display: block; }
-    a { color: #1B3A4B; text-decoration: none; }
+    body { margin: 0; padding: 0; background: #FAFAF9; -webkit-font-smoothing: antialiased; }
+    table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { border: 0; display: block; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+    a { color: #2E6CDB; text-decoration: none; }
     a:hover { text-decoration: underline; }
-    .body-font {
-      font-family: 'Inter Tight', -apple-system, 'Segoe UI', sans-serif;
-      color: #141414;
-      line-height: 1.65;
-    }
-    .mono { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; }
-    @media (max-width: 620px) {
-      .container { width: 100% !important; }
-      .px { padding-left: 16px !important; padding-right: 16px !important; }
+    .mono { font-family: 'SF Mono', ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace; }
+    @media only screen and (max-width: 620px) {
+      .container { width: 100% !important; max-width: 100% !important; }
+      .px { padding-left: 20px !important; padding-right: 20px !important; }
+      .header-px { padding-left: 20px !important; padding-right: 20px !important; }
+      .stack { display: block !important; width: 100% !important; text-align: left !important; }
+      .stack-right { text-align: left !important; padding-top: 4px !important; }
     }
   </style>
 </head>
-<body class="body-font">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FAFAF7;">
+<body style="margin:0;padding:0;background:#FAFAF9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0B1220;">
+  <!-- Preheader (hidden) -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#FAFAF9;opacity:0;">
+    {% block preheader %}{{ subject }}{% endblock %}
+  </div>
+
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FAFAF9;width:100%;">
     <tr>
-      <td align="center" style="padding: 32px 16px;">
-        <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;background:#FAFAF7;">
+      <td align="center" style="padding:32px 12px;">
+
+        <!-- Wordmark / header band -->
+        <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;">
           <tr>
-            <td class="px" style="padding: 0 8px 24px 8px;">
-              <span style="font-family:'Inter Tight',sans-serif;font-size:18px;font-weight:500;color:#141414;letter-spacing:-0.01em;">Vittring</span>
+            <td class="header-px" style="padding:0 4px 16px 4px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td class="stack" align="left" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:18px;font-weight:600;color:#0B1220;letter-spacing:-0.02em;">
+                    Vittring
+                  </td>
+                  <td class="stack stack-right" align="right" style="font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#94A3B8;letter-spacing:0.08em;text-transform:uppercase;">
+                    {% block header_meta %}{% endblock %}
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
+
+          <!-- Card -->
           <tr>
-            <td class="px" style="padding: 0 8px;">
-              {% block content %}{% endblock %}
+            <td style="padding:0;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FFFFFF;border:1px solid #E5E7EB;border-radius:14px;">
+                <tr>
+                  <td class="px" style="padding:36px 36px;">
+                    {% block content %}{% endblock %}
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
+
+          <!-- Footer -->
           <tr>
-            <td class="px" style="padding: 48px 8px 0 8px; border-top: 1px solid #E8E7E0;">
-              <p style="margin: 16px 0 4px 0; font-size: 12px; color: #8A8A85;">
-                Vittring · {{ from_address }}
-              </p>
-              <p style="margin: 0; font-size: 12px; color: #8A8A85;">
+            <td class="header-px" style="padding:24px 4px 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+              <p style="margin:0 0 6px 0;font-size:12px;color:#94A3B8;line-height:1.6;">
                 {% block footer_extra %}{% endblock %}
               </p>
+              <p style="margin:0;font-size:12px;color:#94A3B8;line-height:1.6;">
+                {{ contact_address or "Vittring c/o Karim Khalil, Sverige" }}
+                {% if from_address %} &middot; <span style="color:#94A3B8;">{{ from_address }}</span>{% endif %}
+              </p>
             </td>
           </tr>
+
         </table>
       </td>
     </tr>

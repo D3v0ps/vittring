@@ -1,0 +1,34 @@
+[Unit]
+Description=Vittring scheduler (APScheduler)
+After=network.target postgresql.service vittring-api.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=vittring
+Group=vittring
+WorkingDirectory=/opt/vittring/current
+EnvironmentFile=/etc/vittring/.env
+ExecStart=/opt/vittring/current/.venv/bin/python -m vittring.jobs
+KillSignal=SIGTERM
+TimeoutStopSec=30
+Restart=on-failure
+RestartSec=10
+
+# Sandboxing
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+NoNewPrivileges=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadWritePaths=/opt/vittring/var /var/log/vittring
+
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

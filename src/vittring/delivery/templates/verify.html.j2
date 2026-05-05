@@ -1,17 +1,36 @@
 {% extends "_base.html.j2" %}
+
+{% block preheader %}Bekräfta din e-postadress för att aktivera ditt Vittring-konto.{% endblock %}
+
+{% block header_meta %}Bekräftelse{% endblock %}
+
 {% block content %}
-<h1 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; color: #141414; line-height: 1.2;">
-  Bekräfta din e-postadress
+<p style="margin:0 0 8px 0;font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#2E6CDB;">
+  Bekräfta e-post
+</p>
+<h1 style="margin:0 0 20px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:30px;font-weight:600;letter-spacing:-0.025em;color:#0B1220;line-height:1.15;">
+  Bekräfta din e-postadress.
 </h1>
-<p style="margin: 0 0 16px 0; font-size: 16px; color: #141414; line-height: 1.65;">
-  Klicka på länken nedan för att bekräfta att <span class="mono">{{ email }}</span> tillhör dig. Länken är giltig i 24 timmar.
+<p style="margin:0 0 28px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:16px;color:#475569;line-height:1.65;">
+  Klicka på knappen nedan för att bekräfta att <span class="mono" style="font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;color:#0B1220;">{{ email }}</span> tillhör dig. Länken är giltig i 24 timmar.
 </p>
-<p style="margin: 24px 0;">
-  <a href="{{ verify_url }}" style="display:inline-block;height:36px;line-height:36px;padding:0 16px;background:#1B3A4B;color:#FAFAF7;border-radius:6px;font-size:14px;font-weight:500;text-decoration:none;">
-    Bekräfta e-post
-  </a>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:8px 0 28px 0;">
+  <tr>
+    <td align="center" bgcolor="#2E6CDB" style="background:#2E6CDB;border-radius:8px;">
+      <a href="{{ verify_url }}" style="display:inline-block;padding:14px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:600;color:#FFFFFF;text-decoration:none;letter-spacing:-0.005em;border-radius:8px;">
+        Bekräfta e-post &rarr;
+      </a>
+    </td>
+  </tr>
+</table>
+
+<p style="margin:0;padding-top:24px;border-top:1px solid #E5E7EB;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#94A3B8;line-height:1.65;">
+  Fungerar inte knappen? Kopiera länken:<br />
+  <span class="mono" style="font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;color:#475569;word-break:break-all;">{{ verify_url }}</span>
 </p>
-<p style="margin: 0; font-size: 13px; color: #8A8A85;">
-  Fungerar inte knappen? Kopiera länken: <span class="mono">{{ verify_url }}</span>
-</p>
+{% endblock %}
+
+{% block footer_extra %}
+Om du inte registrerade ett konto kan du ignorera detta mejl.
 {% endblock %}
