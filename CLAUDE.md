@@ -225,6 +225,8 @@ vittring/
 
 ## 7. Pricing (configure as Stripe products)
 
+> **Status: deferred.** Stripe integration is postponed. Until billing is enabled, all signups land on a permanent trial plan with no payment required. Schema, code paths, and webhook handlers should still be designed so that enabling Stripe later is purely configuration (price IDs + webhook secret).
+
 | Plan | Price | Filters | Seats | Sources |
 |---|---|---|---|---|
 | Solo | 1 500 SEK/mån | 5 | 1 | All three |
@@ -618,12 +620,16 @@ JOBTECH_TAXONOMY_URL=https://taxonomy.api.jobtechdev.se
 TED_BASE_URL=https://api.ted.europa.eu/v3
 BOLAGSVERKET_BACKEND=poit
 
-# Hetzner Storage Box (backups)
+# Backups
+BACKUP_TARGET=local                   # 'local' or 'storagebox'
+BACKUP_LOCAL_PATH=/var/backups/vittring
+BACKUP_ENCRYPTION_PASSPHRASE=
+
+# Hetzner Storage Box (only if BACKUP_TARGET=storagebox)
 BACKUP_HOST=
 BACKUP_USER=
 BACKUP_SSH_KEY_PATH=/etc/vittring/backup_id_ed25519
 BACKUP_REMOTE_PATH=/backups/vittring
-BACKUP_ENCRYPTION_PASSPHRASE=
 ```
 
 ---
@@ -737,9 +743,11 @@ Karim adds `DEPLOY_SSH_KEY` to GitHub Secrets (private key paired with a public 
 ## 18. Backups
 
 ### Database
+> **Storage Box status: deferred.** Until a Storage Box is provisioned, nightly `pg_dump` writes encrypted dumps to `/var/backups/vittring/` on the same server with the same retention policy. The `backup.sh` script supports both targets via `BACKUP_TARGET=local|storagebox`. Switching to Storage Box later is a config change.
+
 - Nightly `pg_dump` at 02:00 Europe/Stockholm via cron.
 - Output: `vittring-YYYY-MM-DD.sql.gz`, encrypted with `gpg --symmetric` using `BACKUP_ENCRYPTION_PASSPHRASE`.
-- Pushed to Hetzner Storage Box via rsync over SSH.
+- Pushed to Hetzner Storage Box via rsync over SSH (when enabled). Otherwise written to `/var/backups/vittring/`.
 - Retention: 30 daily, 12 weekly (Sundays), 12 monthly (1st of month).
 - Old backups pruned by retention policy.
 
@@ -787,11 +795,14 @@ Claude Code must verify these before starting work and halt with clear instructi
 1. **DNS A-record:** `vittring.karimkhalil.se` → `62.238.37.54`. Verify via `dig +short vittring.karimkhalil.se`.
 2. **SSH access:** Claude Code can SSH to `root@62.238.37.54` using Karim's local SSH key.
 3. **Resend account:** API key in `/etc/vittring/.env` as `RESEND_API_KEY`.
-4. **Stripe account:** secret key, webhook secret, and product price IDs in `/etc/vittring/.env`.
-5. **Sentry project:** DSN in `/etc/vittring/.env`.
-6. **Hetzner Storage Box:** ordered (extra €3/mo), credentials in `/etc/vittring/.env`.
-7. **GitHub repository:** created, deploy SSH key added, secrets configured.
-8. **Email DNS records:** Claude Code generates the list via Resend API on first run, prints them, halts. Karim adds them to one.com DNS, then re-runs.
+4. **Sentry project:** DSN in `/etc/vittring/.env` (EU region).
+5. **GitHub repository:** `D3v0ps/vittring` created. Deploy SSH key (private) added as `DEPLOY_SSH_KEY` secret; matching public key installed on server during bootstrap.
+6. **Email DNS records:** Claude Code generates the list via Resend API on first run, prints them, halts. Karim adds them to one.com DNS, then re-runs.
+
+**Deferred (not blocking initial deploy):**
+
+- **Stripe account:** required only when billing is enabled. Schema and code paths are in place; needs `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and price IDs to activate.
+- **Hetzner Storage Box:** required only for off-server backups. Until then, backups are written locally to `/var/backups/vittring/`.
 
 ---
 
