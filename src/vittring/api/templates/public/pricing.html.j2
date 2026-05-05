@@ -1,51 +1,111 @@
 {% extends "_layout.html.j2" %}
 {% block content %}
+
+<section class="section">
+  <div class="container">
+    <div class="section-head" style="text-align: left;">
+      <span class="eyebrow">Priser</span>
+      <h1 style="font-size: var(--text-4xl); letter-spacing: var(--tracking-tighter); margin-bottom: var(--space-3);">Tre planer, samma data, full transparens.</h1>
+      <p>Alla planer inkluderar bevakning av JobTech, Bolagsverket och TED med daglig digest. Skillnaden ligger i antal filter, antal användare och integrationer.</p>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="pricing-tier">
+        <div class="pricing-tier-name">Solo</div>
+        <div class="pricing-tier-price">1 500 kr <span class="per">/ mån</span></div>
+        <p class="muted" style="font-size: var(--text-sm); margin-top: var(--space-2);">För enskilda KAM och säljare.</p>
+        <ul class="pricing-tier-features">
+          <li>5 prenumerationer</li>
+          <li>1 användare</li>
+          <li>JobTech, Bolagsverket, TED</li>
+          <li>Daglig digest 06:30</li>
+          <li>14 dagars gratis provperiod</li>
+          <li>E-postsupport</li>
+        </ul>
+        <a href="/auth/signup" class="btn btn-secondary" style="width:100%;">Välj Solo</a>
+      </div>
+
+      <div class="pricing-tier featured">
+        <div class="pricing-tier-name">Team — populär</div>
+        <div class="pricing-tier-price">2 500 kr <span class="per">/ mån</span></div>
+        <p class="muted" style="font-size: var(--text-sm); margin-top: var(--space-2);">För team som delar prospects.</p>
+        <ul class="pricing-tier-features">
+          <li>20 prenumerationer</li>
+          <li>5 användare</li>
+          <li>JobTech, Bolagsverket, TED</li>
+          <li>Daglig digest 06:30</li>
+          <li>Delade taggar och anteckningar</li>
+          <li>Roller och behörigheter</li>
+        </ul>
+        <a href="/auth/signup" class="btn btn-accent" style="width:100%;">Välj Team</a>
+      </div>
+
+      <div class="pricing-tier">
+        <div class="pricing-tier-name">Pro</div>
+        <div class="pricing-tier-price">4 000 kr <span class="per">/ mån</span></div>
+        <p class="muted" style="font-size: var(--text-sm); margin-top: var(--space-2);">För större organisationer med CRM.</p>
+        <ul class="pricing-tier-features">
+          <li>Obegränsade prenumerationer</li>
+          <li>15 användare</li>
+          <li>HubSpot-integration</li>
+          <li>API-åtkomst med rådata</li>
+          <li>Egen kontaktperson</li>
+          <li>Anpassad SLA</li>
+        </ul>
+        <a href="/auth/signup" class="btn btn-secondary" style="width:100%;">Välj Pro</a>
+      </div>
+    </div>
+
+    <p class="subtle" style="margin-top: var(--space-5); text-align: center;">
+      Alla priser exklusive moms. Årsbetalning ger 10 % rabatt. Behöver du volymavtal eller en custom-plan? <a href="mailto:info@karimkhalil.se">Hör av dig direkt.</a>
+    </p>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
 <section class="section">
   <div class="container container-narrow">
-    <h1>Priser</h1>
-    <p>
-      Alla planer inkluderar bevakning av samtliga tre datakällor och ett dagligt sammanfattningsmejl. Skillnaden ligger i hur många filter du kan ha aktiva och hur många användare som delar kontot.
-    </p>
-    <p class="muted"><span class="mono">Priser exklusive moms. 14 dagars kostnadsfri provperiod på samtliga planer — inget kreditkort krävs för att börja.</span></p>
+    <div class="section-head">
+      <span class="eyebrow">Vanliga frågor om priser</span>
+      <h2>Det vi får mest frågor om kring fakturering.</h2>
+    </div>
 
-    <table class="table" style="margin-top: 32px;">
-      <thead>
-        <tr>
-          <th>Plan</th>
-          <th>Pris per månad</th>
-          <th>Filter</th>
-          <th>Användare</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>Solo</strong></td>
-          <td class="mono">1 500 kr</td>
-          <td>5</td>
-          <td>1</td>
-        </tr>
-        <tr>
-          <td><strong>Team</strong></td>
-          <td class="mono">2 500 kr</td>
-          <td>20</td>
-          <td>5</td>
-        </tr>
-        <tr>
-          <td><strong>Pro</strong></td>
-          <td class="mono">4 000 kr</td>
-          <td>Obegränsat</td>
-          <td>15</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <p style="margin-top: 32px;">
-      Årsbetalning ger 10 % rabatt. Frågor om volymavtal eller integration mot ert CRM (Pro-planen inkluderar HubSpot)? <a href="mailto:info@karimkhalil.se">Hör av dig direkt.</a>
-    </p>
-
-    <div style="margin-top: 32px;">
-      <a href="/auth/signup" class="btn btn-primary">Starta provperiod</a>
+    <div class="faq">
+      <div class="faq-item">
+        <div class="faq-q">Behöver jag kreditkort för att börja?</div>
+        <p class="faq-a">Nej. Provperioden är 14 dagar utan betalningsuppgifter. Efter perioden frågar vi om du vill fortsätta.</p>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Kan jag byta plan senare?</div>
+        <p class="faq-a">Ja. Uppgradera när som helst direkt i kontot. Differensen proraterar mot innevarande månad.</p>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Hur fungerar uppsägning?</div>
+        <p class="faq-a">Avbryt i kontot. Pågående månad fortsätter, ingen återbetalning men ingen automatisk förnyelse heller.</p>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Kan jag få faktura?</div>
+        <p class="faq-a">Ja, alla planer faktureras månadsvis eller årsvis via Stripe. Faktura med ROT/RUT-uppgifter går att få på begäran.</p>
+      </div>
     </div>
   </div>
 </section>
+
+<section class="section">
+  <div class="container">
+    <div class="cta-banner">
+      <div class="cta-banner-inner">
+        <div>
+          <h2>Redo att testa?</h2>
+          <p>Starta provperioden idag — du behöver inte ange kortuppgifter.</p>
+        </div>
+        <div style="display:flex; gap: var(--space-3); flex-wrap: wrap;">
+          <a href="/auth/signup" class="btn btn-on-dark btn-lg">Starta provperiod</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 {% endblock %}

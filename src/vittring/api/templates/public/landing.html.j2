@@ -1,33 +1,253 @@
 {% extends "_layout.html.j2" %}
 {% block content %}
+
 <section class="hero">
-  <div class="container container-narrow">
-    <h1>Vet vilket företag som behöver personal innan dina konkurrenter kontaktar dem.</h1>
-    <p class="lead">
-      Vittring bevakar offentliga datakällor — Arbetsförmedlingens jobbannonser, Bolagsverkets ändringar och TED:s upphandlingar — och mejlar dig en daglig sammanställning av nya signaler som matchar dina kriterier. Bygg ditt prospect-flöde på data som dina konkurrenter inte ser.
-    </p>
-    <div class="hero-cta">
-      <a href="/auth/signup" class="btn btn-primary">Starta 14 dagars provperiod</a>
-      <a href="/pricing" class="btn btn-secondary">Se priser</a>
+  <div class="container">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">Sales intelligence för bemanningsbranschen</span>
+        <h1>Vet vilket företag som behöver personal innan dina konkurrenter kontaktar dem.</h1>
+        <p class="lead">
+          Vittring bevakar tre offentliga datakällor — Arbetsförmedlingens jobbannonser, Bolagsverkets ändringar och TED:s upphandlingar — och mejlar dig en kurerad daglig sammanställning av nya signaler som matchar din nisch.
+        </p>
+        <div class="hero-cta">
+          <a href="/auth/signup" class="btn btn-accent btn-lg">Starta 14 dagars provperiod</a>
+          <a href="/pricing" class="btn btn-secondary btn-lg">Se priser</a>
+        </div>
+        <div class="hero-meta">
+          <span class="hero-meta-item"><span class="dot"></span> Inget kreditkort krävs</span>
+          <span class="hero-meta-item"><span class="dot"></span> Daglig digest 06:30</span>
+          <span class="hero-meta-item"><span class="dot"></span> EU-data, GDPR-säkrad</span>
+        </div>
+      </div>
+
+      <aside class="digest" aria-label="Exempel på dagligt mejl">
+        <div class="digest-titlebar">
+          <span class="r"></span><span class="y"></span><span class="g"></span>
+        </div>
+        <div class="digest-body">
+          <div class="digest-from">Från Vittring · Tisdag 5 maj 06:30</div>
+          <div class="digest-subject">12 nya signaler — Lagerarbetare Storstockholm</div>
+
+          <div class="digest-section-title">Lagerarbetare Storstockholm</div>
+          <div class="digest-section-meta">5 signaler</div>
+
+          <div class="digest-row">
+            <div class="digest-row-meta">
+              <span class="badge badge-accent">Jobb</span>
+              <span class="digest-row-date mono">04 maj 14:32</span>
+            </div>
+            <div class="digest-row-title">ICA Sverige AB söker 12 truckförare</div>
+            <div class="digest-row-detail">Västerhaninge · Heltid · Tillsvidareanställning</div>
+            <a href="#" class="digest-row-link">Läs annonsen ↗</a>
+          </div>
+
+          <div class="digest-row">
+            <div class="digest-row-meta">
+              <span class="badge badge-highlight">Bolagsändring</span>
+              <span class="digest-row-date mono">04 maj 09:15</span>
+            </div>
+            <div class="digest-row-title">Norrlands Logistik AB · Ny VD</div>
+            <div class="digest-row-detail mono" style="font-size: 12px;">Org.nr 5567 23‑1223 · Södertälje</div>
+            <a href="#" class="digest-row-link">Läs kungörelsen ↗</a>
+          </div>
+
+          <div class="digest-row">
+            <div class="digest-row-meta">
+              <span class="badge badge-success">Upphandling</span>
+              <span class="digest-row-date mono">03 maj 11:00</span>
+            </div>
+            <div class="digest-row-title">Region Stockholm — Ramavtal lagerbemanning</div>
+            <div class="digest-row-detail">CPV 79620000 · Uppskattat värde 12 mkr · Sista anbud 12 jun</div>
+            <a href="#" class="digest-row-link">Visa upphandling ↗</a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section class="stats-strip">
+  <div class="container">
+    <div class="stats-grid">
+      <div>
+        <div class="stat-num">3</div>
+        <div class="stat-label">offentliga datakällor</div>
+      </div>
+      <div>
+        <div class="stat-num mono">06:30</div>
+        <div class="stat-label">daglig leverans</div>
+      </div>
+      <div>
+        <div class="stat-num">~5 000</div>
+        <div class="stat-label">nya signaler/dygn</div>
+      </div>
+      <div>
+        <div class="stat-num">EU</div>
+        <div class="stat-label">data residency</div>
+      </div>
     </div>
   </div>
 </section>
 
 <section class="section">
-  <div class="container container-narrow">
-    <h2>Hur det fungerar</h2>
-    <p>
-      Du beskriver vad du letar efter — yrkesroller, kommuner, branschkoder, nyckelord. Varje morgon klockan 06:30 får du ett mejl med nya jobbannonser som passar din nisch, bolagsändringar bland dina målbolag och nya offentliga upphandlingar inom bemanning och rekrytering.
-    </p>
-    <p>
-      Det finns inget visuellt brus. Ingen graf, ingen poäng, ingen rangordning. Bara nya signaler, daterade och med direktlänk till källan. Det du gör med dem — om du ringer, mejlar eller väntar — är upp till dig.
-    </p>
-    <h2>Källor</h2>
-    <ul>
-      <li><strong>JobTech Dev</strong> (Arbetsförmedlingen) — alla jobbannonser i Sverige med branschtaxonomi och organisationsnummer.</li>
-      <li><strong>Bolagsverket / PoIT</strong> — ändringar i styrelse, VD, säte, namn, anmärkningar och likvidationer.</li>
-      <li><strong>TED</strong> (Tenders Electronic Daily, EU) — offentliga upphandlingar med svenska CPV-koder för bemanning och rekrytering.</li>
-    </ul>
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Hur det funkar</span>
+      <h2>Tre steg från registrering till nya samtal.</h2>
+      <p>Vittring kräver ingen integration, ingen träning, ingen onboarding. Du beskriver din nisch, vi bevakar källorna, du får en sammanfattning varje morgon.</p>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">01</div>
+        <h3>Beskriv din nisch</h3>
+        <p>Yrkesroller, kommuner, branschkoder, nyckelord, CPV-koder. Exempel: lagerarbetare i Storstockholm, undantaget heltid och tillsvidare. Du kan ändra när du vill.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">02</div>
+        <h3>Vi bevakar och matchar</h3>
+        <p>Vid 06:00 hämtar vi nya jobbannonser, vid 07:00 nya bolagsändringar, vid 08:00 nya upphandlingar. Matchningsmotorn filtrerar bort 99,5 % av bruset.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">03</div>
+        <h3>Du får ett mejl</h3>
+        <p>06:30 ligger en kurerad sammanställning i din inbox. Klart, daterat, med direktlänk till källan. Vad du gör med det — ringer, mejlar eller väntar — är ditt beslut.</p>
+      </div>
+    </div>
   </div>
 </section>
+
+<div class="section-divider"></div>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Datakällor</span>
+      <h2>Tre offentliga signaler. Sammanställda. Levererade.</h2>
+      <p>All data kommer från svenska eller europeiska myndighetskällor. Inga skrapade LinkedIn-sidor, inga andrahandstjänster, inga gråzoner.</p>
+    </div>
+
+    <div class="sources">
+      <div class="source-card">
+        <div class="source-name">JobTech Dev <span class="source-tag">jobsearch.api.jobtechdev.se</span></div>
+        <p>Alla jobbannonser publicerade i Sverige via Arbetsförmedlingens öppna API. Branschtaxonomi, organisationsnummer per arbetsgivare, kommun och län per arbetsplats.</p>
+      </div>
+      <div class="source-card">
+        <div class="source-name">Bolagsverket <span class="source-tag">PoIT-kungörelser</span></div>
+        <p>Ändringar i styrelse, VD, säte, namn, anmärkningar och likvidationer. När ett bolag byter VD eller flyttar huvudkontor — du får veta dagen efter.</p>
+      </div>
+      <div class="source-card">
+        <div class="source-name">TED <span class="source-tag">ted.europa.eu</span></div>
+        <p>Offentliga upphandlingar med svenska CPV-koder för bemanning, rekrytering och konsulttjänster. Värde, deadline, kontaktperson — direkt i ditt mejl.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Priser</span>
+      <h2>Tre planer. Inga dolda avgifter. Avbryt när du vill.</h2>
+      <p>Alla planer inkluderar bevakning av samtliga tre datakällor och daglig digest. Skillnaden ligger i hur många filter du kan ha aktiva och antal användare.</p>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="pricing-tier">
+        <div class="pricing-tier-name">Solo</div>
+        <div class="pricing-tier-price">1 500 kr <span class="per">/ mån</span></div>
+        <ul class="pricing-tier-features">
+          <li>5 prenumerationer</li>
+          <li>1 användare</li>
+          <li>Alla tre datakällor</li>
+          <li>14 dagars provperiod</li>
+        </ul>
+        <a href="/auth/signup" class="btn btn-secondary" style="width:100%;">Välj Solo</a>
+      </div>
+
+      <div class="pricing-tier featured">
+        <div class="pricing-tier-name">Team</div>
+        <div class="pricing-tier-price">2 500 kr <span class="per">/ mån</span></div>
+        <ul class="pricing-tier-features">
+          <li>20 prenumerationer</li>
+          <li>5 användare</li>
+          <li>Alla tre datakällor</li>
+          <li>Delade filter och taggar</li>
+        </ul>
+        <a href="/auth/signup" class="btn btn-accent" style="width:100%;">Välj Team</a>
+      </div>
+
+      <div class="pricing-tier">
+        <div class="pricing-tier-name">Pro</div>
+        <div class="pricing-tier-price">4 000 kr <span class="per">/ mån</span></div>
+        <ul class="pricing-tier-features">
+          <li>Obegränsade prenumerationer</li>
+          <li>15 användare</li>
+          <li>HubSpot-integration</li>
+          <li>API-åtkomst</li>
+        </ul>
+        <a href="/auth/signup" class="btn btn-secondary" style="width:100%;">Välj Pro</a>
+      </div>
+    </div>
+
+    <p class="subtle" style="margin-top: 16px; text-align: center;">
+      Alla priser exklusive moms. Årsbetalning ger 10 % rabatt. Behöver du volymavtal? <a href="mailto:info@karimkhalil.se">Hör av dig direkt.</a>
+    </p>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<section class="section">
+  <div class="container container-narrow">
+    <div class="section-head">
+      <span class="eyebrow">Vanliga frågor</span>
+      <h2>Det vi får mest frågor om.</h2>
+    </div>
+
+    <div class="faq">
+      <div class="faq-item">
+        <div class="faq-q">Är data ni hämtar offentlig?</div>
+        <p class="faq-a">Ja. Allt kommer från offentliga API:er och kungörelser publicerade av svenska myndigheter eller EU. Vi tillför urval och leverans — inget annat. Ingen scraping av LinkedIn eller liknande gråzoner.</p>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Hur snabbt kommer en signal in?</div>
+        <p class="faq-a">Inom 24 timmar från publicering. Jobbannonser hämtas dagligen 06:00, bolagsändringar 07:00, upphandlingar 08:00. Din digest lämnar oss 06:30 dagen efter.</p>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Var lagras min data?</div>
+        <p class="faq-a">Hetzner, Falkenstein (Tyskland, EU). Vi behandlar personuppgifter enligt GDPR och har personuppgiftsbiträdesavtal med våra underbiträden (Resend, Sentry, Hetzner).</p>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Kan jag avbryta?</div>
+        <p class="faq-a">När som helst. Månadsavgift fortsätter pågående period ut, ingen återbetalning, ingen uppsägningstid. Provperioden fakturerar inget.</p>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Får jag tillgång till rådata?</div>
+        <p class="faq-a">På Pro-planen, ja — via API. På Solo och Team får du data sammanställd i mejl. Allt vi visar finns även i ditt konto med sökbar historik.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="cta-banner">
+      <div class="cta-banner-inner">
+        <div>
+          <h2>Sluta missa affärer som låg framför näsan på dig.</h2>
+          <p>Starta provperioden idag. Inget kreditkort. Avbryt när du vill.</p>
+        </div>
+        <div style="display:flex; gap: var(--space-3); flex-wrap: wrap;">
+          <a href="/auth/signup" class="btn btn-on-dark btn-lg">Starta provperiod</a>
+          <a href="mailto:info@karimkhalil.se" class="btn btn-ghost btn-lg" style="color: var(--color-text-inverse);">Boka samtal</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 {% endblock %}

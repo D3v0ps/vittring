@@ -4,8 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{{ title }} — Vittring</title>
-  <link rel="stylesheet" href="/static/css/main.css" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/main.css" />
   <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
 </head>
 <body>
@@ -14,18 +17,17 @@
       <a href="/" class="brand">Vittring</a>
       <nav class="topnav">
         {% if user %}
-          <a href="/app" class="{% if request.url.path == '/app' %}active{% endif %}">Konto</a>
+          <a href="/app" class="{% if request.url.path == '/app' %}active{% endif %}">Översikt</a>
           <a href="/app/subscriptions" class="{% if request.url.path.startswith('/app/subscriptions') %}active{% endif %}">Prenumerationer</a>
           <a href="/app/account">Inställningar</a>
           <form method="post" action="/auth/logout" style="display:inline">
-            <input type="hidden" name="csrf" value="" />
-            <button type="submit" class="btn btn-ghost">Logga ut</button>
+            <button type="submit" class="btn btn-ghost btn-sm">Logga ut</button>
           </form>
           <span class="avatar">{{ (user.full_name or user.email)[:1].upper() }}</span>
         {% else %}
           <a href="/pricing">Priser</a>
           <a href="/auth/login">Logga in</a>
-          <a href="/auth/signup" class="btn btn-secondary">Skapa konto</a>
+          <a href="/auth/signup" class="btn btn-primary btn-sm">Starta provperiod</a>
         {% endif %}
       </nav>
     </div>
@@ -38,11 +40,11 @@
   <footer class="site-footer">
     <div class="container">
       <div class="footer-row">
-        <span>Vittring</span>
+        <span style="font-weight: 600; color: var(--color-text);">Vittring</span>
         <a href="/legal/privacy">Integritetspolicy</a>
         <a href="/legal/terms">Användarvillkor</a>
         <a href="mailto:info@karimkhalil.se">Kontakt</a>
-        <span style="margin-left:auto;">© 2026 Karim Khalil</span>
+        <span style="margin-left:auto; color: var(--color-text-subtle);">© 2026 Karim Khalil</span>
       </div>
     </div>
   </footer>

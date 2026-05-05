@@ -14,11 +14,11 @@ from starlette.types import ASGIApp
 
 CSP = (
     "default-src 'self'; "
-    "script-src 'self' https://js.stripe.com; "
+    "script-src 'self' https://js.stripe.com https://unpkg.com; "
     "frame-src https://js.stripe.com https://hooks.stripe.com; "
     "img-src 'self' data:; "
-    "style-src 'self' 'unsafe-inline'; "
-    "font-src 'self'; "
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    "font-src 'self' https://fonts.gstatic.com; "
     "connect-src 'self'; "
     "form-action 'self'; "
     "base-uri 'self'; "
