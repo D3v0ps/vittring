@@ -113,7 +113,13 @@ class EavropScraper(BaseScraper[ProcurementItem]):
     domain = "www.e-avrop.com"
     source_value = "eavrop"
 
-    LISTING_PATHS = ("/upphandlingar", "/annonser", "/")
+    # /upphandlingar, /annonser and / on www.e-avrop.com are wrappers — the
+    # first 404s, the second is a login-walled iframe, the third is the front
+    # page. The actual public procurement list lives at
+    # /e-Upphandling/Default.aspx (active) and /e-Upphandling/planedComing.aspx
+    # (planned). Each row is an <a href="/{customer}/visa/upphandling.aspx?id=N">
+    # which the substring filter in _extract_detail_urls already accepts.
+    LISTING_PATHS = ("/e-Upphandling/Default.aspx", "/e-Upphandling/planedComing.aspx")
 
     async def list_urls(self) -> list[str]:
         """Fetch the public listing page and extract detail-page URLs.
