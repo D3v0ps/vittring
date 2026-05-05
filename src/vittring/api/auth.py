@@ -146,7 +146,26 @@ async def signup(
     verify_url = f"{base}/auth/verify?t={plain}"
     html = render("verify.html.j2", subject="Bekräfta din e-postadress", from_address=settings.email_from_address, email=user.email, verify_url=verify_url)
     text = f"Bekräfta din e-post genom att besöka: {verify_url}"
-    await send_email(to=user.email, subject="Bekräfta din e-postadress hos Vittring", html=html, text=text, tags={"kind": "verify"})
+    try:
+        await send_email(
+            to=user.email,
+            subject="Bekräfta din e-postadress hos Vittring",
+            html=html,
+            text=text,
+            tags={"kind": "verify"},
+        )
+    except Exception as exc:
+        # Domain not yet verified at Resend, transient API error, etc. We
+        # still keep the account so the operator can finish setup later
+        # (and so the user isn't stuck with a half-created row).
+        import structlog
+
+        structlog.get_logger(__name__).warning(
+            "signup_verify_email_failed",
+            user_id=user.id,
+            email=user.email,
+            error=str(exc),
+        )
 
     response = RedirectResponse("/auth/check-email", status_code=status.HTTP_303_SEE_OTHER)
     return response

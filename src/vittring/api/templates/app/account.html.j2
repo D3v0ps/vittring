@@ -1,41 +1,155 @@
 {% extends "_layout.html.j2" %}
 {% block content %}
-<section class="section">
-  <div class="container container-narrow">
-    <h1>Inställningar</h1>
-
-    <div class="card" style="margin-top: 24px;">
-      <h2 style="font-size: 18px;">Profil</h2>
-      <p><strong>E-post</strong><br /><span class="mono">{{ user.email }}</span></p>
-      <p><strong>Namn</strong><br />{{ user.full_name or "—" }}</p>
-      <p><strong>Företag</strong><br />{{ user.company_name or "—" }}</p>
-      <p><strong>Plan</strong><br /><span class="mono">{{ user.plan }}</span></p>
+<div class="app-shell app-shell-narrow">
+  <header class="app-header">
+    <div class="app-header-copy">
+      <div class="eyebrow">Inställningar</div>
+      <h1>Konto</h1>
+      <p class="muted app-header-lead">
+        Profil, plan, säkerhet och dataskydd. Ändringar sparas direkt.
+      </p>
     </div>
+  </header>
 
-    <div class="card" style="margin-top: 24px;">
-      <h2 style="font-size: 18px;">Tvåfaktorsautentisering</h2>
+  {# --- Profile --- #}
+  <section class="settings-section card card-flush">
+    <div class="card-section settings-section-head">
+      <div>
+        <h3>Profil</h3>
+        <p class="muted">Hur vi tilltalar dig och vart digesten skickas.</p>
+      </div>
+    </div>
+    <div class="card-section">
+      <dl class="settings-list">
+        <div class="settings-row">
+          <dt>E-post</dt>
+          <dd class="mono">{{ user.email }}</dd>
+        </div>
+        <div class="settings-row">
+          <dt>Namn</dt>
+          <dd>{{ user.full_name or "—" }}</dd>
+        </div>
+        <div class="settings-row">
+          <dt>Företag</dt>
+          <dd>{{ user.company_name or "—" }}</dd>
+        </div>
+        <div class="settings-row">
+          <dt>Medlem sedan</dt>
+          <dd class="mono">{{ user.created_at.strftime("%Y-%m-%d") }}</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  {# --- Plan --- #}
+  <section class="settings-section card card-flush">
+    <div class="card-section settings-section-head">
+      <div>
+        <h3>Plan</h3>
+        <p class="muted">Din nuvarande prenumeration och fakturering.</p>
+      </div>
+      <a href="/pricing" class="btn btn-secondary btn-sm">Se planer</a>
+    </div>
+    <div class="card-section settings-plan">
+      <div class="settings-plan-tier">
+        <span class="badge badge-accent plan-badge">
+          {% if user.plan == "trial" %}Provperiod
+          {% elif user.plan == "solo" %}Solo
+          {% elif user.plan == "team" %}Team
+          {% elif user.plan == "pro" %}Pro
+          {% else %}{{ user.plan|capitalize }}{% endif %}
+        </span>
+        <div class="settings-plan-meta">
+          {% if user.plan == "trial" and user.trial_ends_at %}
+            {% set days = (user.trial_ends_at - user.created_at).days %}
+            <p class="settings-plan-headline">
+              Provperiod aktiv till
+              <span class="mono">{{ user.trial_ends_at.strftime("%Y-%m-%d") }}</span>
+            </p>
+            <p class="muted">
+              Efter provperioden behöver du välja en plan för att fortsätta få den dagliga digesten.
+            </p>
+          {% elif user.plan == "solo" %}
+            <p class="settings-plan-headline">Solo · 5 prenumerationer</p>
+            <p class="muted">Daglig digest, alla tre datakällor.</p>
+          {% elif user.plan == "team" %}
+            <p class="settings-plan-headline">Team · 20 prenumerationer</p>
+            <p class="muted">Daglig digest, alla tre datakällor, delade filter inom teamet.</p>
+          {% elif user.plan == "pro" %}
+            <p class="settings-plan-headline">Pro · Obegränsat</p>
+            <p class="muted">Obegränsade prenumerationer och prioriterad support.</p>
+          {% else %}
+            <p class="settings-plan-headline">{{ user.plan|capitalize }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% if user.plan == "trial" %}
+        <a href="/pricing" class="btn btn-accent">Uppgradera</a>
+      {% endif %}
+    </div>
+  </section>
+
+  {# --- Security / 2FA --- #}
+  <section class="settings-section card card-flush">
+    <div class="card-section settings-section-head">
+      <div>
+        <h3>Säkerhet</h3>
+        <p class="muted">Tvåfaktorsautentisering med en authenticator-app.</p>
+      </div>
+    </div>
+    <div class="card-section settings-2fa">
       {% if user.totp_enabled_at %}
-        <p>Aktiverat sedan <span class="mono">{{ user.totp_enabled_at.strftime("%Y-%m-%d") }}</span>.</p>
+        <div class="settings-2fa-status">
+          <span class="status-pip status-pip-on" aria-hidden="true"></span>
+          <div>
+            <p class="settings-row-headline">Tvåfaktor är aktivt</p>
+            <p class="muted">Aktiverat sedan <span class="mono">{{ user.totp_enabled_at.strftime("%Y-%m-%d") }}</span>.</p>
+          </div>
+        </div>
         <form method="post" action="/auth/2fa/disable">
           <button type="submit" class="btn btn-secondary">Inaktivera</button>
         </form>
       {% else %}
-        <p>Skydda kontot med en authenticator-app.</p>
+        <div class="settings-2fa-status">
+          <span class="status-pip" aria-hidden="true"></span>
+          <div>
+            <p class="settings-row-headline">Inte aktiverat</p>
+            <p class="muted">Skydda kontot med en kod från Google Authenticator, 1Password eller liknande.</p>
+          </div>
+        </div>
         <a href="/auth/2fa/enable" class="btn btn-primary">Aktivera</a>
       {% endif %}
     </div>
+  </section>
 
-    <div class="card" style="margin-top: 24px;">
-      <h2 style="font-size: 18px;">Mina data (GDPR)</h2>
-      <p>Exportera allt vi har om dig som JSON, eller begär radering. Radering har 30 dagars karenstid.</p>
-      <p>
-        <a href="/app/account/export" class="btn btn-secondary">Exportera data</a>
-        <form method="post" action="/app/account/delete" style="display: inline; margin-left: 8px;"
-              onsubmit="return confirm('Är du säker? Kontot inaktiveras nu och raderas slutgiltigt om 30 dagar.');">
-          <button type="submit" class="btn btn-ghost" style="color: var(--color-danger);">Radera kontot</button>
-        </form>
-      </p>
+  {# --- GDPR --- #}
+  <section class="settings-section card card-flush">
+    <div class="card-section settings-section-head">
+      <div>
+        <h3>Data &amp; integritet</h3>
+        <p class="muted">Du äger din data. Exportera den när du vill — eller radera kontot helt.</p>
+      </div>
     </div>
-  </div>
-</section>
+    <div class="card-section settings-gdpr-row">
+      <div>
+        <p class="settings-row-headline">Exportera all min data</p>
+        <p class="muted">Du får en JSON-fil med profil, prenumerationer, levererade signaler och loggar.</p>
+      </div>
+      <a href="/app/account/export" class="btn btn-secondary">Exportera JSON</a>
+    </div>
+    <div class="card-section settings-gdpr-row settings-gdpr-danger">
+      <div>
+        <p class="settings-row-headline">Radera kontot</p>
+        <p class="muted">
+          Kontot inaktiveras direkt och raderas slutgiltigt efter
+          <span class="mono">30 dagars</span> karenstid. Innan dess kan du återaktivera via support.
+        </p>
+      </div>
+      <form method="post" action="/app/account/delete"
+            onsubmit="return confirm('Är du säker? Kontot inaktiveras nu och raderas slutgiltigt om 30 dagar.');">
+        <button type="submit" class="btn btn-danger">Radera kontot</button>
+      </form>
+    </div>
+  </section>
+</div>
 {% endblock %}

@@ -1,8 +1,30 @@
 {% extends "_layout.html.j2" %}
 {% block content %}
 <section class="auth-shell">
-  <h1>Bekräfta din e-post</h1>
-  <p>Vi har mejlat dig en bekräftelselänk. Klicka på den för att aktivera kontot. Länken är giltig i 24 timmar.</p>
-  <p class="subtle">Inget mejl? Kontrollera skräpposten eller <a href="mailto:info@karimkhalil.se">hör av dig</a>.</p>
+  <div class="auth-card">
+    <a href="/" class="auth-mark">
+      <span class="auth-mark-dot"></span>
+      Vittring
+    </a>
+    <div class="auth-state">
+      <div class="auth-state-icon auth-state-icon-pending">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M3 7.5l9 6 9-6M3 7.5v9a1.5 1.5 0 001.5 1.5h15a1.5 1.5 0 001.5-1.5v-9M3 7.5L4.5 6h15L21 7.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1>Bekräfta din e-post</h1>
+      <p>Vi har skickat en bekräftelselänk. Klicka på den för att aktivera kontot — länken är giltig i 24 timmar.</p>
+    </div>
+    <div class="auth-divider"></div>
+    <ol class="auth-steps">
+      <li>Öppna mejlet från Vittring</li>
+      <li>Klicka på bekräftelselänken</li>
+      <li>Logga in och lägg upp din första bevakning</li>
+    </ol>
+    <a href="/auth/login" class="btn btn-secondary" style="width: 100%;">Till inloggning</a>
+    <p class="auth-foot">
+      Inget mejl? Kontrollera skräpposten eller <a href="mailto:info@karimkhalil.se">hör av dig</a>.
+    </p>
+  </div>
 </section>
 {% endblock %}

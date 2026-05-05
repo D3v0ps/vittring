@@ -1,18 +1,25 @@
-Vittring — {{ total }} nya signaler ({{ digest_date }})
+VITTRING — DAGLIG SAMMANSTÄLLNING
+============================================================
+{{ total }} {{ "ny signal" if total == 1 else "nya signaler" }} · {{ digest_date }}
+============================================================
 
 {% for section in sections %}
-== {{ section.subscription_name }} ({{ section.items|length }} {{ "signal" if section.items|length == 1 else "signaler" }}) ==
+{{ section.subscription_name }}
+------------------------------------------------------------
+{{ section.items|length }} {{ "signal" if section.items|length == 1 else "signaler" }}
 
 {% for item in section.items %}
-[{{ item.kind_label }}] {{ item.date_label }}
+[{{ item.kind_label }}]  {{ item.date_label }}
 {{ item.title }}
-{% if item.detail %}{{ item.detail }}{% endif %}
-{% if item.source_url %}{{ item.source_url }}{% endif %}
+{% if item.detail %}{{ item.detail }}
+{% endif %}
+{% if item.source_url %}Läs mer: {{ item.source_url }}
+{% endif %}
 
 {% endfor %}
 {% endfor %}
-
-Hantera prenumerationer: {{ manage_url }}
-Avregistrera: {{ unsubscribe_url }}
+============================================================
+Hantera prenumerationer:  {{ manage_url }}
+Avregistrera:             {{ unsubscribe_url }}
 
 {{ contact_address }}

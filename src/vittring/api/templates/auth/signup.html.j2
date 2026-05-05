@@ -1,32 +1,57 @@
 {% extends "_layout.html.j2" %}
 {% block content %}
-<section class="auth-shell">
-  <h1>Skapa konto</h1>
-  <p class="muted">14 dagars provperiod, inget kreditkort krävs.</p>
-  {% if error %}
-    <div class="alert-error">{{ error }}</div>
-  {% endif %}
-  <form method="post" action="/auth/signup">
-    <div class="field">
-      <label for="email">E-post</label>
-      <input class="input" type="email" id="email" name="email" required autocomplete="email" />
+<section class="auth-shell-grid">
+  <div class="auth-shell-form">
+    <div class="auth-shell-form-inner">
+      <a href="/" class="auth-mark">
+        <span class="auth-mark-dot"></span>
+        Vittring
+      </a>
+      <h1 class="auth-heading">Skapa konto</h1>
+      <p class="auth-sub">14 dagars provperiod. Inget kreditkort krävs. Avsluta när du vill.</p>
+      {% if error %}
+        <div class="alert-error">{{ error }}</div>
+      {% endif %}
+      <form method="post" action="/auth/signup" class="auth-form">
+        <div class="field">
+          <label for="email">Arbetsmejl</label>
+          <input class="input" type="email" id="email" name="email" required autocomplete="email" placeholder="namn@företag.se" />
+        </div>
+        <div class="field">
+          <label for="full_name">Namn</label>
+          <input class="input" type="text" id="full_name" name="full_name" autocomplete="name" />
+        </div>
+        <div class="field">
+          <label for="company_name">Företag</label>
+          <input class="input" type="text" id="company_name" name="company_name" autocomplete="organization" />
+        </div>
+        <div class="field">
+          <label for="password">Lösenord</label>
+          <input class="input" type="password" id="password" name="password" required minlength="12" autocomplete="new-password" />
+          <span class="password-requirements">Minst 12 tecken. Använd gärna en lösenfras.</span>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">Skapa konto</button>
+      </form>
+      <p class="auth-foot">
+        Har du redan ett konto? <a href="/auth/login">Logga in</a>
+      </p>
     </div>
-    <div class="field">
-      <label for="full_name">Namn</label>
-      <input class="input" type="text" id="full_name" name="full_name" autocomplete="name" />
+  </div>
+  <aside class="auth-brand-side">
+    <div class="auth-brand-inner">
+      <span class="auth-brand-eyebrow">Vittring</span>
+      <h2>Bevakning av offentlig upphandling, utan brus.</h2>
+      <p>Strukturerade prenumerationer på TED, Mercell och Visma Opic. En daglig sammanfattning rakt i inkorgen.</p>
+      <div class="auth-brand-stat">
+        <div class="auth-brand-stat-num">12 547</div>
+        <div class="auth-brand-stat-label">nya upphandlingar bevakade idag</div>
+      </div>
+      <ul class="auth-brand-list">
+        <li>Sökord, CPV-koder och geografi</li>
+        <li>Daglig sammanfattning kl. 07:00</li>
+        <li>SSO, 2FA och fakturabetalning</li>
+      </ul>
     </div>
-    <div class="field">
-      <label for="company_name">Företag</label>
-      <input class="input" type="text" id="company_name" name="company_name" autocomplete="organization" />
-    </div>
-    <div class="field">
-      <label for="password">Lösenord (minst 12 tecken)</label>
-      <input class="input" type="password" id="password" name="password" required minlength="12" autocomplete="new-password" />
-    </div>
-    <button type="submit" class="btn btn-primary">Skapa konto</button>
-  </form>
-  <p class="subtle" style="margin-top: 24px;">
-    Har du redan ett konto? <a href="/auth/login">Logga in</a>
-  </p>
+  </aside>
 </section>
 {% endblock %}

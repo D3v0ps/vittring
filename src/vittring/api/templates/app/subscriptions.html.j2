@@ -1,55 +1,100 @@
 {% extends "_layout.html.j2" %}
 {% block content %}
-<section class="section">
-  <div class="container">
-    <div style="display: flex; align-items: center; justify-content: space-between;">
-      <h1>Prenumerationer</h1>
-      <a href="/app/subscriptions/new" class="btn btn-primary">Ny prenumeration</a>
+<div class="app-shell">
+  <header class="app-header">
+    <div class="app-header-copy">
+      <div class="eyebrow">Prenumerationer</div>
+      <h1>Dina filter</h1>
+      <p class="muted app-header-lead">
+        Definiera vad som matchar i den dagliga digesten.
+        {% if subscriptions %}
+          Du har {{ subscriptions|length }} aktiv{{ "" if subscriptions|length == 1 else "a" }} just nu.
+        {% endif %}
+      </p>
     </div>
+    <div class="app-header-actions">
+      <a href="/app/subscriptions/new" class="btn btn-accent">Ny prenumeration</a>
+    </div>
+  </header>
 
-    {% if subscriptions %}
-    <table class="table" style="margin-top: 32px;">
-      <thead>
-        <tr>
-          <th>Namn</th>
-          <th>Signaler</th>
-          <th>Status</th>
-          <th>Skapad</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for sub in subscriptions %}
-        <tr>
-          <td>{{ sub.name }}</td>
-          <td>
+  {% if subscriptions %}
+    <section class="card card-flush subs-list">
+      <div class="subs-list-head">
+        <span>Namn</span>
+        <span>Signaler</span>
+        <span>Status</span>
+        <span>Skapad</span>
+        <span class="subs-list-head-actions">Åtgärder</span>
+      </div>
+      {% for sub in subscriptions %}
+        <article class="subs-list-row">
+          <div class="subs-list-name">
+            <span class="subs-list-name-label">{{ sub.name }}</span>
+            <span class="mono subtle subs-list-id">#{{ sub.id }}</span>
+          </div>
+          <div class="subs-list-types">
             {% for st in sub.signal_types %}
-              <span class="badge badge-neutral">{{ st }}</span>
+              <span class="badge badge-{% if st == 'procurement' %}accent{% elif st == 'job_ad' %}neutral{% else %}highlight{% endif %}">
+                {% if st == "procurement" %}Upphandling
+                {% elif st == "job_ad" %}Jobbannons
+                {% elif st == "company_event" %}Bolagshändelse
+                {% else %}{{ st }}{% endif %}
+              </span>
             {% endfor %}
-          </td>
-          <td>
+          </div>
+          <div class="subs-list-status">
             {% if sub.active %}
+              <span class="status-pip status-pip-on" aria-hidden="true"></span>
               <span class="badge badge-success">Aktiv</span>
             {% else %}
+              <span class="status-pip" aria-hidden="true"></span>
               <span class="badge badge-neutral">Pausad</span>
             {% endif %}
-          </td>
-          <td class="mono">{{ sub.created_at.strftime("%Y-%m-%d") }}</td>
-          <td>
-            <form method="post" action="/app/subscriptions/{{ sub.id }}/delete" style="display: inline;"
+          </div>
+          <div class="subs-list-date mono subtle">
+            {{ sub.created_at.strftime("%Y-%m-%d") }}
+          </div>
+          <div class="subs-list-actions">
+            <a href="/app/subscriptions/new?duplicate={{ sub.id }}" class="btn btn-ghost btn-sm">Duplicera</a>
+            <form method="post" action="/app/subscriptions/{{ sub.id }}/delete"
                   onsubmit="return confirm('Radera prenumerationen {{ sub.name }}?');">
-              <button type="submit" class="btn btn-ghost">Radera</button>
+              <button type="submit" class="btn btn-ghost btn-sm subs-list-delete">Radera</button>
             </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <div class="card" style="margin-top: 32px;">
-      <p>Du har inga prenumerationer än. Lägg till din första för att börja få dagliga signaler.</p>
-    </div>
-    {% endif %}
-  </div>
-</section>
+          </div>
+        </article>
+      {% endfor %}
+    </section>
+
+    <p class="muted subs-list-footnote">
+      Dina filter levereras som en sammanfattning varje morgon kl 06:30 till
+      <span class="mono">{{ user.email }}</span>.
+    </p>
+  {% else %}
+    <section class="empty-state">
+      <div class="empty-state-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18"/>
+          <path d="M6 12h12"/>
+          <path d="M10 18h4"/>
+        </svg>
+      </div>
+      <h2>Inga prenumerationer ännu</h2>
+      <p class="muted">
+        En prenumeration är ditt filter — t.ex. ”Lagerarbetare Storstockholm”
+        eller ”Konsultchefer norra Sverige”. Vi matchar mot tre datakällor och
+        levererar träffar i en daglig digest.
+      </p>
+      <div class="empty-state-actions">
+        <a href="/app/subscriptions/new" class="btn btn-accent">Skapa första prenumerationen</a>
+      </div>
+      <div class="empty-state-examples">
+        <span class="subtle">Exempel:</span>
+        <span class="badge badge-neutral">Lagerarbetare Storstockholm</span>
+        <span class="badge badge-neutral">Truckförare Skåne län</span>
+        <span class="badge badge-neutral">Konsultchefer norra Sverige</span>
+      </div>
+    </section>
+  {% endif %}
+</div>
 {% endblock %}

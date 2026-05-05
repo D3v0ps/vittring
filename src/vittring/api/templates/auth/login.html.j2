@@ -1,29 +1,68 @@
 {% extends "_layout.html.j2" %}
 {% block content %}
-<section class="auth-shell">
-  <h1>Logga in</h1>
-  {% if error %}
-    <div class="alert-error">{{ error }}</div>
-  {% endif %}
-  <form method="post" action="/auth/login">
-    <div class="field">
-      <label for="email">E-post</label>
-      <input class="input" type="email" id="email" name="email" value="{{ email_value or '' }}" required autocomplete="email" />
+<section class="auth-shell-grid">
+  <div class="auth-shell-form">
+    <div class="auth-shell-form-inner">
+      <a href="/" class="auth-mark">
+        <span class="auth-mark-dot"></span>
+        Vittring
+      </a>
+      <h1 class="auth-heading">{% if require_2fa %}Bekräfta inloggning{% else %}Logga in{% endif %}</h1>
+      <p class="auth-sub">
+        {% if require_2fa %}
+          Ange koden från din authenticator-app för att slutföra inloggningen.
+        {% else %}
+          Välkommen tillbaka. Logga in för att se dagens bevakningar.
+        {% endif %}
+      </p>
+      {% if error %}
+        <div class="alert-error">{{ error }}</div>
+      {% endif %}
+      {% if require_2fa %}
+        <div class="auth-2fa-notice">
+          <svg class="auth-2fa-notice-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M10 1.5L3 4.5v5.25c0 4.18 2.98 8.09 7 9.25 4.02-1.16 7-5.07 7-9.25V4.5L10 1.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M7.5 10l1.75 1.75L13 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Tvåfaktor är aktiverat på det här kontot. Vi kontrollerar koden mot din authenticator.</span>
+        </div>
+      {% endif %}
+      <form method="post" action="/auth/login" class="auth-form">
+        <div class="field">
+          <label for="email">E-post</label>
+          <input class="input" type="email" id="email" name="email" value="{{ email_value or '' }}" required autocomplete="email" placeholder="namn@företag.se" />
+        </div>
+        <div class="field">
+          <label for="password">Lösenord</label>
+          <input class="input" type="password" id="password" name="password" required autocomplete="current-password" />
+        </div>
+        {% if require_2fa %}
+        <div class="field">
+          <label for="totp">Tvåfaktorskod</label>
+          <input class="input mono" type="text" id="totp" name="totp" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required autofocus placeholder="123 456" />
+        </div>
+        {% endif %}
+        <button type="submit" class="btn btn-primary btn-lg">
+          {% if require_2fa %}Bekräfta och logga in{% else %}Logga in{% endif %}
+        </button>
+      </form>
+      <p class="auth-foot">
+        <a href="/auth/password-reset">Glömt lösenordet?</a>
+        <span style="margin: 0 var(--space-2); color: var(--color-text-subtle);">·</span>
+        <a href="/auth/signup">Skapa konto</a>
+      </p>
     </div>
-    <div class="field">
-      <label for="password">Lösenord</label>
-      <input class="input" type="password" id="password" name="password" required autocomplete="current-password" />
+  </div>
+  <aside class="auth-brand-side">
+    <div class="auth-brand-inner">
+      <span class="auth-brand-eyebrow">Daglig sammanfattning</span>
+      <h2>"Vi missar inte längre upphandlingar som matchar oss."</h2>
+      <p>Sedan vi började med Vittring har vi gått från manuell sökning till en strukturerad rutin. En läsning på morgonen räcker.</p>
+      <div class="auth-brand-stat">
+        <div class="auth-brand-stat-num">04:32</div>
+        <div class="auth-brand-stat-label">genomsnittlig tid att läsa dagens bevakning</div>
+      </div>
     </div>
-    {% if require_2fa %}
-    <div class="field">
-      <label for="totp">Tvåfaktorskod</label>
-      <input class="input mono" type="text" id="totp" name="totp" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required />
-    </div>
-    {% endif %}
-    <button type="submit" class="btn btn-primary">Logga in</button>
-  </form>
-  <p class="subtle" style="margin-top: 24px;">
-    <a href="/auth/password-reset">Glömt lösenordet?</a> · <a href="/auth/signup">Skapa konto</a>
-  </p>
+  </aside>
 </section>
 {% endblock %}
