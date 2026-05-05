@@ -150,9 +150,7 @@ class BaseScraper[T](IngestAdapter[T]):
                 "cache_hit": False,
                 "robots_status_code": None,
                 "robots_decision": "rate_limit_exceeded",
-                "robots_reason": (
-                    f"{used} requests in last 24h, max {self.MAX_REQUESTS_PER_DAY}"
-                ),
+                "robots_reason": (f"{used} requests in last 24h, max {self.MAX_REQUESTS_PER_DAY}"),
                 "request_time_ms": int((time.monotonic() - started) * 1000),
             }
             await self._write_audit(meta)
@@ -350,9 +348,7 @@ class BaseScraper[T](IngestAdapter[T]):
         if wait > 0:
             await asyncio.sleep(wait)
 
-    async def _do_get(
-        self, url: str, headers: dict[str, str]
-    ) -> tuple[str | None, int | None]:
+    async def _do_get(self, url: str, headers: dict[str, str]) -> tuple[str | None, int | None]:
         """GET ``url`` with up to 3 retries on 5xx using exponential backoff."""
         attempt = 0
         backoff = 1.0
