@@ -1,0 +1,80 @@
+/* Design tokens — see design-system.md. Never edit colour or radius
+   values without updating the design system spec first. */
+
+:root {
+  /* Bakgrund */
+  --color-bg: #FAFAF7;
+  --color-bg-elevated: #FFFFFF;
+  --color-bg-subtle: #F2F1EC;
+  --color-bg-sunken: #EDECE6;
+
+  /* Text */
+  --color-text: #141414;
+  --color-text-muted: #5C5C58;
+  --color-text-subtle: #8A8A85;
+  --color-text-inverse: #FAFAF7;
+
+  /* Borders */
+  --color-border: #DCDBD3;
+  --color-border-strong: #B8B7AE;
+  --color-border-subtle: #E8E7E0;
+
+  /* Accent */
+  --color-accent: #1B3A4B;
+  --color-accent-hover: #133040;
+  --color-accent-subtle: #E8EEF1;
+  --color-accent-text: #1B3A4B;
+
+  /* Semantiska */
+  --color-success: #2D5A3D;
+  --color-success-bg: #E8EFE9;
+  --color-warning: #8A6A1F;
+  --color-warning-bg: #F4EDD9;
+  --color-danger: #8B2C2C;
+  --color-danger-bg: #F2E2E2;
+
+  /* Mörka ytor */
+  --color-dark: #141414;
+  --color-dark-text: #FAFAF7;
+
+  /* Typografi */
+  --font-sans: 'Inter Tight', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-md: 18px;
+  --text-lg: 22px;
+  --text-xl: 28px;
+  --text-2xl: 36px;
+  --text-3xl: 48px;
+
+  --leading-tight: 1.2;
+  --leading-snug: 1.4;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 999px;
+
+  --container-narrow: 720px;
+  --container-default: 1080px;
+  --container-wide: 1280px;
+}

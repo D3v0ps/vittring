@@ -1,0 +1,14 @@
+{% extends "_layout.html.j2" %}
+{% block content %}
+<section class="section">
+  <div class="container container-narrow">
+    {% if ok %}
+      <h1>Avregistrerad</h1>
+      <p>Dina prenumerationer är pausade. Logga in för att aktivera dem igen om du ändrar dig.</p>
+    {% else %}
+      <h1>Kunde inte avregistrera</h1>
+      <p>Länken är ogiltig eller har gått ut. Logga in i ditt konto för att hantera prenumerationerna manuellt.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

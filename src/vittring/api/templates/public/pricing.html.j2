@@ -1,0 +1,51 @@
+{% extends "_layout.html.j2" %}
+{% block content %}
+<section class="section">
+  <div class="container container-narrow">
+    <h1>Priser</h1>
+    <p>
+      Alla planer inkluderar bevakning av samtliga tre datakällor och ett dagligt sammanfattningsmejl. Skillnaden ligger i hur många filter du kan ha aktiva och hur många användare som delar kontot.
+    </p>
+    <p class="muted"><span class="mono">Priser exklusive moms. 14 dagars kostnadsfri provperiod på samtliga planer — inget kreditkort krävs för att börja.</span></p>
+
+    <table class="table" style="margin-top: 32px;">
+      <thead>
+        <tr>
+          <th>Plan</th>
+          <th>Pris per månad</th>
+          <th>Filter</th>
+          <th>Användare</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Solo</strong></td>
+          <td class="mono">1 500 kr</td>
+          <td>5</td>
+          <td>1</td>
+        </tr>
+        <tr>
+          <td><strong>Team</strong></td>
+          <td class="mono">2 500 kr</td>
+          <td>20</td>
+          <td>5</td>
+        </tr>
+        <tr>
+          <td><strong>Pro</strong></td>
+          <td class="mono">4 000 kr</td>
+          <td>Obegränsat</td>
+          <td>15</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top: 32px;">
+      Årsbetalning ger 10 % rabatt. Frågor om volymavtal eller integration mot ert CRM (Pro-planen inkluderar HubSpot)? <a href="mailto:info@karimkhalil.se">Hör av dig direkt.</a>
+    </p>
+
+    <div style="margin-top: 32px;">
+      <a href="/auth/signup" class="btn btn-primary">Starta provperiod</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

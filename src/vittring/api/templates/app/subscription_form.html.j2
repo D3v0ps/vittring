@@ -1,0 +1,64 @@
+{% extends "_layout.html.j2" %}
+{% block content %}
+<section class="section">
+  <div class="container container-narrow">
+    <h1>Ny prenumeration</h1>
+    {% if error %}<div class="alert-error">{{ error }}</div>{% endif %}
+    <form method="post" action="/app/subscriptions/">
+      <div class="field">
+        <label for="name">Namn (för internt bruk)</label>
+        <input class="input" id="name" name="name" required placeholder="t.ex. Lagerarbetare Storstockholm" />
+      </div>
+
+      <fieldset style="border: none; padding: 0; margin: 0 0 24px 0;">
+        <legend style="font-size: 14px; color: var(--color-text-muted); margin-bottom: 8px;">Signaltyper</legend>
+        <label style="display: block; margin-bottom: 4px;">
+          <input type="checkbox" name="signal_types" value="job" checked /> Jobbannonser (JobTech)
+        </label>
+        <label style="display: block; margin-bottom: 4px;">
+          <input type="checkbox" name="signal_types" value="company_change" /> Bolagsändringar (Bolagsverket)
+        </label>
+        <label style="display: block; margin-bottom: 4px;">
+          <input type="checkbox" name="signal_types" value="procurement" /> Upphandlingar (TED)
+        </label>
+      </fieldset>
+
+      <div class="field">
+        <label for="occupations">Yrkesroller (kommaseparerat)</label>
+        <input class="input" id="occupations" name="occupations" placeholder="Lagerarbetare, Truckförare, Chaufför C/CE" />
+      </div>
+      <div class="field">
+        <label for="municipalities">Kommuner (kommaseparerat)</label>
+        <input class="input" id="municipalities" name="municipalities" placeholder="Stockholm, Södertälje, Botkyrka" />
+      </div>
+      <div class="field">
+        <label for="counties">Län (kommaseparerat)</label>
+        <input class="input" id="counties" name="counties" placeholder="Stockholms län" />
+      </div>
+      <div class="field">
+        <label for="sni_codes">SNI-koder (för bolagsändringar)</label>
+        <input class="input mono" id="sni_codes" name="sni_codes" placeholder="49410, 52100" />
+      </div>
+      <div class="field">
+        <label for="cpv_codes">CPV-koder (för upphandlingar)</label>
+        <input class="input mono" id="cpv_codes" name="cpv_codes" placeholder="79600000, 79610000" />
+      </div>
+      <div class="field">
+        <label for="keywords_any">Inkluderande nyckelord</label>
+        <input class="input" id="keywords_any" name="keywords_any" placeholder="bemanning, interim, konsult" />
+      </div>
+      <div class="field">
+        <label for="keywords_none">Exkluderande nyckelord</label>
+        <input class="input" id="keywords_none" name="keywords_none" placeholder="heltid, tillsvidare" />
+      </div>
+      <div class="field">
+        <label for="min_procurement_value_sek">Min upphandlingsvärde (SEK)</label>
+        <input class="input mono" id="min_procurement_value_sek" name="min_procurement_value_sek" type="number" min="0" placeholder="500000" />
+      </div>
+
+      <button type="submit" class="btn btn-primary">Spara</button>
+      <a href="/app/subscriptions" class="btn btn-ghost">Avbryt</a>
+    </form>
+  </div>
+</section>
+{% endblock %}

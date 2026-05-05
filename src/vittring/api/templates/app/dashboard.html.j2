@@ -1,0 +1,44 @@
+{% extends "_layout.html.j2" %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <h1>Hej {{ user.full_name or user.email }}</h1>
+    <p class="muted">Plan: <span class="mono">{{ user.plan }}</span>{% if user.trial_ends_at %} · Provperiod till <span class="mono">{{ user.trial_ends_at.strftime("%Y-%m-%d") }}</span>{% endif %}</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px;">
+      <div class="card">
+        <h2 style="font-size: 18px;">Aktiva prenumerationer</h2>
+        <p class="muted" style="margin-bottom: 16px;">{{ subscriptions|length }} aktiv{{ "" if subscriptions|length == 1 else "a" }}</p>
+        {% if subscriptions %}
+          <ul style="list-style: none; padding: 0; margin: 0;">
+            {% for sub in subscriptions[:5] %}
+              <li style="padding: 8px 0; border-bottom: 1px solid var(--color-border-subtle);">
+                {{ sub.name }}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>Du har inga prenumerationer än.</p>
+        {% endif %}
+        <a href="/app/subscriptions" class="btn btn-secondary" style="margin-top: 16px;">Hantera</a>
+      </div>
+
+      <div class="card">
+        <h2 style="font-size: 18px;">Senaste signaler</h2>
+        {% if recent_alerts %}
+          <ul style="list-style: none; padding: 0; margin: 0;">
+            {% for alert in recent_alerts[:5] %}
+              <li style="padding: 8px 0; border-bottom: 1px solid var(--color-border-subtle);">
+                <span class="badge badge-neutral">{{ alert.signal_type }}</span>
+                <span class="mono subtle" style="margin-left: 8px;">{{ alert.delivered_at.strftime("%Y-%m-%d %H:%M") }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>Inga signaler levererade ännu — de kommer i morgon kl 06:30.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "_layout.html.j2" %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <h1>Prenumerationer</h1>
+      <a href="/app/subscriptions/new" class="btn btn-primary">Ny prenumeration</a>
+    </div>
+
+    {% if subscriptions %}
+    <table class="table" style="margin-top: 32px;">
+      <thead>
+        <tr>
+          <th>Namn</th>
+          <th>Signaler</th>
+          <th>Status</th>
+          <th>Skapad</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sub in subscriptions %}
+        <tr>
+          <td>{{ sub.name }}</td>
+          <td>
+            {% for st in sub.signal_types %}
+              <span class="badge badge-neutral">{{ st }}</span>
+            {% endfor %}
+          </td>
+          <td>
+            {% if sub.active %}
+              <span class="badge badge-success">Aktiv</span>
+            {% else %}
+              <span class="badge badge-neutral">Pausad</span>
+            {% endif %}
+          </td>
+          <td class="mono">{{ sub.created_at.strftime("%Y-%m-%d") }}</td>
+          <td>
+            <form method="post" action="/app/subscriptions/{{ sub.id }}/delete" style="display: inline;"
+                  onsubmit="return confirm('Radera prenumerationen {{ sub.name }}?');">
+              <button type="submit" class="btn btn-ghost">Radera</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="card" style="margin-top: 32px;">
+      <p>Du har inga prenumerationer än. Lägg till din första för att börja få dagliga signaler.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

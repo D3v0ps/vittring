@@ -1,0 +1,33 @@
+{% extends "_layout.html.j2" %}
+{% block content %}
+<section class="hero">
+  <div class="container container-narrow">
+    <h1>Vet vilket företag som behöver personal innan dina konkurrenter kontaktar dem.</h1>
+    <p class="lead">
+      Vittring bevakar offentliga datakällor — Arbetsförmedlingens jobbannonser, Bolagsverkets ändringar och TED:s upphandlingar — och mejlar dig en daglig sammanställning av nya signaler som matchar dina kriterier. Bygg ditt prospect-flöde på data som dina konkurrenter inte ser.
+    </p>
+    <div class="hero-cta">
+      <a href="/auth/signup" class="btn btn-primary">Starta 14 dagars provperiod</a>
+      <a href="/pricing" class="btn btn-secondary">Se priser</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container container-narrow">
+    <h2>Hur det fungerar</h2>
+    <p>
+      Du beskriver vad du letar efter — yrkesroller, kommuner, branschkoder, nyckelord. Varje morgon klockan 06:30 får du ett mejl med nya jobbannonser som passar din nisch, bolagsändringar bland dina målbolag och nya offentliga upphandlingar inom bemanning och rekrytering.
+    </p>
+    <p>
+      Det finns inget visuellt brus. Ingen graf, ingen poäng, ingen rangordning. Bara nya signaler, daterade och med direktlänk till källan. Det du gör med dem — om du ringer, mejlar eller väntar — är upp till dig.
+    </p>
+    <h2>Källor</h2>
+    <ul>
+      <li><strong>JobTech Dev</strong> (Arbetsförmedlingen) — alla jobbannonser i Sverige med branschtaxonomi och organisationsnummer.</li>
+      <li><strong>Bolagsverket / PoIT</strong> — ändringar i styrelse, VD, säte, namn, anmärkningar och likvidationer.</li>
+      <li><strong>TED</strong> (Tenders Electronic Daily, EU) — offentliga upphandlingar med svenska CPV-koder för bemanning och rekrytering.</li>
+    </ul>
+  </div>
+</section>
+{% endblock %}

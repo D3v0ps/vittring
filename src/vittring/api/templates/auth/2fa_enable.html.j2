@@ -1,0 +1,18 @@
+{% extends "_layout.html.j2" %}
+{% block content %}
+<section class="auth-shell">
+  <h1>Aktivera tvåfaktor</h1>
+  {% if error %}<div class="alert-error">{{ error }}</div>{% endif %}
+  <p>Skanna QR-koden i din authenticator-app (1Password, Authy, Google Authenticator) eller mata in koden manuellt:</p>
+  <p class="mono" style="background: var(--color-bg-sunken); padding: 8px 12px; border-radius: 6px; user-select: all;">{{ secret }}</p>
+  <p class="subtle">URI: <span class="mono">{{ uri }}</span></p>
+  <form method="post" action="/auth/2fa/enable" style="margin-top: 24px;">
+    <input type="hidden" name="secret" value="{{ secret }}" />
+    <div class="field">
+      <label for="code">Bekräfta med en aktuell 6-siffrig kod</label>
+      <input class="input mono" type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code" />
+    </div>
+    <button type="submit" class="btn btn-primary">Aktivera 2FA</button>
+  </form>
+</section>
+{% endblock %}

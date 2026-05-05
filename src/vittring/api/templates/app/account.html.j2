@@ -1,0 +1,41 @@
+{% extends "_layout.html.j2" %}
+{% block content %}
+<section class="section">
+  <div class="container container-narrow">
+    <h1>Inställningar</h1>
+
+    <div class="card" style="margin-top: 24px;">
+      <h2 style="font-size: 18px;">Profil</h2>
+      <p><strong>E-post</strong><br /><span class="mono">{{ user.email }}</span></p>
+      <p><strong>Namn</strong><br />{{ user.full_name or "—" }}</p>
+      <p><strong>Företag</strong><br />{{ user.company_name or "—" }}</p>
+      <p><strong>Plan</strong><br /><span class="mono">{{ user.plan }}</span></p>
+    </div>
+
+    <div class="card" style="margin-top: 24px;">
+      <h2 style="font-size: 18px;">Tvåfaktorsautentisering</h2>
+      {% if user.totp_enabled_at %}
+        <p>Aktiverat sedan <span class="mono">{{ user.totp_enabled_at.strftime("%Y-%m-%d") }}</span>.</p>
+        <form method="post" action="/auth/2fa/disable">
+          <button type="submit" class="btn btn-secondary">Inaktivera</button>
+        </form>
+      {% else %}
+        <p>Skydda kontot med en authenticator-app.</p>
+        <a href="/auth/2fa/enable" class="btn btn-primary">Aktivera</a>
+      {% endif %}
+    </div>
+
+    <div class="card" style="margin-top: 24px;">
+      <h2 style="font-size: 18px;">Mina data (GDPR)</h2>
+      <p>Exportera allt vi har om dig som JSON, eller begär radering. Radering har 30 dagars karenstid.</p>
+      <p>
+        <a href="/app/account/export" class="btn btn-secondary">Exportera data</a>
+        <form method="post" action="/app/account/delete" style="display: inline; margin-left: 8px;"
+              onsubmit="return confirm('Är du säker? Kontot inaktiveras nu och raderas slutgiltigt om 30 dagar.');">
+          <button type="submit" class="btn btn-ghost" style="color: var(--color-danger);">Radera kontot</button>
+        </form>
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}
