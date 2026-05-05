@@ -78,6 +78,13 @@ class BaseScraper[T](IngestAdapter[T]):
     domain: str
     source_value: str
 
+    # Per-instance overrides ---------------------------------------------------
+    # ``bypass_active_hours`` lets the admin "Trigger now" button run scrapers
+    # outside the 06-22 Europe/Stockholm window. Auto-scheduled runs leave it
+    # at ``False`` and remain bound by the policy.
+    def __init__(self) -> None:
+        self.bypass_active_hours: bool = False
+
     # Per-process caches -------------------------------------------------------
     # robots.txt: domain -> (parser, fetched_at, status_code)
     _robots_cache: ClassVar[
@@ -121,7 +128,7 @@ class BaseScraper[T](IngestAdapter[T]):
             return None, meta
 
         # 2. Active hours
-        if not self._within_active_hours():
+        if not self.bypass_active_hours and not self._within_active_hours():
             meta = {
                 "source": self.name,
                 "url": url,

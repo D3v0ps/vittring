@@ -26,6 +26,7 @@ from vittring import __version__ as app_version
 from vittring.api.deps import CurrentSuperuser, request_meta
 from vittring.api.templates import templates
 from vittring.audit.log import AuditAction, audit
+from vittring.config import get_settings
 from vittring.db import SessionDep
 from vittring.delivery.domain_setup import (
     DomainStatus,
@@ -34,6 +35,7 @@ from vittring.delivery.domain_setup import (
 from vittring.ingest.base import run_ingest
 from vittring.ingest.bolagsverket import BolagsverketAdapter
 from vittring.ingest.jobtech import JobTechAdapter
+from vittring.ingest.scrapers.base import BaseScraper
 from vittring.ingest.scrapers.eavrop import EavropScraper
 from vittring.ingest.scrapers.kommers import KommersScraper
 from vittring.ingest.scrapers.mercell import MercellScraper
@@ -1278,8 +1280,13 @@ async def system_trigger(
         source, adapter_cls = INGEST_ADAPTERS[job_name]
         try:
             since = datetime.now(timezone.utc) - timedelta(hours=26)
+            adapter = adapter_cls()
+            # Manual admin triggers bypass the 06-22 Stockholm active-hours
+            # window — scheduled cron runs still respect it.
+            if isinstance(adapter, BaseScraper):
+                adapter.bypass_active_hours = True
             result = await asyncio.wait_for(
-                run_ingest(adapter_cls(), since=since), timeout=120
+                run_ingest(adapter, since=since), timeout=120
             )
             await audit(
                 session,
