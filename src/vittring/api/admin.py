@@ -1359,6 +1359,143 @@ async def system_trigger(
 
 
 # ---------------------------------------------------------------------------
+# /admin/system/test-email — manual demo / smoke send
+# ---------------------------------------------------------------------------
+
+@router.post("/system/test-email", include_in_schema=False, response_model=None)
+async def system_test_email(
+    request: Request,
+    session: SessionDep,
+    user: CurrentSuperuser,
+    to: Annotated[EmailStr, Form()],
+    template: Annotated[str, Form()] = "test",
+) -> RedirectResponse:
+    """Send a single email to ``to`` using a chosen template.
+
+    Templates: ``test`` (plain admin smoke test), ``welcome``, ``verify``,
+    ``reset_password``, ``digest`` (sample data, single section).
+    Useful for demos and verifying the Resend domain end-to-end.
+    """
+    from vittring.delivery.email import render, send_email
+
+    settings = get_settings()
+    base = str(settings.app_base_url).rstrip("/")
+
+    if template == "welcome":
+        subject = "Välkommen till Vittring"
+        html = render(
+            "welcome.html.j2",
+            subject=subject,
+            from_address=settings.email_from_address,
+            full_name=user.full_name or "",
+            dashboard_url=f"{base}/app",
+        )
+        text = "Välkommen till Vittring. Logga in på " + f"{base}/app"
+    elif template == "verify":
+        subject = "Bekräfta din e-postadress"
+        html = render(
+            "verify.html.j2",
+            subject=subject,
+            from_address=settings.email_from_address,
+            email=to,
+            verify_url=f"{base}/auth/verify?t=demo",
+        )
+        text = f"Bekräfta din e-post: {base}/auth/verify?t=demo"
+    elif template == "reset_password":
+        subject = "Återställ ditt lösenord"
+        html = render(
+            "reset_password.html.j2",
+            subject=subject,
+            from_address=settings.email_from_address,
+            email=to,
+            reset_url=f"{base}/auth/password-reset/confirm?t=demo",
+        )
+        text = f"Återställ lösenord: {base}/auth/password-reset/confirm?t=demo"
+    elif template == "digest":
+        subject = "Vittring — exempeldigest"
+        sections = [
+            {
+                "subscription_name": "Lager och logistik · Storstockholm",
+                "items": [
+                    {
+                        "kind_label": "Upphandling",
+                        "title": "Region Stockholm — Ramavtal lagerbemanning",
+                        "detail": "12 mkr · Anbud senast 12 jun",
+                        "source_url": f"{base}/app",
+                        "date_label": "04 maj 16:42",
+                    },
+                    {
+                        "kind_label": "Jobb",
+                        "title": "Postnord söker 18 truckförare",
+                        "detail": "Rosersberg · SNI 53.100",
+                        "source_url": f"{base}/app",
+                        "date_label": "04 maj 14:32",
+                    },
+                ],
+            }
+        ]
+        html = render(
+            "digest.html.j2",
+            subject=subject,
+            from_address=settings.email_from_address,
+            total=2,
+            digest_date="tisdag 5 maj",
+            sections=sections,
+            manage_url=f"{base}/app/subscriptions",
+            unsubscribe_url=f"{base}/unsubscribe?t={user.id}",
+            contact_address="Vittring · info@karimkhalil.se",
+        )
+        text = f"Exempeldigest från Vittring. Se {base}/app"
+    else:
+        subject = "Vittring — testmejl"
+        html = (
+            "<!doctype html><html><body style='font-family:sans-serif;background:#FAFAF9;"
+            "padding:32px;'><h1 style='color:#0B1220;margin:0 0 12px;'>Testmejl från Vittring</h1>"
+            f"<p>Skickat av <strong>{user.email}</strong> via admin-panelen.</p>"
+            f"<p style='color:#475569;font-size:13px;'>Tidpunkt: "
+            f"{datetime.now(timezone.utc).isoformat(timespec='seconds')}</p></body></html>"
+        )
+        text = f"Testmejl från Vittring (admin: {user.email})."
+
+    meta = request_meta(request)
+    flash_kind = "success"
+    try:
+        sent = await send_email(
+            to=str(to),
+            subject=subject,
+            html=html,
+            text=text,
+            tags={"kind": "admin_test", "template": template},
+        )
+        flash_msg = f"Skickade {template!r} till {to} (id {sent.message_id})."
+        await audit(
+            session,
+            action="admin_test_email_sent",
+            user_id=user.id,
+            ip=meta["ip"],
+            user_agent=meta["user_agent"],
+            metadata={"to": str(to), "template": template, "message_id": sent.message_id},
+        )
+    except Exception as exc:
+        logger.exception("admin_test_email_failed")
+        await audit(
+            session,
+            action="admin_test_email_failed",
+            user_id=user.id,
+            ip=meta["ip"],
+            user_agent=meta["user_agent"],
+            metadata={"to": str(to), "template": template, "error": str(exc)},
+        )
+        flash_msg = f"Misslyckades: {exc}"
+        flash_kind = "error"
+
+    flash = urlencode({"flash": flash_msg, "flash_kind": flash_kind})
+    return RedirectResponse(
+        f"/admin/system?{flash}", status_code=status.HTTP_303_SEE_OTHER
+    )
+
+
+# ---------------------------------------------------------------------------
 # /admin/email
 # ---------------------------------------------------------------------------
 

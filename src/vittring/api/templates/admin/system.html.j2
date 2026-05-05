@@ -90,5 +90,31 @@
       </table>
     </div>
 
+    <!-- Manuell e-postutskick / demo -->
+    <div class="card" style="margin-top: 16px;">
+      <h2 class="card-h2">Skicka testmejl</h2>
+      <p class="card-sub">Trigga ett enskilt mejl för demo eller smoke-test. Verifiera att Resend-domänen är klar innan du skickar till externa adresser.</p>
+      <form method="post" action="/admin/system/test-email" style="display: grid; grid-template-columns: 1fr 220px auto; gap: 12px; align-items: end; margin-top: 12px;">
+        {{ csrf_input() }}
+        <label style="display: block;">
+          <span style="display: block; font-family: var(--font-mono); font-size: 10px; color: var(--v-ink-4); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px;">Till</span>
+          <input type="email" name="to" required placeholder="namn@exempel.se"
+                 style="width: 100%; height: 38px; padding: 0 12px; background: var(--v-night-2); border: 1px solid var(--v-night-3); border-radius: 6px; color: var(--v-paper); font-family: var(--font-mono); font-size: 13px;" />
+        </label>
+        <label style="display: block;">
+          <span style="display: block; font-family: var(--font-mono); font-size: 10px; color: var(--v-ink-4); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px;">Mall</span>
+          <select name="template"
+                  style="width: 100%; height: 38px; padding: 0 12px; background: var(--v-night-2); border: 1px solid var(--v-night-3); border-radius: 6px; color: var(--v-paper); font-family: var(--font-sans); font-size: 13px;">
+            <option value="test">Smoke-test</option>
+            <option value="welcome">Välkomstmejl</option>
+            <option value="verify">Verifieringsmejl</option>
+            <option value="reset_password">Lösenordsåterställning</option>
+            <option value="digest">Daglig digest (exempel)</option>
+          </select>
+        </label>
+        <button type="submit" class="btn btn-amber" style="height: 38px;">Skicka →</button>
+      </form>
+    </div>
+
   </div>
 {% endblock %}
