@@ -239,7 +239,16 @@ log "Phase 8: SSH hardening"
 sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
 sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
 sed -i 's/^#\?KbdInteractiveAuthentication.*/KbdInteractiveAuthentication no/' /etc/ssh/sshd_config
-systemctl reload ssh || systemctl reload sshd
+# Ubuntu 24.04 socket-activates ssh, so the .service is inactive between
+# connections — `reload` fails. Restart the .socket if present, otherwise
+# the .service. Existing sessions stay alive in either case.
+if systemctl list-unit-files --type=socket | grep -q '^ssh\.socket'; then
+    systemctl restart ssh.socket
+elif systemctl list-unit-files --type=service | grep -q '^ssh\.service'; then
+    systemctl restart ssh.service
+elif systemctl list-unit-files --type=service | grep -q '^sshd\.service'; then
+    systemctl restart sshd.service
+fi
 
 # ---------------------------------------------------------------------------
 # Phase 9 — backup directory + cron
