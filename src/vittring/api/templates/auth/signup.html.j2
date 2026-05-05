@@ -13,6 +13,7 @@
         <div class="alert-error">{{ error }}</div>
       {% endif %}
       <form method="post" action="/auth/signup" class="auth-form">
+      {{ csrf_input() }}
         <div class="field">
           <label for="email">Arbetsmejl</label>
           <input class="input" type="email" id="email" name="email" required autocomplete="email" placeholder="namn@företag.se" />

@@ -58,6 +58,7 @@
             <a href="/app/subscriptions/new?duplicate={{ sub.id }}" class="btn btn-ghost btn-sm">Duplicera</a>
             <form method="post" action="/app/subscriptions/{{ sub.id }}/delete"
                   onsubmit="return confirm('Radera prenumerationen {{ sub.name }}?');">
+      {{ csrf_input() }}
               <button type="submit" class="btn btn-ghost btn-sm subs-list-delete">Radera</button>
             </form>
           </div>

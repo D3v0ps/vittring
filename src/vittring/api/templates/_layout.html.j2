@@ -21,6 +21,7 @@
           <a href="/app/subscriptions" class="{% if request.url.path.startswith('/app/subscriptions') %}active{% endif %}">Prenumerationer</a>
           <a href="/app/account">Inställningar</a>
           <form method="post" action="/auth/logout" style="display:inline">
+      {{ csrf_input() }}
             <button type="submit" class="btn btn-ghost btn-sm">Logga ut</button>
           </form>
           <span class="avatar">{{ (user.full_name or user.email)[:1].upper() }}</span>

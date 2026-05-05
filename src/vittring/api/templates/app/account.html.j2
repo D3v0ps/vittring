@@ -107,6 +107,7 @@
           </div>
         </div>
         <form method="post" action="/auth/2fa/disable">
+      {{ csrf_input() }}
           <button type="submit" class="btn btn-secondary">Inaktivera</button>
         </form>
       {% else %}
@@ -147,6 +148,7 @@
       </div>
       <form method="post" action="/app/account/delete"
             onsubmit="return confirm('Är du säker? Kontot inaktiveras nu och raderas slutgiltigt om 30 dagar.');">
+      {{ csrf_input() }}
         <button type="submit" class="btn btn-danger">Radera kontot</button>
       </form>
     </div>

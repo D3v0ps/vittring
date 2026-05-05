@@ -27,6 +27,7 @@
     <div class="auth-divider"></div>
 
     <form method="post" action="/auth/2fa/enable" class="auth-form">
+      {{ csrf_input() }}
       <input type="hidden" name="secret" value="{{ secret }}" />
       <div class="field">
         <label for="code">Bekräftelsekod</label>

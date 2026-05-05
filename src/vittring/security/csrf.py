@@ -1,9 +1,18 @@
-"""CSRF protection via the synchronizer-token pattern.
+"""CSRF protection via double-submit cookie.
 
-Stateless: the token is HMAC(session_id, secret) — server validates by
-recomputation. Tokens are issued in a non-HttpOnly cookie so the page can
-echo them in a header on form submit, and validated on every state-changing
-request.
+The middleware issues a signed cookie on safe-method requests. State-changing
+requests must echo the same token via either the ``X-CSRF-Token`` header or a
+``csrf_token`` form field. Templates render the form-field value with
+``{{ csrf_input() }}``.
+
+Why double-submit-cookie + SameSite=Lax:
+- The cookie is set with ``SameSite=Lax`` so browsers refuse to send it on
+  most cross-site POSTs (covering the easy CSRF vectors).
+- For forms within the same origin, we explicitly require a hidden input
+  whose value matches the cookie — an attacker cannot read the cookie value
+  to forge a request, even if they could trigger a form POST.
+- Token has an HMAC signature so a stolen cookie value can be invalidated
+  without a database lookup if the secret key rotates.
 """
 
 from __future__ import annotations
@@ -21,9 +30,11 @@ from vittring.config import get_settings
 
 CSRF_COOKIE_NAME = "vittring_csrf"
 CSRF_HEADER_NAME = "x-csrf-token"
+CSRF_FORM_FIELD = "csrf_token"
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 EXEMPT_PATHS_PREFIXES: tuple[str, ...] = (
     "/api/webhooks/",  # Stripe & Resend webhooks have their own signature
+    "/billing/webhook",
     "/health",
     "/ready",
     "/static/",
@@ -48,6 +59,18 @@ def _valid(token: str) -> bool:
     return hmac.compare_digest(_sign(raw), sig)
 
 
+async def _extract_form_token(request: Request) -> str | None:
+    content_type = request.headers.get("content-type", "")
+    if not content_type.startswith(("application/x-www-form-urlencoded", "multipart/form-data")):
+        return None
+    try:
+        form = await request.form()
+    except Exception:
+        return None
+    value = form.get(CSRF_FORM_FIELD)
+    return value if isinstance(value, str) else None
+
+
 class CSRFMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
@@ -56,26 +79,34 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         method = request.method.upper()
 
+        # Ensure the token is available to templates regardless of path.
+        cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+        if not cookie_token or not _valid(cookie_token):
+            cookie_token = issue_token()
+            request.state.csrf_new_cookie = cookie_token
+        request.state.csrf_token = cookie_token
+
         if method in SAFE_METHODS or any(path.startswith(p) for p in EXEMPT_PATHS_PREFIXES):
             response = await call_next(request)
-            if request.cookies.get(CSRF_COOKIE_NAME) is None:
+            if getattr(request.state, "csrf_new_cookie", None):
                 response.set_cookie(
                     CSRF_COOKIE_NAME,
-                    issue_token(),
+                    request.state.csrf_new_cookie,
                     httponly=False,
-                    secure=True,
+                    secure=request.url.scheme == "https",
                     samesite="lax",
                     max_age=60 * 60 * 24,
+                    path="/",
                 )
             return response
 
-        cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
-        header_token = request.headers.get(CSRF_HEADER_NAME)
+        # State-changing request: validate token. Accept either header or form field.
+        submitted = request.headers.get(CSRF_HEADER_NAME) or await _extract_form_token(request)
         if (
-            not cookie_token
-            or not header_token
-            or cookie_token != header_token
-            or not _valid(cookie_token)
+            not request.cookies.get(CSRF_COOKIE_NAME)
+            or not submitted
+            or submitted != request.cookies.get(CSRF_COOKIE_NAME)
+            or not _valid(submitted)
         ):
             return JSONResponse(
                 {"detail": "csrf_token_invalid"},

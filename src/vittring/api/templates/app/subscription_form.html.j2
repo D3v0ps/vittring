@@ -14,6 +14,7 @@
     {% if error %}<div class="alert-error">{{ error }}</div>{% endif %}
 
     <form method="post" action="/app/subscriptions/" class="sub-form" id="sub-form">
+      {{ csrf_input() }}
       <div class="sub-form-grid">
         <div class="sub-form-main">
 
