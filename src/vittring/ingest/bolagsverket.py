@@ -13,6 +13,7 @@ window — see ``src/vittring/jobs/gdpr.py``.
 
 from __future__ import annotations
 
+import json
 from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Any
@@ -60,9 +61,26 @@ class _PoitBackend(_Backend):
         }
         async with http_client() as client:
             while True:
-                payload = await get_json_with_retry(
-                    client, self.POIT_API_URL, params=dict(params)
-                )
+                try:
+                    payload = await get_json_with_retry(
+                        client, self.POIT_API_URL, params=dict(params)
+                    )
+                except (ValueError, json.JSONDecodeError) as exc:
+                    # PoIT's public endpoint occasionally returns a stub HTML
+                    # page or a 200 with empty body; treat as "no data right
+                    # now" rather than crashing the ingest job.
+                    logger.warning(
+                        "bolagsverket_invalid_response",
+                        page=params["page"],
+                        error=str(exc),
+                    )
+                    return
+                if not isinstance(payload, dict):
+                    logger.warning(
+                        "bolagsverket_unexpected_payload_type",
+                        type=type(payload).__name__,
+                    )
+                    return
                 rows: list[dict[str, Any]] = payload.get("kungorelser", [])
                 if not rows:
                     break

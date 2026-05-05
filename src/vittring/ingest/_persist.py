@@ -23,11 +23,23 @@ async def upsert_companies(rows: Sequence[dict[str, Any]]) -> dict[str, int]:
     Used by adapters that surface a company alongside their primary signal,
     so we can attach ``company_id`` foreign keys without a second round-trip.
     Empty input returns an empty map.
+
+    Postgres' ``ON CONFLICT DO UPDATE`` cannot affect the same row twice in a
+    single statement, so we dedupe by orgnr before sending — keeping the last
+    name we saw for each orgnr.
     """
     if not rows:
         return {}
     now = datetime.now(timezone.utc)
-    payload = [{**row, "last_seen_at": now} for row in rows]
+    deduped: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        orgnr = row.get("orgnr")
+        if not orgnr:
+            continue
+        deduped[orgnr] = {**row, "last_seen_at": now}
+    if not deduped:
+        return {}
+    payload = list(deduped.values())
     async with session_scope() as session:
         stmt = (
             pg_insert(Company)
@@ -38,9 +50,8 @@ async def upsert_companies(rows: Sequence[dict[str, Any]]) -> dict[str, int]:
             )
         )
         await session.execute(stmt)
-        orgnrs = [row["orgnr"] for row in rows]
         result = await session.execute(
-            select(Company.orgnr, Company.id).where(Company.orgnr.in_(orgnrs))
+            select(Company.orgnr, Company.id).where(Company.orgnr.in_(list(deduped)))
         )
         return dict(result.all())  # type: ignore[arg-type]
 
