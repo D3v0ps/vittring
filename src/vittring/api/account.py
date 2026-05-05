@@ -8,17 +8,21 @@ import json
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Form, Request, status
+from fastapi import APIRouter, Form, Query, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+from pydantic import ValidationError
 from sqlalchemy import delete, select
 
 from vittring.api.deps import CurrentVerifiedUser, request_meta
 from vittring.api.templates import templates
 from vittring.audit.log import AuditAction, audit
 from vittring.db import SessionDep
+from vittring.matching.criteria import Criteria
+from vittring.matching.engine import match_procurement
 from vittring.models.audit import AuditLog
 from vittring.models.saved import SavedSignal
 from vittring.models.subscription import DeliveredAlert, Subscription
+from vittring.schemas.ingest import ProcurementItem
 
 router = APIRouter(prefix="/app", tags=["account"])
 
@@ -256,22 +260,51 @@ def _stub_context(user: Any, active: str, title: str, description: str) -> dict[
 
 @router.get("/calendar", response_class=HTMLResponse, include_in_schema=False)
 async def calendar(
-    request: Request, session: SessionDep, user: CurrentVerifiedUser
+    request: Request,
+    session: SessionDep,
+    user: CurrentVerifiedUser,
+    q: Annotated[str | None, Query(max_length=80)] = None,
 ) -> HTMLResponse:
     """Upcoming deadlines and dates relevant to this user.
 
-    Pulls three event sources:
-    - Procurement deadlines: rows in ``procurements`` where the user has a
-      subscription whose criteria match (CPV, municipality) and deadline is
-      in the future. Sorted ascending.
-    - Trial expiration: ``user.trial_ends_at`` if still set and in the future.
-    - Sample deadlines for empty-database state so the page reads as populated
-      until ingest catches up.
+    Procurements are filtered through the matching engine against the
+    user's active subscriptions — same code path as the daily email
+    digest. If the user has no active subscriptions, every recent
+    procurement is shown so the page is useful before they configure
+    anything.
+
+    The ``q`` query param applies an additional case-insensitive
+    substring filter over title + buyer + description, intended for
+    quick ad-hoc lookups ("bemanning", "lager", "vårdpersonal").
     """
     from vittring.models.signals import Procurement
 
     now = datetime.now(timezone.utc)
     horizon = now + timedelta(days=90)
+    q_norm = (q or "").strip()
+    q_lower = q_norm.casefold() or None
+
+    subs_rows = (
+        await session.execute(
+            select(Subscription).where(
+                Subscription.user_id == user.id,
+                Subscription.active.is_(True),
+            )
+        )
+    ).scalars().all()
+
+    # Parse each subscription's JSONB criteria into a typed Criteria.
+    # Skip subscriptions that don't target procurements or whose stored
+    # criteria fail validation (e.g. shape drift after a schema change) —
+    # they shouldn't blow up the calendar render.
+    proc_criteria: list[Criteria] = []
+    for sub in subs_rows:
+        if "procurement" not in (sub.signal_types or []):
+            continue
+        try:
+            proc_criteria.append(Criteria.model_validate(sub.criteria or {}))
+        except ValidationError:
+            continue
 
     proc_rows = (
         await session.execute(
@@ -282,12 +315,42 @@ async def calendar(
                 Procurement.deadline <= horizon,
             )
             .order_by(Procurement.deadline.asc())
-            .limit(25)
+            .limit(200)
         )
     ).scalars().all()
 
+    def _matches_subscriptions(p: Procurement) -> bool:
+        if not proc_criteria:
+            return True  # no procurement-targeting subs -> show everything
+        item = ProcurementItem(
+            external_id=p.external_id,
+            buyer_orgnr=p.buyer_orgnr,
+            buyer_name=p.buyer_name,
+            title=p.title,
+            description=p.description,
+            cpv_codes=list(p.cpv_codes or []),
+            estimated_value_sek=p.estimated_value_sek,
+            procedure_type=p.procedure_type,
+            deadline=p.deadline,
+            source_url=p.source_url,
+            source=p.source,
+        )
+        return any(match_procurement(item, c) for c in proc_criteria)
+
+    def _matches_q(p: Procurement) -> bool:
+        if q_lower is None:
+            return True
+        haystack = " ".join(
+            x for x in (p.title, p.buyer_name, p.description) if x
+        ).casefold()
+        return q_lower in haystack
+
+    matched_procs = [
+        p for p in proc_rows if _matches_subscriptions(p) and _matches_q(p)
+    ][:25]
+
     events: list[dict[str, Any]] = []
-    for p in proc_rows:
+    for p in matched_procs:
         events.append(
             {
                 "kind": "Upphandling",
@@ -299,7 +362,9 @@ async def calendar(
             }
         )
 
-    if user.trial_ends_at and user.trial_ends_at > now:
+    # The trial-expiration card is personal, not a procurement signal —
+    # it shouldn't disappear when the user runs an ad-hoc keyword search.
+    if user.trial_ends_at and user.trial_ends_at > now and q_lower is None:
         events.append(
             {
                 "kind": "Provperiod",
@@ -311,9 +376,16 @@ async def calendar(
             }
         )
 
-    # If the procurement table is empty, render representative samples so
-    # the page reads as something rather than blank.
-    if not proc_rows:
+    # Show sample deadlines only if the procurements table is empty *and*
+    # no filters are active — otherwise an empty result for "bemanning"
+    # would lie to the user with fake bemanning hits.
+    is_sample_only = (
+        not proc_rows
+        and not proc_criteria
+        and q_lower is None
+        and (not user.trial_ends_at or user.trial_ends_at <= now)
+    )
+    if not proc_rows and not proc_criteria and q_lower is None:
         sample_dates = [
             (now + timedelta(days=delta), title, buyer)
             for delta, title, buyer in (
@@ -338,20 +410,11 @@ async def calendar(
 
     events.sort(key=lambda e: e["date"])
 
-    # Group by date (YYYY-MM-DD) for the timeline rendering.
     grouped: dict[str, list[dict[str, Any]]] = {}
     for ev in events:
         key = ev["date"].strftime("%Y-%m-%d")
         grouped.setdefault(key, []).append(ev)
 
-    subs_rows = (
-        await session.execute(
-            select(Subscription).where(
-                Subscription.user_id == user.id,
-                Subscription.active.is_(True),
-            )
-        )
-    ).scalars().all()
     name_for_initials = user.full_name or user.email.split("@")[0]
 
     return templates.TemplateResponse(
@@ -366,8 +429,13 @@ async def calendar(
             "active": "calendar",
             "grouped": grouped,
             "total_events": len(events),
-            "is_sample_only": not proc_rows and (not user.trial_ends_at or user.trial_ends_at <= now),
+            "is_sample_only": is_sample_only,
             "now_date": now.date(),
+            "q": q_norm,
+            "filter_active": bool(proc_criteria) or q_lower is not None,
+            "subscription_filter_count": len(proc_criteria),
+            "matched_procurements": len(matched_procs),
+            "total_procurements": len(proc_rows),
         },
     )
 
