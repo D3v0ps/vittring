@@ -227,11 +227,13 @@ vittring/
 
 > **Status: deferred.** Stripe integration is postponed. Until billing is enabled, all signups land on a permanent trial plan with no payment required. Schema, code paths, and webhook handlers should still be designed so that enabling Stripe later is purely configuration (price IDs + webhook secret).
 
-| Plan | Price | Filters | Seats | Sources |
-|---|---|---|---|---|
-| Solo | 1 500 SEK/mån | 5 | 1 | All three |
-| Team | 2 500 SEK/mån | 20 | 5 | All three |
-| Pro | 4 000 SEK/mån | Unlimited | 15 | All three + HubSpot integration |
+| Plan | Price | Filters | Seats | Sources | Notes |
+|---|---|---|---|---|---|
+| Solo | 1 500 SEK/mån | 5 | 1 | All | |
+| Team | 2 500 SEK/mån | 20 | 5 | All | CSV-export, kommentarer |
+| Pro | 4 000 SEK/mån | Obegränsat | 15 | All + HubSpot | API export, prioriterad support |
+
+All plans include: JobTech (jobs), Bolagsverket (changes), TED + scraped procurement sources (e-Avrop, Kommers, TendSign, Mercell), historical data from Upphandlingsmyndigheten. Pro adds: HubSpot two-way sync, REST API access, CSV export, priority support.
 
 All prices ex VAT. Annual billing optional with 10 % discount. 14-day free trial on all plans, no credit card required to start.
 
@@ -434,7 +436,11 @@ CREATE TABLE email_verification_tokens (
 - **Tracked change types:** `ceo`, `board_member`, `address`, `name`, `remark`, `liquidation`, `sni`.
 - **Personal data lifecycle:** names of board members and CEOs are personal data. Retain for max 30 days unless surfaced in a `delivered_alerts` row, in which case retention is `delivered_at + 30 days`. A nightly job (`scrub_personal_data`) sets `personal_data_purged_at` and nulls `old_value`/`new_value` for expired rows.
 
-### 9.3 TED (Tenders Electronic Daily)
+### 9.3 Procurement sources
+
+Vittring aggregates four procurement signal sources into the unified `procurements` table. Each source is implemented as its own adapter; users see deduplicated results.
+
+#### 9.3.1 TED (Tenders Electronic Daily) — open API
 
 - **Base URL:** `https://api.ted.europa.eu/v3/notices/search`
 - **Auth:** none
@@ -446,6 +452,50 @@ CREATE TABLE email_verification_tokens (
   - `85000000` series — health and social work services
 - **Polling:** daily at 08:00 Europe/Stockholm
 - **Source value:** `'ted'`
+
+#### 9.3.2 Upphandlingsmyndigheten — open statistical data
+
+- **Purpose:** historical Swedish procurement data for context, trend analysis, and seeding the `procurements` table with awarded contracts not present in TED.
+- **Source:** Upphandlingsmyndigheten's open statistical datasets (CSV/JSON downloads).
+- **Polling:** weekly, Sunday at 03:00 Europe/Stockholm.
+- **Implementation:** importer reads the latest published dataset, upserts into `procurements`.
+- **Source value:** `'upphandlingsmyndigheten'`.
+- **Use:** primarily backfill / historical lookups, not real-time alerts.
+
+#### 9.3.3 Scraped sources — e-Avrop, Kommers, TendSign, Mercell
+
+These four Swedish procurement portals publish active tenders that do not always appear in TED (sub-threshold, direktupphandlingar, frivilliga annonser). Vittring scrapes their public listing pages.
+
+- **Polling:** daily at 07:30 Europe/Stockholm.
+- **Architecture:** all four share a common `BaseScraper` (see 9.4). Each subclass implements `list_urls()` and `parse()`.
+- **Source values:** `'eavrop'`, `'kommers'`, `'tendsign'`, `'mercell'`.
+- **Compliance:** all scraped sources are subject to the strict good-faith policy in section 24. Failure of any compliance check (robots disallow, rate limit, blocked-domain list) halts that source's scrape immediately.
+- **Note:** TendSign and Mercell are operated by the same legal entity (Mercell Group). Treat them as separate technical endpoints but apply opt-out / take-down requests jointly.
+
+#### 9.3.4 Scraper adapter interface
+
+```python
+# src/vittring/ingest/scrapers/base.py
+from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
+
+class BaseScraper(ABC):
+    name: str               # 'eavrop', 'kommers', 'tendsign', 'mercell'
+    base_url: str
+    user_agent: str         # MUST identify Vittring + contact URL (see §24.1)
+    request_delay_s: float  # MUST be >= 2.0 (see §24.3)
+
+    @abstractmethod
+    async def list_urls(self) -> AsyncIterator[str]:
+        """Yield listing/detail URLs to fetch. MUST respect robots.txt."""
+
+    @abstractmethod
+    async def parse(self, url: str, html: str) -> dict | None:
+        """Return a normalized procurement dict, or None to skip.
+        MUST extract only public fields (no login/captcha bypass)."""
+```
+
+Every `BaseScraper` subclass MUST satisfy section 24 in full (identification, robots.txt obedience, rate limiting, caching, public-only fields, blocked-domain list, opt-out, audit log). A scraper that cannot meet these requirements MUST NOT be enabled.
 
 ### 9.4 Adapter interface
 
@@ -820,6 +870,14 @@ The full system consists of these components.
 7. JobTech adapter with retries, backoff, Sentry metrics
 8. Bolagsverket adapter with `official` and `poit` backends behind same interface
 9. TED adapter
+9a. `BaseScraper` abstract base class (see §9.3.4) with built-in robots.txt enforcement, rate limiting, caching, audit logging hooks (per §24)
+9b. e-Avrop scraper (`src/vittring/ingest/scrapers/eavrop.py`)
+9c. Kommers scraper (`src/vittring/ingest/scrapers/kommers.py`)
+9d. TendSign scraper (`src/vittring/ingest/scrapers/tendsign.py`)
+9e. Mercell scraper (`src/vittring/ingest/scrapers/mercell.py`)
+9f. Public `/bot` page describing Vittring's crawler, contact email, opt-out instructions (per §24.1, §24.7)
+9g. Opt-out email handler — incoming request to `info@karimkhalil.se` flags the source domain in `scraping_blocklist` and disables further fetches within 24 h (per §24.7)
+9h. Upphandlingsmyndigheten weekly importer (`src/vittring/ingest/upphandlingsmyndigheten.py`) — Sunday 03:00 historical/statistical data import
 10. Matching engine with 100 % test coverage
 11. Email module with Jinja2 templates: digest, welcome, verify, password-reset
 12. Resend domain verification flow (`delivery/domain_setup.py`)

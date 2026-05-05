@@ -92,6 +92,33 @@
 
   .source-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
   @media (max-width: 880px) { .source-grid { grid-template-columns: 1fr; } }
+
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 880px) { .compare-grid { grid-template-columns: 1fr; } }
+
+  .pitch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  @media (max-width: 880px) { .pitch-grid { grid-template-columns: 1fr; } }
+  .pitch-card {
+    border: 1px solid var(--v-night-3); border-left: 3px solid var(--v-amber);
+    border-radius: var(--r-3); padding: 32px; background: var(--v-night);
+  }
+  .pitch-eyebrow { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--v-amber); margin-bottom: 12px; }
+  .pitch-headline { font-family: var(--font-display); font-size: 22px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; color: var(--v-paper); margin-bottom: 16px; }
+  .pitch-body { font-size: 14px; line-height: 1.5; color: var(--v-mist); }
+
+  .integ-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 48px; align-items: start; }
+  @media (max-width: 880px) { .integ-grid { grid-template-columns: 1fr; gap: 24px; } }
+  .integ-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+  .integ-tool {
+    font-family: var(--font-mono); font-size: 12px;
+    padding: 6px 12px; border-radius: var(--r-pill);
+    background: var(--v-night); border: 1px solid var(--v-night-3);
+    color: var(--v-paper);
+  }
+  .integ-list { list-style: none; padding: 0; margin: 0; }
+  .integ-list li { padding: 14px 0; border-top: 1px solid var(--v-night-3); font-size: 15px; color: var(--v-mist); line-height: 1.5; display: flex; gap: 12px; }
+  .integ-list li:first-child { border-top: none; }
+  .integ-list .label { font-family: var(--font-mono); font-size: 11px; color: var(--v-signal); flex-shrink: 0; min-width: 90px; padding-top: 2px; letter-spacing: 0.05em; }
   .source-card {
     border: 1px solid var(--v-night-3); border-radius: var(--r-3);
     padding: 32px; background: var(--v-night);
@@ -168,13 +195,13 @@
           <span class="t-mono" style="font-size: 11px; color: var(--v-signal); letter-spacing: 0.08em;">— LIVE · 3 KÄLLOR ÖVERVAKAS —</span>
         </div>
 
-        <h1 class="hero-h1">En radar för<br><em>köpsignaler.</em></h1>
+        <h1 class="hero-h1">Hitta företag som behöver personal — <em>innan dina konkurrenter ringer.</em></h1>
 
-        <p class="hero-lede">Vittring scannar tre offentliga register dygnet runt. Du får det som rör dig — i din inbox 06:30, eller som push i appen.</p>
+        <p class="hero-lede">Spara 5–10 timmar research per vecka. Få dagliga säljsignaler från jobbannonser, bolagshändelser och offentliga upphandlingar — kurerade efter din nisch.</p>
 
         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
           <a href="/auth/signup" class="v-button v-button--signal v-button--lg">Starta provperiod →</a>
-          <a href="/app" class="v-button v-button--ghost-dark v-button--lg">Se live demo</a>
+          <a href="/demo" class="v-button v-button--ghost-dark v-button--lg">Se exempel på signaler</a>
         </div>
 
         <div class="ticker">
@@ -283,12 +310,62 @@
       <div class="step-cell">
         <div class="step-num">02</div>
         <div class="step-title">Vi filtrerar bruset</div>
-        <div class="step-desc">Matchningsmotorn släpper igenom det som rör dig. 99,5 % förkastas.</div>
+        <div class="step-desc" style="font-style: italic; color: var(--v-paper);">"Av 4 982 inkommande signaler igår matchade 12 din profil."</div>
       </div>
       <div class="step-cell">
         <div class="step-num">03</div>
         <div class="step-title">Du läser ditt mejl</div>
         <div class="step-desc">06:30 ligger digesten i inboxen. Klart, daterat, direktlänkat.</div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 0; border-bottom: 1px solid var(--v-night-3);">
+      <div style="padding: 32px 40px; border-left: 1px solid var(--v-night-3);">
+        <div style="font-family: var(--font-display); font-size: 36px; font-weight: 400; letter-spacing: -0.02em; color: var(--v-paper);">06:30</div>
+        <div class="t-mono" style="font-size: 11px; color: var(--v-ink-4); letter-spacing: 0.08em; margin-top: 4px;">DAGLIG LEVERANS</div>
+      </div>
+      <div style="padding: 32px 40px; border-left: 1px solid var(--v-night-3);">
+        <div style="font-family: var(--font-display); font-size: 36px; font-weight: 400; letter-spacing: -0.02em; color: var(--v-paper);">3 källor</div>
+        <div class="t-mono" style="font-size: 11px; color: var(--v-ink-4); letter-spacing: 0.08em; margin-top: 4px;">JOBB · BOLAG · UPPHANDLING</div>
+      </div>
+      <div style="padding: 32px 40px; border-left: 1px solid var(--v-night-3);">
+        <div style="font-family: var(--font-display); font-size: 36px; font-weight: 400; letter-spacing: -0.02em; color: var(--v-paper);">EU residency</div>
+        <div class="t-mono" style="font-size: 11px; color: var(--v-ink-4); letter-spacing: 0.08em; margin-top: 4px;">HETZNER FALKENSTEIN</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BEFORE / AFTER -->
+<section style="padding: 96px 48px; background: var(--v-night-2);">
+  <div style="max-width: 1280px; margin: 0 auto;">
+    <div class="t-eyebrow" style="color: var(--v-ink-4); margin-bottom: 16px;">SKILLNADEN</div>
+    <h2 style="font-family: var(--font-display); font-size: clamp(40px, 5vw, 64px); font-weight: 400; letter-spacing: -0.03em; line-height: 1; margin: 0 0 48px; color: var(--v-paper);">
+      Före och <em style="color: var(--v-signal); font-style: italic;">efter</em> Vittring.
+    </h2>
+
+    <div class="compare-grid">
+      <div style="border: 1px solid var(--v-night-3); border-left: 3px solid var(--v-amber); border-radius: var(--r-3); padding: 40px; background: var(--v-night);">
+        <div class="t-mono" style="font-size: 11px; color: var(--v-amber); letter-spacing: 0.1em; margin-bottom: 16px;">UTAN VITTRING</div>
+        <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; color: var(--v-paper); margin-bottom: 24px;">Manuell research, missade fönster.</div>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          <li style="display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--v-night-3); font-size: 15px; color: var(--v-mist); line-height: 1.5;"><span style="color: var(--v-amber); font-family: var(--font-mono); flex-shrink: 0;">×</span><span>Säljare letar manuellt i jobbsajter, allabolag och TED varje morgon.</span></li>
+          <li style="display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--v-night-3); font-size: 15px; color: var(--v-mist); line-height: 1.5;"><span style="color: var(--v-amber); font-family: var(--font-mono); flex-shrink: 0;">×</span><span>Signaler missas — fel sökord, fel dag, fel källa.</span></li>
+          <li style="display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--v-night-3); font-size: 15px; color: var(--v-mist); line-height: 1.5;"><span style="color: var(--v-amber); font-family: var(--font-mono); flex-shrink: 0;">×</span><span>Konkurrenten hinner ringa kunden först.</span></li>
+          <li style="display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--v-night-3); font-size: 15px; color: var(--v-mist); line-height: 1.5;"><span style="color: var(--v-amber); font-family: var(--font-mono); flex-shrink: 0;">×</span><span>CRM fylls med kalla leads utan tydlig anledning att ringa.</span></li>
+        </ul>
+      </div>
+
+      <div style="border: 1px solid var(--v-night-3); border-left: 3px solid var(--v-signal); border-radius: var(--r-3); padding: 40px; background: var(--v-night);">
+        <div class="t-mono" style="font-size: 11px; color: var(--v-signal); letter-spacing: 0.1em; margin-bottom: 16px;">MED VITTRING</div>
+        <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; color: var(--v-paper); margin-bottom: 24px;">Färdig lista 06:30, varje morgon.</div>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          <li style="display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--v-night-3); font-size: 15px; color: var(--v-mist); line-height: 1.5;"><span style="color: var(--v-signal); font-family: var(--font-mono); flex-shrink: 0;">✓</span><span>Färdig lista i inboxen 06:30 — inget letande.</span></li>
+          <li style="display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--v-night-3); font-size: 15px; color: var(--v-mist); line-height: 1.5;"><span style="color: var(--v-signal); font-family: var(--font-mono); flex-shrink: 0;">✓</span><span>Endast relevanta signaler — bruset filtreras bort.</span></li>
+          <li style="display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--v-night-3); font-size: 15px; color: var(--v-mist); line-height: 1.5;"><span style="color: var(--v-signal); font-family: var(--font-mono); flex-shrink: 0;">✓</span><span>Direktlänkar till källor — verifiera på sekunder.</span></li>
+          <li style="display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--v-night-3); font-size: 15px; color: var(--v-mist); line-height: 1.5;"><span style="color: var(--v-signal); font-family: var(--font-mono); flex-shrink: 0;">✓</span><span>Leads kan skickas till CRM med signal som anledning.</span></li>
+          <li style="display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--v-night-3); font-size: 15px; color: var(--v-mist); line-height: 1.5;"><span style="color: var(--v-signal); font-family: var(--font-mono); flex-shrink: 0;">✓</span><span>Säljteamet vet vem de ska kontakta — och varför.</span></li>
+        </ul>
       </div>
     </div>
   </div>
@@ -314,7 +391,7 @@
           <span class="t-mono" style="font-size: 10px; color: var(--v-signal);">● Realtid</span>
         </div>
         <div class="source-name">Rekryteringsbehov</div>
-        <div class="source-desc">När bolag annonserar volymrekryteringar — ett tidigt tecken på expansion eller leverantörsbyte. Vårt nät plockar upp varje annons publicerad i landet och taggar den per ort, roll och bransch.</div>
+        <div class="source-desc">Hitta företag som rekryterar volym just nu — lager, chaufförer, vård, kundtjänst, industri. Vi plockar upp varje annons publicerad i landet och taggar per ort, roll och bransch.</div>
       </div>
       <div class="source-card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
@@ -327,7 +404,7 @@
           <span class="t-mono" style="font-size: 10px; color: var(--v-signal);">● Daglig</span>
         </div>
         <div class="source-name">Bolagshändelser</div>
-        <div class="source-desc">Ny VD, ny styrelse, ny adress, namnändring, likvidation. När en köpare byter befattningar omförhandlas leverantörsavtal — och då är fönstret öppet för dig.</div>
+        <div class="source-desc">Nå köpare i det fönster där leverantörsavtal omförhandlas — efter ledarskifte, namnändring eller adressbyte. Vi bevakar Bolagsverkets registreringar dagligen och taggar händelser per typ och bransch.</div>
       </div>
       <div class="source-card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
@@ -340,7 +417,35 @@
           <span class="t-mono" style="font-size: 10px; color: var(--v-signal);">● Daglig</span>
         </div>
         <div class="source-name">Offentliga upphandlingar</div>
-        <div class="source-desc">Ramavtal och uppdrag för bemanning, rekrytering och konsulttjänster — filtrerade och sorterade efter dina filter, från första publicering till sista anbudsdag.</div>
+        <div class="source-desc">Vinn ramavtal och offentliga uppdrag inom bemanning, rekrytering och konsulttjänster i tid. Vi hämtar TED och svenska källor dagligen och filtrerar per CPV-kod, ort och anbudsdeadline.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXEMPEL PÅ SIGNALER -->
+<section style="padding: 0 48px 96px; background: var(--v-night-2);">
+  <div style="max-width: 1280px; margin: 0 auto;">
+    <div class="t-eyebrow" style="color: var(--v-ink-4); margin-bottom: 16px;">EXEMPEL PÅ SIGNALER VI HITTAR</div>
+    <h2 style="font-family: var(--font-display); font-size: clamp(36px, 4.5vw, 56px); font-weight: 400; letter-spacing: -0.025em; line-height: 1.05; margin: 0 0 48px; color: var(--v-paper);">
+      Tre konkreta <em style="color: var(--v-signal); font-style: italic;">säljöppningar.</em>
+    </h2>
+
+    <div class="pitch-grid">
+      <div class="pitch-card">
+        <div class="pitch-eyebrow">JOBBSIGNAL</div>
+        <div class="pitch-headline">Postnord söker 18 truckförare i Rosersberg</div>
+        <div class="pitch-body">Volymrekrytering inom lager/logistik. Möjlig pitch: "Vi kan hjälpa er bemanna toppar snabbt."</div>
+      </div>
+      <div class="pitch-card">
+        <div class="pitch-eyebrow">UPPHANDLINGSSIGNAL</div>
+        <div class="pitch-headline">Region Stockholm publicerar ramavtal inom bemanning</div>
+        <div class="pitch-body">Offentlig aktör med stort behov. Möjlig åtgärd: bevaka sista anbudsdag och ansvarig enhet.</div>
+      </div>
+      <div class="pitch-card">
+        <div class="pitch-eyebrow">BOLAGSSIGNAL</div>
+        <div class="pitch-headline">Ahlsell Logistik byter VD</div>
+        <div class="pitch-body">Ledarskifte kan skapa nya leverantörsbeslut. Möjlig åtgärd: kontakta ny beslutsfattare efter tillträde.</div>
       </div>
     </div>
   </div>
@@ -366,9 +471,10 @@
           <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--v-amber), var(--v-amber-2)); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 20px; color: var(--v-paper); font-weight: 500;">LH</div>
           <div>
             <div style="font-weight: 500; color: var(--v-paper);">Lina Hellström</div>
-            <div class="t-mono" style="font-size: 11px; color: var(--v-ink-4);">KAM, Acme Bemanning</div>
+            <div class="t-mono" style="font-size: 11px; color: var(--v-ink-4);">Tidig pilotanvändare · bemanningsbolag i Stockholmsregionen</div>
           </div>
         </div>
+        <div style="margin-top: 24px; font-style: italic; font-size: 13px; color: var(--v-ink-4);">Vi visar verkliga referenser så snart de är offentliga.</div>
       </div>
     </div>
   </div>

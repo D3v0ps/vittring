@@ -51,6 +51,11 @@ class AuditAction(StrEnum):
     ADMIN_TRIGGER_DIGEST = "admin_trigger_digest"
     ADMIN_TRIGGER_GDPR_SCRUB = "admin_trigger_gdpr_scrub"
 
+    # Scraper compliance actions (see CLAUDE.md §24)
+    SCRAPER_REQUEST = "scraper_request"
+    SCRAPER_OPT_OUT_RECEIVED = "scraper_opt_out_received"
+    SCRAPER_BLOCKED_DOMAIN_ADDED = "scraper_blocked_domain_added"
+
 
 async def audit(
     session: AsyncSession,
