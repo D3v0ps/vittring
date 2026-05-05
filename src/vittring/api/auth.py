@@ -480,7 +480,21 @@ async def password_reset_confirm(
 
 @router.get("/2fa/enable", response_class=HTMLResponse, include_in_schema=False)
 async def two_factor_setup_page(request: Request, user: CurrentUser) -> HTMLResponse:
-    secret = user.totp_secret or generate_secret()
+    """Show the QR / secret for setting up 2FA.
+
+    The pending secret is persisted on ``user.totp_secret`` *immediately* but
+    the ``totp_enabled_at`` flag remains null until the user confirms with a
+    valid 6-digit code. That way the POST handler does not have to trust a
+    client-supplied ``secret`` field — it reads the freshly stored value
+    server-side. Until ``totp_enabled_at`` is set, login still allows access
+    without TOTP, so a half-finished setup does not lock the user out.
+    """
+    if not user.totp_secret or user.totp_enabled_at is not None:
+        # Either no setup in progress, or 2FA already activated and the
+        # operator wants to re-pair (rotate). Issue a fresh secret either way.
+        user.totp_secret = generate_secret()
+        user.totp_enabled_at = None
+    secret = user.totp_secret
     uri = provisioning_uri(secret, account_name=user.email)
     return templates.TemplateResponse(
         request,
@@ -494,9 +508,19 @@ async def two_factor_enable(
     request: Request,
     session: SessionDep,
     user: CurrentUser,
-    secret: Annotated[str, Form()],
     code: Annotated[str, Form()],
 ) -> HTMLResponse | RedirectResponse:
+    """Confirm a pending 2FA setup by checking the user's authenticator code.
+
+    The secret is read from ``user.totp_secret`` (set by the GET handler) —
+    we never trust a hidden form field, so a malicious client cannot pin the
+    server's OTP secret to one they control.
+    """
+    secret = user.totp_secret
+    if not secret:
+        return RedirectResponse(
+            "/auth/2fa/enable", status_code=status.HTTP_303_SEE_OTHER
+        )
     if not verify_code(secret, code):
         uri = provisioning_uri(secret, account_name=user.email)
         return templates.TemplateResponse(
@@ -505,7 +529,6 @@ async def two_factor_enable(
             {"title": "Aktivera 2FA", "secret": secret, "uri": uri, "error": "Fel kod."},
             status_code=status.HTTP_400_BAD_REQUEST,
         )
-    user.totp_secret = secret
     user.totp_enabled_at = datetime.now(timezone.utc)
     meta = request_meta(request)
     await audit(

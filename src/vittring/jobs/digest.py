@@ -19,6 +19,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from vittring.api.unsubscribe import make_unsubscribe_token
 from vittring.config import get_settings
 from vittring.db import session_scope
 from vittring.delivery.email import render, send_email
@@ -411,7 +412,9 @@ async def run_daily_digest() -> None:
                     for s in sections
                 ],
                 "manage_url": f"{base_url}/app/subscriptions",
-                "unsubscribe_url": _build_unsubscribe_url(base_url, str(user.id)),
+                "unsubscribe_url": _build_unsubscribe_url(
+                    base_url, make_unsubscribe_token(user.id)
+                ),
                 "contact_address": "Vittring c/o Karim Khalil, Sverige",
             }
 

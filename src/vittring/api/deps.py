@@ -44,9 +44,18 @@ async def current_user(
 async def current_verified_user(
     user: Annotated[User, Depends(current_user)],
 ) -> User:
+    """Require a verified email; otherwise bounce to the friendly page.
+
+    Raising HTTPException(403) used to surface as raw JSON ``email_not_verified``
+    which dead-ended any user whose verification email got lost. Replace with
+    a 303 redirect to ``/auth/verification-needed`` so the user has somewhere
+    to go (resend link, contact support).
+    """
     if not user.is_verified:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="email_not_verified"
+            status_code=status.HTTP_303_SEE_OTHER,
+            detail="email_not_verified",
+            headers={"Location": "/auth/verification-needed"},
         )
     return user
 

@@ -22,9 +22,19 @@ router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
 
 
 def _verify_signature(body: bytes, signature: str | None) -> None:
+    """Reject unsigned or wrongly-signed webhook deliveries (fail closed).
+
+    If ``RESEND_WEBHOOK_SECRET`` is not configured the endpoint refuses every
+    request — the previous behaviour silently accepted unauthenticated POSTs
+    in production whenever the secret was missing, which let any attacker
+    flag arbitrary deliveries as opened/clicked.
+    """
     secret = get_settings().resend_webhook_secret
     if secret is None:
-        return  # webhook secret not configured — skip verification in dev
+        raise HTTPException(
+            status_code=503,
+            detail="resend_webhook_secret_not_configured",
+        )
     if signature is None:
         raise HTTPException(status_code=400, detail="missing_signature")
     expected = hmac.new(

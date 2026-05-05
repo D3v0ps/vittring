@@ -12,7 +12,6 @@
 
 <form method="post" action="/auth/2fa/enable" class="auth-form">
   {{ csrf_input() }}
-  <input type="hidden" name="secret" value="{{ secret }}" />
   <div class="field">
     <label for="code">Bekräftelsekod</label>
     <input class="input mono" type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code" placeholder="123 456" autofocus />

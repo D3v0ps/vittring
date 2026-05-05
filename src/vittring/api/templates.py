@@ -6,12 +6,23 @@ from pathlib import Path
 from typing import Any
 
 from fastapi.templating import Jinja2Templates
-from jinja2 import pass_context
+from jinja2 import pass_context, select_autoescape
 from markupsafe import Markup
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 
-templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
+# Default ``select_autoescape`` enables HTML escaping only for ``.html``,
+# ``.htm`` and ``.xml`` extensions — Vittring uses ``.html.j2`` everywhere
+# so without this override Jinja would emit user-supplied strings verbatim
+# (broad reflected/stored XSS surface). Enable autoescape for the
+# ``.j2`` and ``.html.j2`` patterns explicitly.
+templates = Jinja2Templates(
+    directory=str(TEMPLATE_DIR),
+    autoescape=select_autoescape(
+        enabled_extensions=("html", "htm", "xml", "j2"),
+        default_for_string=True,
+    ),
+)
 
 
 @pass_context
