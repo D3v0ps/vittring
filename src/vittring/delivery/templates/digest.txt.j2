@@ -4,11 +4,13 @@ VITTRING — DAGLIG SAMMANSTÄLLNING
 ============================================================
 
 {% for section in sections %}
+{% set section_items = section['items'] %}
+{% set section_count = section_items|length %}
 {{ section.subscription_name }}
 ------------------------------------------------------------
-{{ section.items|length }} {{ "signal" if section.items|length == 1 else "signaler" }}
+{{ section_count }} {{ "signal" if section_count == 1 else "signaler" }}
 
-{% for item in section.items %}
+{% for item in section_items %}
 [{{ item.kind_label }}]  {{ item.date_label }}
 {{ item.title }}
 {% if item.detail %}{{ item.detail }}
