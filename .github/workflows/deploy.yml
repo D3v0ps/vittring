@@ -1,0 +1,21 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 62.238.37.54
+          username: vittring
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            /opt/vittring/current/scripts/deploy.sh "${{ github.ref_name }}"

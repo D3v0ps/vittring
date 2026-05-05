@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Lint, type-check, and test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: vittring
+          POSTGRES_PASSWORD: vittring
+          POSTGRES_DB: vittring_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vittring -d vittring_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      APP_ENV: test
+      APP_SECRET_KEY: ci-test-secret-key-not-for-production-use-0123456789abcdef
+      APP_BASE_URL: http://localhost:8000
+      DATABASE_URL: postgresql+asyncpg://vittring:vittring@localhost:5432/vittring_test
+      RESEND_API_KEY: re_ci_dummy_key
+      EMAIL_FROM_ADDRESS: ci@example.test
+      EMAIL_REPLY_TO: ci@example.test
+      EMAIL_SENDING_DOMAIN: example.test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Install citext extension
+        env:
+          PGPASSWORD: vittring
+        run: |
+          psql -h localhost -U vittring -d vittring_test -c "CREATE EXTENSION IF NOT EXISTS citext;"
+
+      - name: Lint with ruff
+        run: uv run ruff check .
+
+      - name: Check formatting with ruff
+        run: uv run ruff format --check .
+
+      - name: Type-check with mypy
+        run: uv run mypy
+
+      - name: Apply database migrations
+        run: uv run alembic upgrade head
+
+      - name: Run tests with coverage
+        run: |
+          uv run pytest \
+            --cov=src/vittring \
+            --cov-report=term-missing \
+            --cov-fail-under=70 \
+            --cov-config=pyproject.toml
+
+      - name: Enforce 100% coverage on matching engine
+        run: |
+          uv run coverage report \
+            --include="src/vittring/matching/*" \
+            --fail-under=100
