@@ -5,7 +5,7 @@ following compliance behaviour for free, in this exact order, on every
 :meth:`fetch` call:
 
 1. Internal blocklist check (`BLOCKED_DOMAINS`).
-2. Active-hours window check (Europe/Stockholm, default 06:00–22:00).
+2. Active-hours window check (Europe/Stockholm, default 06:00-22:00).
 3. Per-domain daily request quota from the ``audit_log`` table.
 4. ``robots.txt`` lookup with 24-hour in-memory cache.
 5. Per-domain inter-request sleep (default 2 s).
@@ -26,8 +26,7 @@ from __future__ import annotations
 import asyncio
 import time
 from abc import abstractmethod
-from collections.abc import AsyncIterator
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any, ClassVar
 from urllib import robotparser
 from urllib.parse import urlsplit
@@ -77,7 +76,9 @@ class BaseScraper[T](IngestAdapter[T]):
 
     # Per-process caches -------------------------------------------------------
     # robots.txt: domain -> (parser, fetched_at, status_code)
-    _robots_cache: ClassVar[dict[str, tuple[robotparser.RobotFileParser | None, float, int]]] = {}
+    _robots_cache: ClassVar[
+        dict[str, tuple[robotparser.RobotFileParser | None, float, int | None]]
+    ] = {}
     # response cache: url -> (etag, last_modified, body)
     _response_cache: ClassVar[dict[str, tuple[str | None, str | None, str]]] = {}
     # last-request timestamp per domain: domain -> monotonic seconds
@@ -269,7 +270,7 @@ class BaseScraper[T](IngestAdapter[T]):
 
         Counts only successful or attempted fetches in the last 24 hours.
         """
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
         async with session_scope() as session:
             stmt = select(func.count(AuditLog.id)).where(
                 AuditLog.action == AuditAction.SCRAPER_REQUEST,
