@@ -17,6 +17,10 @@ from vittring.config import get_settings
 from vittring.ingest.base import run_ingest
 from vittring.ingest.bolagsverket import BolagsverketAdapter
 from vittring.ingest.jobtech import JobTechAdapter
+from vittring.ingest.scrapers.eavrop import EavropScraper
+from vittring.ingest.scrapers.kommers import KommersScraper
+from vittring.ingest.scrapers.mercell import MercellScraper
+from vittring.ingest.scrapers.tendsign import TendSignScraper
 from vittring.ingest.ted import TedAdapter
 from vittring.jobs.digest import run_daily_digest
 from vittring.jobs.gdpr import purge_deleted_users, scrub_personal_data
@@ -38,6 +42,22 @@ async def _run_ted() -> None:
 
 async def _run_bolagsverket() -> None:
     await run_ingest(BolagsverketAdapter(), since=_yesterday())
+
+
+async def _run_eavrop() -> None:
+    await run_ingest(EavropScraper(), since=_yesterday())
+
+
+async def _run_kommers() -> None:
+    await run_ingest(KommersScraper(), since=_yesterday())
+
+
+async def _run_tendsign() -> None:
+    await run_ingest(TendSignScraper(), since=_yesterday())
+
+
+async def _run_mercell() -> None:
+    await run_ingest(MercellScraper(), since=_yesterday())
 
 
 def build_scheduler() -> AsyncIOScheduler:
@@ -71,6 +91,20 @@ def register_jobs(scheduler: AsyncIOScheduler) -> None:
         max_instances=1,
         coalesce=True,
     )
+    for scraper_id, fn, minute in (
+        ("scrape_eavrop", _run_eavrop, 30),
+        ("scrape_kommers", _run_kommers, 35),
+        ("scrape_tendsign", _run_tendsign, 40),
+        ("scrape_mercell", _run_mercell, 45),
+    ):
+        scheduler.add_job(
+            fn,
+            CronTrigger(hour=7, minute=minute),
+            id=scraper_id,
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
     scheduler.add_job(
         run_daily_digest,
         CronTrigger(hour=6, minute=30),

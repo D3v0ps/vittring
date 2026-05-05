@@ -34,6 +34,10 @@ from vittring.delivery.domain_setup import (
 from vittring.ingest.base import run_ingest
 from vittring.ingest.bolagsverket import BolagsverketAdapter
 from vittring.ingest.jobtech import JobTechAdapter
+from vittring.ingest.scrapers.eavrop import EavropScraper
+from vittring.ingest.scrapers.kommers import KommersScraper
+from vittring.ingest.scrapers.mercell import MercellScraper
+from vittring.ingest.scrapers.tendsign import TendSignScraper
 from vittring.ingest.ted import TedAdapter
 from vittring.jobs.digest import run_daily_digest
 from vittring.jobs.gdpr import purge_deleted_users, scrub_personal_data
@@ -1105,6 +1109,30 @@ JOB_DEFINITIONS = [
         "audit_source": "ted",
     },
     {
+        "name": "scrape_eavrop",
+        "label": "Scraper — e-Avrop",
+        "schedule": "07:30 dagligen",
+        "audit_source": "eavrop",
+    },
+    {
+        "name": "scrape_kommers",
+        "label": "Scraper — Kommers",
+        "schedule": "07:35 dagligen",
+        "audit_source": "kommers",
+    },
+    {
+        "name": "scrape_tendsign",
+        "label": "Scraper — TendSign",
+        "schedule": "07:40 dagligen",
+        "audit_source": "tendsign",
+    },
+    {
+        "name": "scrape_mercell",
+        "label": "Scraper — Mercell",
+        "schedule": "07:45 dagligen",
+        "audit_source": "mercell",
+    },
+    {
         "name": "daily_digest",
         "label": "Daglig digest",
         "schedule": "06:30 dagligen",
@@ -1226,6 +1254,10 @@ INGEST_ADAPTERS = {
     "ingest_jobtech": ("jobtech", JobTechAdapter),
     "ingest_bolagsverket": ("bolagsverket", BolagsverketAdapter),
     "ingest_ted": ("ted", TedAdapter),
+    "scrape_eavrop": ("eavrop", EavropScraper),
+    "scrape_kommers": ("kommers", KommersScraper),
+    "scrape_tendsign": ("tendsign", TendSignScraper),
+    "scrape_mercell": ("mercell", MercellScraper),
 }
 
 
