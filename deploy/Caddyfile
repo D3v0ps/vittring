@@ -1,0 +1,46 @@
+{
+    email info@karimkhalil.se
+}
+
+vittring.karimkhalil.se {
+    encode zstd gzip
+
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        -Server
+    }
+
+    @health path /health /ready
+    handle @health {
+        reverse_proxy localhost:8000
+    }
+
+    handle_path /static/* {
+        root * /opt/vittring/current/src/vittring/static
+        file_server
+    }
+
+    handle {
+        reverse_proxy localhost:8000 {
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+            header_up X-Real-IP {remote_host}
+            transport http {
+                read_timeout 60s
+                write_timeout 60s
+            }
+        }
+    }
+
+    log {
+        output file /var/log/caddy/vittring.log {
+            roll_size 10mb
+            roll_keep 14
+        }
+        format json
+    }
+}
