@@ -9,6 +9,10 @@ User=vittring
 Group=vittring
 WorkingDirectory=/opt/vittring/current
 EnvironmentFile=/etc/vittring/.env
+# ProtectHome=true blocks /home/vittring entirely, so asyncpg's default
+# probe for ~/.postgresql/postgresql.key raises PermissionError. Pin HOME
+# outside /home so the probe falls through .exists() == False instead.
+Environment=HOME=/tmp
 ExecStart=/opt/vittring/current/.venv/bin/uvicorn \
     vittring.main:app \
     --host 127.0.0.1 \

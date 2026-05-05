@@ -9,6 +9,8 @@ User=vittring
 Group=vittring
 WorkingDirectory=/opt/vittring/current
 EnvironmentFile=/etc/vittring/.env
+# Same reason as the API unit — keep HOME outside the sandboxed /home tree.
+Environment=HOME=/tmp
 ExecStart=/opt/vittring/current/.venv/bin/python -m vittring.jobs
 KillSignal=SIGTERM
 TimeoutStopSec=30
