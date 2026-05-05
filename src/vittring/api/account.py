@@ -272,19 +272,67 @@ async def calendar_stub(request: Request, user: CurrentVerifiedUser) -> HTMLResp
 
 
 @router.get("/saved", response_class=HTMLResponse, include_in_schema=False)
-async def saved_stub(request: Request, user: CurrentVerifiedUser) -> HTMLResponse:
+async def saved_signals(
+    request: Request, session: SessionDep, user: CurrentVerifiedUser
+) -> HTMLResponse:
+    """List the user's starred signals.
+
+    Joins SavedSignal with the matching sample-signal context so the page
+    is meaningful even before live signals exist. Once real DeliveredAlert
+    rows show up, swap the lookup to query the actual signal tables by
+    (signal_type, signal_id).
+    """
+    saved_rows = (
+        await session.execute(
+            select(SavedSignal)
+            .where(SavedSignal.user_id == user.id)
+            .order_by(SavedSignal.saved_at.desc())
+        )
+    ).scalars().all()
+
+    # Build a lookup over the dashboard's sample feed so we can show
+    # meaningful titles for each saved id without hitting more tables.
+    priority, others = _example_signals()
+    sample_by_id: dict[int, dict[str, Any]] = {s["id"]: s for s in priority + others}
+
+    items: list[dict[str, Any]] = []
+    for r in saved_rows:
+        sample = sample_by_id.get(r.signal_id)
+        items.append(
+            {
+                "saved_at": r.saved_at,
+                "signal_type": r.signal_type,
+                "signal_id": r.signal_id,
+                "kind": (sample or {}).get("kind", r.signal_type.title()),
+                "kind_class": (sample or {}).get("kind_class", "neutral"),
+                "title": (sample or {}).get("title", f"Signal #{r.signal_id}"),
+                "meta": (sample or {}).get("meta", ""),
+                "url": (sample or {}).get("url"),
+            }
+        )
+
+    subs_rows = (
+        await session.execute(
+            select(Subscription).where(
+                Subscription.user_id == user.id,
+                Subscription.active.is_(True),
+            )
+        )
+    ).scalars().all()
+    name_for_initials = user.full_name or user.email.split("@")[0]
+
     return templates.TemplateResponse(
         request,
-        "app/_stub.html.j2",
-        _stub_context(
-            user,
-            active="saved",
-            title="Sparade signaler",
-            description=(
-                "Signaler du stjärnmarkerat hamnar här — så att du kan återvända till "
-                "uppslag som väntar på uppföljning utan att leta bland dagens digest."
-            ),
-        ),
+        "app/saved.html.j2",
+        {
+            "title": "Sparade signaler",
+            "user": user,
+            "subscriptions": [{"name": s.name} for s in subs_rows],
+            "initials": _initials(name_for_initials),
+            "plan_label": PLAN_LABELS.get(user.plan, user.plan.capitalize()),
+            "active": "saved",
+            "items": items,
+        },
     )
 
 

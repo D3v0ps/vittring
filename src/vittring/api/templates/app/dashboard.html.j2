@@ -161,17 +161,23 @@
       <h5>Idag</h5>
       <a href="/app" class="nav-item active">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="6"/><circle cx="7" cy="7" r="3"/><circle cx="7" cy="7" r="1" fill="currentColor"/></svg>
-        Digest <span class="count">{{ digest_count }}</span>
-      </a>
-      <a href="/app" class="nav-item">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 11 L5 6 L8 8 L12 3"/></svg>
-        Översikt
+        Dagens digest <span class="count">{{ digest_count }}</span>
       </a>
       <a href="/app/calendar" class="nav-item">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="10" height="10" rx="1"/><path d="M2 5 L12 5"/></svg>
         Kalender
       </a>
     </div>
+
+    {% if user.is_superuser %}
+    <div class="nav-section">
+      <h5>Plattform</h5>
+      <a href="/admin" class="nav-item" style="color: var(--v-amber);">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 1 L12 4 L12 10 L7 13 L2 10 L2 4 Z"/><circle cx="7" cy="7" r="2"/></svg>
+        Admin-panel →
+      </a>
+    </div>
+    {% endif %}
 
     <div class="nav-section">
       <h5>Prenumerationer</h5>
