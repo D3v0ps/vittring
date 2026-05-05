@@ -1,0 +1,57 @@
+{# Email base layout — table-based for client compatibility, follows design-system.md. #}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>{{ subject }}</title>
+  <style>
+    body { margin: 0; padding: 0; background: #FAFAF7; }
+    table { border-collapse: collapse; }
+    img { border: 0; display: block; }
+    a { color: #1B3A4B; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .body-font {
+      font-family: 'Inter Tight', -apple-system, 'Segoe UI', sans-serif;
+      color: #141414;
+      line-height: 1.65;
+    }
+    .mono { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; }
+    @media (max-width: 620px) {
+      .container { width: 100% !important; }
+      .px { padding-left: 16px !important; padding-right: 16px !important; }
+    }
+  </style>
+</head>
+<body class="body-font">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FAFAF7;">
+    <tr>
+      <td align="center" style="padding: 32px 16px;">
+        <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;background:#FAFAF7;">
+          <tr>
+            <td class="px" style="padding: 0 8px 24px 8px;">
+              <span style="font-family:'Inter Tight',sans-serif;font-size:18px;font-weight:500;color:#141414;letter-spacing:-0.01em;">Vittring</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="px" style="padding: 0 8px;">
+              {% block content %}{% endblock %}
+            </td>
+          </tr>
+          <tr>
+            <td class="px" style="padding: 48px 8px 0 8px; border-top: 1px solid #E8E7E0;">
+              <p style="margin: 16px 0 4px 0; font-size: 12px; color: #8A8A85;">
+                Vittring · {{ from_address }}
+              </p>
+              <p style="margin: 0; font-size: 12px; color: #8A8A85;">
+                {% block footer_extra %}{% endblock %}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

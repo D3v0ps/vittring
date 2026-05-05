@@ -1,0 +1,58 @@
+{% extends "_base.html.j2" %}
+{% block content %}
+<p style="margin: 0 0 4px 0; font-size: 14px; color: #5C5C58;">
+  <span class="mono">{{ digest_date }}</span>
+</p>
+<h1 style="margin: 0 0 32px 0; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; color: #141414; line-height: 1.2;">
+  {{ total }} nya signaler
+</h1>
+
+{% for section in sections %}
+<h2 style="margin: 32px 0 8px 0; font-size: 16px; font-weight: 500; color: #141414; letter-spacing: -0.01em;">
+  {{ section.subscription_name }}
+</h2>
+<p style="margin: 0 0 16px 0; font-size: 13px; color: #8A8A85;">
+  {{ section.items|length }} {{ "signal" if section.items|length == 1 else "signaler" }}
+</p>
+
+{% for item in section.items %}
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+       style="border-bottom: 1px solid #E8E7E0; padding: 0;">
+  <tr>
+    <td style="padding: 16px 0;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="padding-right: 12px;">
+            <span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:500;background:#EDECE6;color:#5C5C58;">
+              {{ item.kind_label }}
+            </span>
+          </td>
+          <td>
+            <span class="mono" style="font-size: 12px; color: #8A8A85;">{{ item.date_label }}</span>
+          </td>
+        </tr>
+      </table>
+      <h3 style="margin: 8px 0 4px 0; font-size: 16px; font-weight: 500; color: #141414; letter-spacing: -0.015em;">
+        {{ item.title }}
+      </h3>
+      {% if item.detail %}
+      <p style="margin: 0 0 8px 0; font-size: 14px; color: #5C5C58;">{{ item.detail }}</p>
+      {% endif %}
+      {% if item.source_url %}
+      <a href="{{ item.source_url }}" style="font-size: 14px; color: #1B3A4B;">Läs mer</a>
+      {% endif %}
+    </td>
+  </tr>
+</table>
+{% endfor %}
+{% endfor %}
+
+<p style="margin: 32px 0 0 0; font-size: 13px; color: #5C5C58;">
+  <a href="{{ manage_url }}" style="color: #1B3A4B;">Hantera prenumerationer</a>
+</p>
+{% endblock %}
+
+{% block footer_extra %}
+<a href="{{ unsubscribe_url }}" style="color: #8A8A85;">Avregistrera</a> ·
+{{ contact_address }}
+{% endblock %}
