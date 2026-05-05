@@ -85,6 +85,7 @@ async def signup_page(request: Request, user: OptionalUser) -> HTMLResponse:
     "/signup",
     dependencies=[Depends(rate_limit(SIGNUP_BY_IP, client_ip))],
     include_in_schema=False,
+    response_model=None,
 )
 async def signup(
     request: Request,
@@ -164,7 +165,7 @@ async def check_email(request: Request) -> HTMLResponse:
 # Email verification
 # ---------------------------------------------------------------------------
 
-@router.get("/verify", include_in_schema=False)
+@router.get("/verify", include_in_schema=False, response_model=None)
 async def verify_email(t: str, session: SessionDep, request: Request) -> HTMLResponse:
     token_row = (
         await session.execute(
@@ -223,6 +224,7 @@ async def login_page(request: Request, user: OptionalUser) -> HTMLResponse:
     "/login",
     dependencies=[Depends(rate_limit(LOGIN_BY_IP, client_ip))],
     include_in_schema=False,
+    response_model=None,
 )
 async def login(
     request: Request,
@@ -340,6 +342,7 @@ async def password_reset_page(request: Request) -> HTMLResponse:
     "/password-reset",
     dependencies=[Depends(rate_limit(PASSWORD_RESET_BY_EMAIL, lambda r: r.headers.get("x-forwarded-for", r.client.host if r.client else "?")))],
     include_in_schema=False,
+    response_model=None,
 )
 async def password_reset_request(
     request: Request,
@@ -401,7 +404,7 @@ async def password_reset_confirm_page(t: str, request: Request) -> HTMLResponse:
     )
 
 
-@router.post("/password-reset/confirm", include_in_schema=False)
+@router.post("/password-reset/confirm", include_in_schema=False, response_model=None)
 async def password_reset_confirm(
     request: Request,
     session: SessionDep,
@@ -467,7 +470,7 @@ async def two_factor_setup_page(request: Request, user: CurrentUser) -> HTMLResp
     )
 
 
-@router.post("/2fa/enable", include_in_schema=False)
+@router.post("/2fa/enable", include_in_schema=False, response_model=None)
 async def two_factor_enable(
     request: Request,
     session: SessionDep,

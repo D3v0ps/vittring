@@ -57,7 +57,7 @@ async def new_subscription_page(request: Request, user: CurrentVerifiedUser) -> 
     )
 
 
-@router.post("/", include_in_schema=False)
+@router.post("/", include_in_schema=False, response_model=None)
 async def create_subscription(
     request: Request,
     session: SessionDep,
