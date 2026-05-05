@@ -1,0 +1,173 @@
+/* ============================================================
+   VITTRING — Grafisk profil
+   Imported by dashboard layout. Coexists with the public-side tokens
+   in tokens.css (which uses different prefixes).
+   ============================================================ */
+
+:root {
+  /* Bas-neutraler (varma, lätt sandiga) */
+  --v-paper:        #F5F1EA;
+  --v-paper-2:      #EBE5DA;
+  --v-paper-3:      #DCD4C5;
+  --v-ink:          #14110D;
+  --v-ink-2:        #3A352C;
+  --v-ink-3:        #6B6256;
+  --v-ink-4:        #9A9082;
+
+  /* Mörkt läge */
+  --v-night:        #0F1410;
+  --v-night-2:      #181E18;
+  --v-night-3:      #232A23;
+  --v-mist:         #C8CCC4;
+
+  /* Signal — accentfärg (radar-grön, dämpad) */
+  --v-signal:       #B8E04A;
+  --v-signal-2:     #9BC234;
+  --v-signal-3:     #E8F4C2;
+  --v-signal-ink:   #2A3A0A;
+
+  /* Sekundär accent — bärnsten/koppar */
+  --v-amber:        #C8753E;
+  --v-amber-2:      #A65E2C;
+  --v-amber-3:      #F0DBC8;
+
+  /* Status */
+  --v-priority:     #C8753E;
+  --v-fresh:        #B8E04A;
+  --v-archive:      #9A9082;
+
+  /* Typografi */
+  --font-display:   'Fraunces', 'Times New Roman', serif;
+  --font-sans:      'Inter Tight', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono:      'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Skala (8pt grid) */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  24px;
+  --s-6:  32px;
+  --s-7:  48px;
+  --s-8:  64px;
+  --s-9:  96px;
+  --s-10: 128px;
+
+  --r-1: 4px;
+  --r-2: 8px;
+  --r-3: 12px;
+  --r-4: 18px;
+  --r-pill: 999px;
+
+  --shadow-1: 0 1px 2px rgba(20, 17, 13, 0.04), 0 1px 1px rgba(20, 17, 13, 0.03);
+  --shadow-2: 0 4px 12px rgba(20, 17, 13, 0.06), 0 2px 4px rgba(20, 17, 13, 0.04);
+  --shadow-3: 0 16px 40px rgba(20, 17, 13, 0.10), 0 4px 12px rgba(20, 17, 13, 0.06);
+  --shadow-night: 0 16px 40px rgba(0, 0, 0, 0.4);
+
+  --border-1: 1px solid rgba(20, 17, 13, 0.08);
+  --border-2: 1px solid rgba(20, 17, 13, 0.12);
+  --border-strong: 1px solid var(--v-ink);
+}
+
+/* Typografi-klasser */
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 0.98;
+  font-optical-sizing: auto;
+  font-variation-settings: "SOFT" 50, "WONK" 0;
+}
+.t-display-italic {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+}
+.t-sans { font-family: var(--font-sans); letter-spacing: -0.01em; }
+.t-mono { font-family: var(--font-mono); letter-spacing: -0.01em; font-feature-settings: "ss01", "ss02"; }
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--v-ink-3);
+}
+
+/* Komponenter */
+.v-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 12px 18px;
+  border-radius: var(--r-2);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+.v-button--primary { background: var(--v-ink); color: var(--v-paper); }
+.v-button--primary:hover { background: var(--v-night); }
+.v-button--signal { background: var(--v-signal); color: var(--v-signal-ink); }
+.v-button--signal:hover { background: var(--v-signal-2); }
+.v-button--ghost {
+  background: transparent;
+  color: var(--v-ink);
+  border-color: rgba(20,17,13,0.18);
+}
+.v-button--ghost:hover { background: rgba(20,17,13,0.04); }
+.v-button--lg { padding: 16px 24px; font-size: 15px; }
+
+.v-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid rgba(20,17,13,0.12);
+  color: var(--v-ink-2);
+  background: var(--v-paper);
+}
+.v-pill--signal { background: var(--v-signal-3); border-color: rgba(155, 194, 52, 0.35); color: var(--v-signal-ink); }
+.v-pill--amber { background: var(--v-amber-3); border-color: rgba(200, 117, 62, 0.3); color: var(--v-amber-2); }
+.v-pill--night { background: var(--v-night); border-color: var(--v-night-3); color: var(--v-mist); }
+
+.v-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+
+@keyframes v-pulse {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.v-radar-dot {
+  position: relative;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--v-signal);
+}
+.v-radar-dot::before,
+.v-radar-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--v-signal);
+  opacity: 0.6;
+  animation: v-pulse 2.4s cubic-bezier(0,0,0.2,1) infinite;
+}
+.v-radar-dot::after { animation-delay: 1.2s; }
+
+.v-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(20,17,13,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(20,17,13,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}

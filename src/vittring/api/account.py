@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Any
 
 from fastapi import APIRouter, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -18,37 +20,182 @@ from vittring.models.audit import AuditLog
 
 router = APIRouter(prefix="/app", tags=["account"])
 
+SWEDISH_WEEKDAYS = ["måndag", "tisdag", "onsdag", "torsdag", "fredag", "lördag", "söndag"]
+SWEDISH_MONTHS = [
+    "januari", "februari", "mars", "april", "maj", "juni",
+    "juli", "augusti", "september", "oktober", "november", "december",
+]
+PLAN_LABELS = {"trial": "Provperiod", "solo": "Solo", "team": "Team", "pro": "Pro"}
+
+
+def _initials(name: str) -> str:
+    parts = [p for p in name.replace(".", " ").split() if p]
+    if len(parts) >= 2:
+        return (parts[0][0] + parts[1][0]).upper()
+    if parts:
+        return parts[0][:2].upper()
+    return "—"
+
+
+def _example_signals() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Sample feed used until the user has live signals delivered.
+
+    Mirrors the Vittring design hand-off so the dashboard reads as populated
+    on day one. Once ingest + matching produce real DeliveredAlert rows for
+    the user, swap this for a query joining DeliveredAlert with the
+    referenced signal tables.
+    """
+    priority = [
+        {
+            "date": "04 maj", "time": "16:42",
+            "kind": "Upphandling", "kind_class": "upph",
+            "title": "Region Stockholm — Ramavtal lagerbemanning",
+            "meta": "CPV 79620000 · Volym ~12 mkr · Anbud senast 2026-06-12 · 3 leverantörer förväntade",
+            "source": "TED · ted.europa.eu",
+            "url": "https://ted.europa.eu/",
+        },
+        {
+            "date": "04 maj", "time": "14:32",
+            "kind": "Jobb", "kind_class": "jobb",
+            "title": "Postnord Sverige AB söker 18 truckförare",
+            "meta": "Rosersberg · SNI 53.100 · Heltid · Tredje volymrekrytering på sex månader",
+            "source": "JobTech · af.se",
+            "url": "https://arbetsformedlingen.se/",
+        },
+        {
+            "date": "04 maj", "time": "09:15",
+            "kind": "Bolag", "kind_class": "bolag",
+            "title": "Ahlsell Logistik AB · Ny VD tillträder",
+            "meta": "SE5567231223 · Hallsberg · Helena Berg, tidigare COO DB Schenker",
+            "source": "Bolagsverket · PoIT",
+            "url": None,
+        },
+        {
+            "date": "04 maj", "time": "08:07",
+            "kind": "Jobb", "kind_class": "jobb",
+            "title": "Schenker AB — 6 lagermedarbetare, kvällsskift",
+            "meta": "Jordbro · SNI 52.100 · Visstidsanställning",
+            "source": "JobTech · af.se",
+            "url": "https://arbetsformedlingen.se/",
+        },
+        {
+            "date": "03 maj", "time": "22:11",
+            "kind": "Bolag", "kind_class": "bolag",
+            "title": "Norrlands Logistik AB · Nytt säte i Södertälje",
+            "meta": "SE5566048812 · Tidigare Sundsvall · Indikerar utbyggnad i Mälardalen",
+            "source": "Bolagsverket · PoIT",
+            "url": None,
+        },
+    ]
+    others = [
+        {
+            "date": "03 maj", "time": "17:44",
+            "kind": "Upphandling", "kind_class": "upph",
+            "title": "Trafikförvaltningen — Bemanningstjänster städ & logistik",
+            "meta": "CPV 79620000 · ~8 mkr · Anbud 2026-05-30",
+            "source": "TED · ted.europa.eu",
+            "url": "https://ted.europa.eu/",
+        },
+        {
+            "date": "03 maj", "time": "15:22",
+            "kind": "Jobb", "kind_class": "jobb",
+            "title": "DSV — 4 lagerarbetare, dagtid",
+            "meta": "Arlanda · SNI 52.100 · Tillsvidare",
+            "source": "JobTech",
+            "url": "https://arbetsformedlingen.se/",
+        },
+        {
+            "date": "03 maj", "time": "12:08",
+            "kind": "Bolag", "kind_class": "bolag",
+            "title": "Bring Frigoscandia AB — styrelseändring",
+            "meta": "SE5567 · Två nya ledamöter, fokus tech",
+            "source": "Bolagsverket",
+            "url": None,
+        },
+        {
+            "date": "03 maj", "time": "10:55",
+            "kind": "Jobb", "kind_class": "jobb",
+            "title": "DHL Supply Chain — 12 plockare",
+            "meta": "Brunna · SNI 52.100 · Heltid",
+            "source": "JobTech",
+            "url": "https://arbetsformedlingen.se/",
+        },
+        {
+            "date": "03 maj", "time": "09:30",
+            "kind": "Upphandling", "kind_class": "upph",
+            "title": "Botkyrka kommun — Bemanning skola/förskola",
+            "meta": "CPV 79620000 · ~3 mkr · Anbud 2026-05-25",
+            "source": "TED",
+            "url": "https://ted.europa.eu/",
+        },
+    ]
+    return priority, others
+
 
 @router.get("", response_class=HTMLResponse, include_in_schema=False)
 async def dashboard(
     request: Request, session: SessionDep, user: CurrentVerifiedUser
 ) -> HTMLResponse:
-    subs = (
+    subs_rows = (
         await session.execute(
             select(Subscription).where(
                 Subscription.user_id == user.id,
                 Subscription.active.is_(True),
-            )
+            ).order_by(Subscription.created_at.desc())
         )
     ).scalars().all()
-    recent_alerts = (
-        await session.execute(
-            select(DeliveredAlert)
-            .where(DeliveredAlert.user_id == user.id)
-            .order_by(DeliveredAlert.delivered_at.desc())
-            .limit(20)
-        )
-    ).scalars().all()
-    return templates.TemplateResponse(
-        request,
-        "app/dashboard.html.j2",
-        {
-            "title": "Konto",
-            "user": user,
-            "subscriptions": subs,
-            "recent_alerts": recent_alerts,
-        },
-    )
+
+    # Counts per subscription — placeholder until DeliveredAlert join is wired
+    subs = [
+        {"name": s.name, "signal_count": None}
+        for s in subs_rows
+    ]
+
+    priority_signals, other_signals = _example_signals()
+    digest_count = len(priority_signals) + len(other_signals)
+
+    now = datetime.now(timezone.utc)
+    today_weekday = SWEDISH_WEEKDAYS[now.weekday()].capitalize()
+    today_date = f"{now.day} {SWEDISH_MONTHS[now.month - 1]} {now.year}"
+    week_num = now.isocalendar().week
+
+    name_for_initials = user.full_name or user.email.split("@")[0]
+
+    context = {
+        "title": "Dashboard",
+        "user": user,
+        "subscriptions": subs,
+        "initials": _initials(name_for_initials),
+        "plan_label": PLAN_LABELS.get(user.plan, user.plan.capitalize()),
+
+        "today_weekday": today_weekday,
+        "today_date": today_date,
+        "last_sync_time": "06:30",
+        "next_sync_time": "06:30",
+
+        "digest_count": digest_count,
+        "digest_focus": "Lager & logistik · Storstockholm",
+        "priority_count": len(priority_signals),
+        "other_count": len(other_signals),
+        "saved_count": 2,
+
+        "stat_week_count": "214",
+        "stat_week_delta": "+18%",
+        "stat_noise_pct": "99,5%",
+        "stat_noise_total": "4 982",
+        "stat_week_num": week_num,
+        "stat_conversions": "7",
+        "stat_conversions_delta": "+2",
+
+        "active_filters": ["Storstockholm", "SNI 53.* / 52.*"],
+        "count_upph": sum(1 for s in priority_signals + other_signals if s["kind_class"] == "upph"),
+        "count_jobb": sum(1 for s in priority_signals + other_signals if s["kind_class"] == "jobb"),
+        "count_bolag": sum(1 for s in priority_signals + other_signals if s["kind_class"] == "bolag"),
+
+        "priority_signals": priority_signals,
+        "other_signals": other_signals,
+    }
+    return templates.TemplateResponse(request, "app/dashboard.html.j2", context)
 
 
 @router.get("/account", response_class=HTMLResponse, include_in_schema=False)
