@@ -213,9 +213,12 @@
 
           <div class="sub-form-actions">
             <a href="/app/subscriptions" class="btn btn-ghost">Avbryt</a>
-            <button type="submit" class="btn btn-accent btn-lg" id="submit-btn">
-              Skapa prenumeration
-            </button>
+            <div class="sub-form-submit">
+              <p class="sub-form-submit-hint" id="submit-hint" aria-live="polite"></p>
+              <button type="submit" class="btn btn-accent btn-lg" id="submit-btn">
+                Skapa prenumeration
+              </button>
+            </div>
           </div>
         </div>
 
@@ -320,8 +323,14 @@
 
     // Submit button enabled only if at least one signal
     const submit = document.getElementById('submit-btn');
+    const submitHint = document.getElementById('submit-hint');
     if (submit) {
       submit.disabled = active.size === 0;
+    }
+    if (submitHint) {
+      submitHint.textContent = active.size === 0
+        ? 'Välj minst en signaltyp för att fortsätta.'
+        : '';
     }
   }
 
