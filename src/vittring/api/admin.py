@@ -20,7 +20,7 @@ import structlog
 from fastapi import APIRouter, Form, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import EmailStr
-from sqlalchemy import delete, distinct, func, or_, select
+from sqlalchemy import distinct, func, or_, select
 
 from vittring import __version__ as app_version
 from vittring.api.deps import CurrentSuperuser, request_meta
@@ -166,7 +166,7 @@ async def overview(
             select(User.plan, func.count(User.id)).group_by(User.plan)
         )
     ).all()
-    plans = {p: c for (p, c) in plan_rows}
+    plans = dict(plan_rows)
 
     signups_7d = (
         await session.execute(
