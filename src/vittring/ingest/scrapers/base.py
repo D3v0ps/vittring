@@ -46,6 +46,11 @@ logger = structlog.get_logger(__name__)
 
 STOCKHOLM_TZ = ZoneInfo("Europe/Stockholm")
 
+# robots.txt decisions that permit a fetch. CLAUDE.md §24.2.
+ALLOWED_ROBOTS_DECISIONS: frozenset[str] = frozenset(
+    {"allow_all", "allow_no_robots", "partial_allow"}
+)
+
 
 class BaseScraper[T](IngestAdapter[T]):
     """Compliance-enforcing HTTP fetcher for procurement portals.
@@ -167,7 +172,7 @@ class BaseScraper[T](IngestAdapter[T]):
         parser, robots_status, robots_decision, robots_reason = await self._evaluate_robots(
             domain, url
         )
-        if robots_decision != "allowed_by_robots":
+        if robots_decision not in ALLOWED_ROBOTS_DECISIONS:
             meta = {
                 "source": self.name,
                 "url": url,
@@ -212,7 +217,7 @@ class BaseScraper[T](IngestAdapter[T]):
                 "response_size": len(cached_body),
                 "cache_hit": True,
                 "robots_status_code": robots_status,
-                "robots_decision": "allowed_by_robots",
+                "robots_decision": robots_decision,
                 "robots_reason": robots_reason,
                 "request_time_ms": int((time.monotonic() - started) * 1000),
             }
@@ -227,7 +232,7 @@ class BaseScraper[T](IngestAdapter[T]):
                 "response_size": 0,
                 "cache_hit": False,
                 "robots_status_code": robots_status,
-                "robots_decision": "allowed_by_robots",
+                "robots_decision": robots_decision,
                 "robots_reason": robots_reason,
                 "request_time_ms": int((time.monotonic() - started) * 1000),
             }
@@ -241,7 +246,7 @@ class BaseScraper[T](IngestAdapter[T]):
             "response_size": len(body.encode("utf-8")),
             "cache_hit": False,
             "robots_status_code": robots_status,
-            "robots_decision": "allowed_by_robots",
+            "robots_decision": robots_decision,
             "robots_reason": robots_reason,
             "request_time_ms": int((time.monotonic() - started) * 1000),
         }
@@ -294,9 +299,12 @@ class BaseScraper[T](IngestAdapter[T]):
     ) -> tuple[robotparser.RobotFileParser | None, int | None, str, str]:
         """Fetch + cache robots.txt and decide whether ``url`` is allowed.
 
-        Returns ``(parser, status_code, decision, reason)`` where ``decision``
-        is one of ``allowed_by_robots``, ``disallowed_by_robots``,
-        ``no_robots_txt_404``, ``robots_unreachable_skipped``.
+        Decision values follow CLAUDE.md §24.2:
+        - ``allow_all`` — robots.txt 200 OK, no rule blocks our path
+        - ``allow_no_robots`` — robots.txt 404 (conditional consent)
+        - ``disallow_path`` — robots.txt 200 OK, this path is disallowed
+        - ``disallow_all`` — robots.txt 4xx other than 404
+        - ``disallow_temporary`` — robots.txt 5xx, network error, or timeout
         """
         cached = self._robots_cache.get(domain)
         now = time.monotonic()
@@ -306,19 +314,48 @@ class BaseScraper[T](IngestAdapter[T]):
             parser, status_code = await self._fetch_robots(domain)
             self._robots_cache[domain] = (parser, now, status_code)
 
+        # 404 → conditional allow per §24.2 (operator hasn't declared rules).
         if status_code == 404:
-            return parser, status_code, "no_robots_txt_404", "robots.txt returned 404"
+            return (
+                parser,
+                404,
+                "allow_no_robots",
+                "robots.txt 404 — conditional consent under good-faith policy",
+            )
+        # No parser + non-404 status → either 4xx (refusal) or 5xx/network.
         if parser is None:
+            if status_code is None:
+                return (
+                    parser,
+                    None,
+                    "disallow_temporary",
+                    "robots.txt unreachable (network error / timeout)",
+                )
+            if 400 <= status_code < 500:
+                return (
+                    parser,
+                    status_code,
+                    "disallow_all",
+                    f"robots.txt returned {status_code} — host-level refusal",
+                )
+            if 500 <= status_code < 600:
+                return (
+                    parser,
+                    status_code,
+                    "disallow_temporary",
+                    f"robots.txt returned {status_code} — retry next run",
+                )
             return (
                 parser,
                 status_code,
-                "robots_unreachable_skipped",
-                f"robots.txt unreachable (status={status_code})",
+                "disallow_temporary",
+                f"robots.txt unknown state (status={status_code})",
             )
 
+        # 200 OK with parser
         if parser.can_fetch(self.USER_AGENT, url):
-            return parser, status_code, "allowed_by_robots", "robots.txt allows"
-        return parser, status_code, "disallowed_by_robots", "robots.txt disallows"
+            return parser, status_code, "allow_all", "robots.txt allows"
+        return parser, status_code, "disallow_path", "robots.txt disallows path"
 
     async def _fetch_robots(
         self, domain: str
