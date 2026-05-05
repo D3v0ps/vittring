@@ -1,25 +1,6 @@
-{% extends "_layout.html.j2" %}
-{% block content %}
-<section class="auth-shell">
-  <div class="auth-card">
-    <a href="/" class="auth-mark">
-      <span class="auth-mark-dot"></span>
-      Vittring
-    </a>
-    <div class="auth-state">
-      <div class="auth-state-icon auth-state-icon-success">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <h1>E-post bekräftad</h1>
-      <p>Tack — kontot är aktiverat. Du kan nu logga in och börja lägga upp prenumerationer.</p>
-    </div>
-    <div class="auth-divider"></div>
-    <a href="/auth/login" class="btn btn-primary btn-lg" style="width: 100%;">Logga in</a>
-    <p class="auth-foot">
-      Behöver du hjälp att komma igång? <a href="mailto:info@karimkhalil.se">Kontakta oss</a>.
-    </p>
-  </div>
-</section>
+{% extends "auth/_auth_base.html.j2" %}
+{% block auth_content %}
+<h1 class="auth-h1">E-post <em>bekräftad</em>.</h1>
+<p class="auth-sub">Tack — kontot är aktiverat. Du kan nu logga in och börja lägga upp prenumerationer.</p>
+<a href="/auth/login" class="v-button v-button--full-signal v-button--lg v-button--block">Logga in →</a>
 {% endblock %}

@@ -1,111 +1,137 @@
 {% extends "_layout.html.j2" %}
 {% block content %}
+<style>
+  .price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1200px; margin: 0 auto; }
+  @media (max-width: 920px) { .price-grid { grid-template-columns: 1fr; } }
+  .price-card {
+    background: var(--v-night-2); border: 1px solid var(--v-night-3);
+    border-radius: var(--r-3); padding: 40px 32px;
+    display: flex; flex-direction: column;
+  }
+  .price-card.featured {
+    border-color: var(--v-signal);
+    box-shadow: 0 0 0 1px var(--v-signal), var(--shadow-night);
+    position: relative;
+  }
+  .price-card.featured::before {
+    content: 'Mest valda';
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    background: var(--v-signal); color: var(--v-signal-ink);
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    padding: 4px 10px; border-radius: var(--r-pill);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .price-name { font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.02em; color: var(--v-paper); margin-bottom: 4px; }
+  .price-tag { font-size: 14px; color: var(--v-mist); margin-bottom: 32px; line-height: 1.4; }
+  .price-amount { display: flex; align-items: baseline; gap: 6px; margin-bottom: 24px; }
+  .price-amount .num { font-family: var(--font-display); font-size: 56px; font-weight: 400; letter-spacing: -0.03em; color: var(--v-paper); line-height: 1; }
+  .price-amount .per { font-family: var(--font-mono); font-size: 12px; color: var(--v-ink-4); }
+  .price-features { list-style: none; padding: 0; margin: 0 0 32px; flex-grow: 1; }
+  .price-features li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; font-size: 14px; color: var(--v-mist); border-top: 1px solid rgba(200,204,196,0.08); }
+  .price-features li:first-child { border-top: none; }
+  .price-features li.off { color: var(--v-ink-4); }
+  .price-features svg { flex-shrink: 0; margin-top: 3px; }
 
-<section class="section">
-  <div class="container">
-    <div class="section-head" style="text-align: left;">
-      <span class="eyebrow">Priser</span>
-      <h1 style="font-size: var(--text-4xl); letter-spacing: var(--tracking-tighter); margin-bottom: var(--space-3);">Tre planer, samma data, full transparens.</h1>
-      <p>Alla planer inkluderar bevakning av JobTech, Bolagsverket och TED med daglig digest. Skillnaden ligger i antal filter, antal användare och integrationer.</p>
-    </div>
+  .toggle {
+    display: inline-flex; background: var(--v-night-2);
+    border: 1px solid var(--v-night-3); border-radius: var(--r-pill);
+    padding: 4px; gap: 4px;
+  }
+  .toggle button {
+    background: transparent; border: none; color: var(--v-mist);
+    padding: 8px 16px; border-radius: var(--r-pill);
+    font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s ease;
+  }
+  .toggle button.active { background: var(--v-signal); color: var(--v-signal-ink); }
+  .toggle .save { font-size: 10px; color: var(--v-signal); margin-left: 6px; }
+</style>
 
-    <div class="pricing-grid">
-      <div class="pricing-tier">
-        <div class="pricing-tier-name">Solo</div>
-        <div class="pricing-tier-price">1 500 kr <span class="per">/ mån</span></div>
-        <p class="muted" style="font-size: var(--text-sm); margin-top: var(--space-2);">För enskilda KAM och säljare.</p>
-        <ul class="pricing-tier-features">
-          <li>5 prenumerationer</li>
-          <li>1 användare</li>
-          <li>JobTech, Bolagsverket, TED</li>
-          <li>Daglig digest 06:30</li>
-          <li>14 dagars gratis provperiod</li>
-          <li>E-postsupport</li>
-        </ul>
-        <a href="/auth/signup" class="btn btn-secondary" style="width:100%;">Välj Solo</a>
-      </div>
-
-      <div class="pricing-tier featured">
-        <div class="pricing-tier-name">Team — populär</div>
-        <div class="pricing-tier-price">2 500 kr <span class="per">/ mån</span></div>
-        <p class="muted" style="font-size: var(--text-sm); margin-top: var(--space-2);">För team som delar prospects.</p>
-        <ul class="pricing-tier-features">
-          <li>20 prenumerationer</li>
-          <li>5 användare</li>
-          <li>JobTech, Bolagsverket, TED</li>
-          <li>Daglig digest 06:30</li>
-          <li>Delade taggar och anteckningar</li>
-          <li>Roller och behörigheter</li>
-        </ul>
-        <a href="/auth/signup" class="btn btn-accent" style="width:100%;">Välj Team</a>
-      </div>
-
-      <div class="pricing-tier">
-        <div class="pricing-tier-name">Pro</div>
-        <div class="pricing-tier-price">4 000 kr <span class="per">/ mån</span></div>
-        <p class="muted" style="font-size: var(--text-sm); margin-top: var(--space-2);">För större organisationer med CRM.</p>
-        <ul class="pricing-tier-features">
-          <li>Obegränsade prenumerationer</li>
-          <li>15 användare</li>
-          <li>HubSpot-integration</li>
-          <li>API-åtkomst med rådata</li>
-          <li>Egen kontaktperson</li>
-          <li>Anpassad SLA</li>
-        </ul>
-        <a href="/auth/signup" class="btn btn-secondary" style="width:100%;">Välj Pro</a>
-      </div>
-    </div>
-
-    <p class="subtle" style="margin-top: var(--space-5); text-align: center;">
-      Alla priser exklusive moms. Årsbetalning ger 10 % rabatt. Behöver du volymavtal eller en custom-plan? <a href="mailto:info@karimkhalil.se">Hör av dig direkt.</a>
+<!-- HEADER -->
+<section style="padding: 80px 48px 48px; text-align: center; position: relative; overflow: hidden; background: var(--v-night-2);">
+  <div style="position: absolute; left: 50%; top: 40px; transform: translateX(-50%); opacity: 0.4; pointer-events: none;">
+    <svg width="600" height="600" viewBox="0 0 480 480" fill="none">
+      <circle cx="240" cy="240" r="60" stroke="rgba(200,204,196,0.2)" stroke-width="0.5"/>
+      <circle cx="240" cy="240" r="120" stroke="rgba(200,204,196,0.2)" stroke-width="0.5"/>
+      <circle cx="240" cy="240" r="180" stroke="rgba(200,204,196,0.2)" stroke-width="0.5"/>
+      <circle cx="240" cy="240" r="240" stroke="rgba(200,204,196,0.2)" stroke-width="0.5"/>
+      <circle cx="240" cy="240" r="3" fill="var(--v-signal)"/>
+    </svg>
+  </div>
+  <div style="position: relative; max-width: 800px; margin: 0 auto;">
+    <div class="t-eyebrow" style="margin-bottom: 16px; color: var(--v-signal);">PRISER · MAJ 2026</div>
+    <h1 style="font-family: var(--font-display); font-size: clamp(56px, 7vw, 96px); font-weight: 400; letter-spacing: -0.035em; line-height: 0.95; margin: 0 0 24px; color: var(--v-paper);">
+      Tre planer.<br><em style="color: var(--v-signal); font-style: italic;">Avbryt när du vill.</em>
+    </h1>
+    <p style="font-family: var(--font-display); font-size: 22px; color: var(--v-mist); max-width: 600px; margin: 0 auto 40px; line-height: 1.4;">
+      Alla priser exklusive moms. 14 dagars provperiod på alla planer. Inget kreditkort krävs för start.
     </p>
   </div>
 </section>
 
-<div class="section-divider"></div>
-
-<section class="section">
-  <div class="container container-narrow">
-    <div class="section-head">
-      <span class="eyebrow">Vanliga frågor om priser</span>
-      <h2>Det vi får mest frågor om kring fakturering.</h2>
+<!-- PRICING GRID -->
+<section style="padding: 24px 48px 96px; background: var(--v-night-2);">
+  <div class="price-grid">
+    <div class="price-card">
+      <div class="price-name">Solo</div>
+      <div class="price-tag">För en säljare som vill testa</div>
+      <div class="price-amount">
+        <span class="num">1 500 kr</span>
+        <span class="per">/ mån</span>
+      </div>
+      <ul class="price-features">
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 5 prenumerationer</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 1 användare</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Alla tre datakällor</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Daglig digest 06:30</li>
+        <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> Delade filter och taggar</li>
+        <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> HubSpot-integration</li>
+        <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> API-åtkomst</li>
+      </ul>
+      <a href="/auth/signup" class="v-button v-button--ghost-dark v-button--lg" style="justify-content: center; width: 100%;">Välj Solo →</a>
     </div>
 
-    <div class="faq">
-      <div class="faq-item">
-        <div class="faq-q">Behöver jag kreditkort för att börja?</div>
-        <p class="faq-a">Nej. Provperioden är 14 dagar utan betalningsuppgifter. Efter perioden frågar vi om du vill fortsätta.</p>
+    <div class="price-card featured">
+      <div class="price-name">Team</div>
+      <div class="price-tag">För säljteam som jobbar tillsammans</div>
+      <div class="price-amount">
+        <span class="num">2 500 kr</span>
+        <span class="per">/ mån</span>
       </div>
-      <div class="faq-item">
-        <div class="faq-q">Kan jag byta plan senare?</div>
-        <p class="faq-a">Ja. Uppgradera när som helst direkt i kontot. Differensen proraterar mot innevarande månad.</p>
+      <ul class="price-features">
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 20 prenumerationer</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 5 användare</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Alla tre datakällor</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Daglig digest 06:30</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Delade filter och taggar</li>
+        <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> HubSpot-integration</li>
+        <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> API-åtkomst</li>
+      </ul>
+      <a href="/auth/signup" class="v-button v-button--signal v-button--lg" style="justify-content: center; width: 100%;">Välj Team →</a>
+    </div>
+
+    <div class="price-card">
+      <div class="price-name">Pro</div>
+      <div class="price-tag">För bemanningsföretag i skala</div>
+      <div class="price-amount">
+        <span class="num">4 000 kr</span>
+        <span class="per">/ mån</span>
       </div>
-      <div class="faq-item">
-        <div class="faq-q">Hur fungerar uppsägning?</div>
-        <p class="faq-a">Avbryt i kontot. Pågående månad fortsätter, ingen återbetalning men ingen automatisk förnyelse heller.</p>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Kan jag få faktura?</div>
-        <p class="faq-a">Ja, alla planer faktureras månadsvis eller årsvis via Stripe. Faktura med ROT/RUT-uppgifter går att få på begäran.</p>
-      </div>
+      <ul class="price-features">
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Obegränsade prenumerationer</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 15 användare</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Alla tre datakällor</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Daglig digest 06:30</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Delade filter och taggar</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> HubSpot-integration</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> API-åtkomst</li>
+      </ul>
+      <a href="/auth/signup" class="v-button v-button--ghost-dark v-button--lg" style="justify-content: center; width: 100%;">Välj Pro →</a>
     </div>
   </div>
-</section>
 
-<section class="section">
-  <div class="container">
-    <div class="cta-banner">
-      <div class="cta-banner-inner">
-        <div>
-          <h2>Redo att testa?</h2>
-          <p>Starta provperioden idag — du behöver inte ange kortuppgifter.</p>
-        </div>
-        <div style="display:flex; gap: var(--space-3); flex-wrap: wrap;">
-          <a href="/auth/signup" class="btn btn-on-dark btn-lg">Starta provperiod</a>
-        </div>
-      </div>
-    </div>
-  </div>
+  <p class="t-mono" style="margin-top: 40px; text-align: center; font-size: 12px; color: var(--v-ink-4);">
+    Alla priser exklusive moms · Behöver du volymavtal? <a href="mailto:info@karimkhalil.se" style="color: var(--v-signal);">Hör av dig direkt</a>
+  </p>
 </section>
-
 {% endblock %}

@@ -1,0 +1,110 @@
+{% extends "_layout.html.j2" %}
+{% block content %}
+<style>
+  .auth-shell-grid {
+    display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 76px);
+  }
+  @media (max-width: 880px) { .auth-shell-grid { grid-template-columns: 1fr; min-height: 0; } }
+  .auth-form-side {
+    padding: 64px 48px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--v-night);
+  }
+  .auth-form-inner { width: 100%; max-width: 420px; }
+  .auth-h1 {
+    font-family: var(--font-display); font-weight: 400;
+    font-size: 48px; letter-spacing: -0.03em; line-height: 1.0;
+    color: var(--v-paper); margin: 0 0 12px;
+  }
+  .auth-h1 em { color: var(--v-signal); font-style: italic; }
+  .auth-sub { color: var(--v-mist); font-size: 16px; line-height: 1.5; margin: 0 0 32px; }
+  .auth-form .field { margin-bottom: 16px; }
+  .auth-form label {
+    display: block; font-family: var(--font-mono); font-size: 11px;
+    color: var(--v-ink-4); letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .auth-form .input {
+    width: 100%; height: 44px; padding: 0 14px;
+    background: var(--v-night-2); color: var(--v-paper);
+    border: 1px solid var(--v-night-3); border-radius: var(--r-2);
+    font-family: var(--font-sans); font-size: 14px;
+    transition: border-color 0.15s ease;
+  }
+  .auth-form .input:focus { outline: none; border-color: var(--v-signal); }
+  .auth-form .input.mono { font-family: var(--font-mono); }
+  .auth-foot { margin-top: 24px; font-size: 13px; color: var(--v-mist); }
+  .auth-foot a { color: var(--v-signal); text-decoration: none; }
+  .auth-foot a:hover { text-decoration: underline; }
+  .auth-error {
+    background: rgba(200, 117, 62, 0.1); border: 1px solid rgba(200, 117, 62, 0.3);
+    color: var(--v-amber); padding: 12px 14px; border-radius: var(--r-2);
+    font-size: 13px; margin-bottom: 16px;
+  }
+  .auth-form .helper { font-size: 12px; color: var(--v-ink-4); margin-top: 6px; line-height: 1.4; }
+
+  .auth-aside {
+    background: var(--v-night-2); padding: 64px 48px;
+    border-left: 1px solid var(--v-night-3);
+    display: flex; flex-direction: column; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  @media (max-width: 880px) { .auth-aside { display: none; } }
+  .auth-aside-radar { position: absolute; right: -120px; top: -120px; opacity: 0.4; pointer-events: none; }
+  .auth-aside-content { position: relative; max-width: 420px; }
+  .auth-quote {
+    font-family: var(--font-display); font-size: 28px; line-height: 1.2;
+    letter-spacing: -0.02em; color: var(--v-paper); margin-bottom: 24px;
+  }
+  .auth-quote em { color: var(--v-signal); font-style: italic; }
+
+  .auth-mini-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 32px; border-top: 1px solid var(--v-night-3); }
+  .auth-mini-stats .cell { padding: 24px 0; }
+  .auth-mini-stats .cell + .cell { border-left: 1px solid var(--v-night-3); padding-left: 24px; }
+  .auth-mini-num { font-family: var(--font-display); font-size: 36px; line-height: 1; color: var(--v-paper); letter-spacing: -0.02em; }
+  .auth-mini-lbl { font-family: var(--font-mono); font-size: 10px; color: var(--v-ink-4); letter-spacing: 0.08em; margin-top: 6px; text-transform: uppercase; }
+
+  .v-button--block { width: 100%; justify-content: center; }
+  .v-button--full-signal { background: var(--v-signal); color: var(--v-signal-ink); }
+  .v-button--full-signal:hover { background: var(--v-signal-2); color: var(--v-signal-ink); text-decoration: none; }
+</style>
+<div class="auth-shell-grid">
+  <div class="auth-form-side">
+    <div class="auth-form-inner">
+      {% block auth_content %}{% endblock %}
+    </div>
+  </div>
+  <aside class="auth-aside">
+    <div class="auth-aside-radar">
+      <svg width="520" height="520" viewBox="0 0 480 480" fill="none">
+        <circle cx="240" cy="240" r="60" stroke="rgba(200,204,196,0.2)" stroke-width="0.5"/>
+        <circle cx="240" cy="240" r="120" stroke="rgba(200,204,196,0.2)" stroke-width="0.5"/>
+        <circle cx="240" cy="240" r="180" stroke="rgba(200,204,196,0.2)" stroke-width="0.5"/>
+        <circle cx="240" cy="240" r="240" stroke="rgba(200,204,196,0.2)" stroke-width="0.5"/>
+        <circle cx="240" cy="240" r="3" fill="var(--v-signal)"/>
+      </svg>
+    </div>
+    <div class="auth-aside-content">
+      <div class="t-eyebrow" style="color: var(--v-signal); margin-bottom: 16px;">FRÅN VÅRA TIDIGA ANVÄNDARE</div>
+      <div class="auth-quote">"Vi har gått från att jaga rykten till att ringa kunder samma morgon som de annonserar — <em>tre samtal om dagen, alla kvalificerade.</em>"</div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--v-amber), var(--v-amber-2)); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 16px; color: var(--v-paper); font-weight: 500;">LH</div>
+        <div>
+          <div style="color: var(--v-paper); font-size: 14px; font-weight: 500;">Lina Hellström</div>
+          <div class="t-mono" style="font-size: 11px; color: var(--v-ink-4);">KAM, Acme Bemanning</div>
+        </div>
+      </div>
+      <div class="auth-mini-stats">
+        <div class="cell">
+          <div class="auth-mini-num">~5 000</div>
+          <div class="auth-mini-lbl">Signaler / dygn</div>
+        </div>
+        <div class="cell">
+          <div class="auth-mini-num">06:30</div>
+          <div class="auth-mini-lbl">I din inbox</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,26 +1,28 @@
 {% extends "_layout.html.j2" %}
 {% block content %}
-<section class="section">
-  <div class="container container-narrow">
-    <h1>Integritetspolicy</h1>
-    <p class="muted">Senast uppdaterad: 2026-05-05</p>
-    <p>
-      Vittring drivs av Karim Khalil, Sverige. Vi behandlar personuppgifter enligt GDPR. Denna text är en sammanfattning — den fullständiga policyn med detaljerad lista över personuppgifter, lagringstider och underbiträden ligger i <span class="mono">legal/privacy_policy.sv.md</span>.
-    </p>
-    <h2>Vilka uppgifter lagrar vi?</h2>
-    <p>
-      Vi lagrar din e-post, ditt namn (om du angivit det), företagsnamn (om du angivit det) samt aktivitetsloggar för säkerhetsändamål. Vi lagrar inte fakturerings- eller betalningsuppgifter; betalflödet hanteras av Stripe.
-    </p>
-    <h2>Underbiträden</h2>
-    <p>
-      Resend (e-postutskick, EU), Hetzner (drift, EU/Tyskland), Sentry (felövervakning, EU). Vi har personuppgiftsbiträdesavtal med samtliga.
-    </p>
-    <h2>Dina rättigheter</h2>
-    <p>
-      Logga in och välj <em>Inställningar → Exportera mina data</em> för att få ut allt vi har som JSON. Välj <em>Inställningar → Radera kontot</em> för att radera dina uppgifter. Vi har en 30-dagars karenstid innan slutgiltig radering så att vi kan återställa kontot om radering sker av misstag.
-    </p>
-    <h2>Kontakt</h2>
-    <p>Frågor? <a href="mailto:info@karimkhalil.se">info@karimkhalil.se</a></p>
+<section style="padding: 80px 48px 96px; background: var(--v-night-2);">
+  <div style="max-width: 720px; margin: 0 auto;">
+    <div class="t-eyebrow" style="margin-bottom: 16px; color: var(--v-signal);">JURIDIK</div>
+    <h1 style="font-family: var(--font-display); font-size: 56px; font-weight: 400; letter-spacing: -0.03em; line-height: 1; margin: 0 0 16px; color: var(--v-paper);">
+      Integritetspolicy.
+    </h1>
+    <p class="t-mono" style="font-size: 12px; color: var(--v-ink-4); margin-bottom: 48px;">SENAST UPPDATERAD 2026-05-05</p>
+
+    <div style="font-size: 16px; line-height: 1.7; color: var(--v-mist);">
+      <p>Vittring drivs av Karim Khalil, Sverige. Vi behandlar personuppgifter enligt GDPR. Det här är en sammanfattning — den fullständiga policyn med detaljerad lista över personuppgifter, lagringstider och underbiträden ligger i <span class="t-mono" style="color: var(--v-signal);">legal/privacy_policy.sv.md</span>.</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Vilka uppgifter lagrar vi?</h2>
+      <p>Vi lagrar din e-post, ditt namn (om du angivit det), företagsnamn (om du angivit det) samt aktivitetsloggar för säkerhetsändamål. Vi lagrar inte fakturerings- eller betalningsuppgifter — betalflödet hanteras av Stripe.</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Underbiträden</h2>
+      <p>Resend (e-postutskick, EU), Hetzner (drift, EU/Tyskland), Sentry (felövervakning, EU). Vi har personuppgiftsbiträdesavtal med samtliga.</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Dina rättigheter</h2>
+      <p>Logga in och välj <em>Inställningar → Exportera mina data</em> för att få ut allt vi har som JSON. Välj <em>Inställningar → Radera kontot</em> för att radera dina uppgifter. Vi har en 30-dagars karenstid innan slutgiltig radering så att vi kan återställa kontot om radering sker av misstag.</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Kontakt</h2>
+      <p>Frågor? <a href="mailto:info@karimkhalil.se" style="color: var(--v-signal); text-decoration: none;">info@karimkhalil.se</a></p>
+    </div>
   </div>
 </section>
 {% endblock %}

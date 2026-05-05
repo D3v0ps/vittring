@@ -7,45 +7,130 @@
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/main.css" />
-  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/brand.css" />
+  <style>
+    body { background: var(--v-night); color: var(--v-mist); }
+
+    .v-nav {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(15, 20, 16, 0.85);
+      backdrop-filter: saturate(180%) blur(12px);
+      -webkit-backdrop-filter: saturate(180%) blur(12px);
+      border-bottom: 1px solid rgba(200, 204, 196, 0.1);
+      padding: 14px 32px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .v-nav-brand { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; }
+    .v-nav-brand-text {
+      font-family: var(--font-display); font-weight: 500;
+      letter-spacing: -0.025em; font-size: 22px; line-height: 1; color: var(--v-paper);
+    }
+    .v-nav-links {
+      display: flex; gap: 28px; align-items: center;
+      font-family: var(--font-sans); font-size: 14px;
+    }
+    .v-nav-links a { color: var(--v-mist); text-decoration: none; transition: color 0.15s ease; }
+    .v-nav-links a:hover { color: var(--v-paper); }
+    .v-nav-actions { display: flex; gap: 12px; align-items: center; }
+
+    .v-button {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 18px; border-radius: var(--r-2);
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      letter-spacing: -0.01em; border: 1px solid transparent;
+      cursor: pointer; text-decoration: none;
+      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+      white-space: nowrap;
+    }
+    .v-button--signal { background: var(--v-signal); color: var(--v-signal-ink); }
+    .v-button--signal:hover { background: var(--v-signal-2); color: var(--v-signal-ink); text-decoration: none; }
+    .v-button--ghost-dark {
+      background: transparent; color: var(--v-mist);
+      border-color: rgba(200, 204, 196, 0.2);
+    }
+    .v-button--ghost-dark:hover { background: rgba(200, 204, 196, 0.05); color: var(--v-paper); text-decoration: none; }
+    .v-button--lg { padding: 16px 24px; font-size: 15px; }
+
+    @media (max-width: 720px) {
+      .v-nav-links { display: none; }
+    }
+  </style>
+  {% block head_extra %}{% endblock %}
 </head>
 <body>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <a href="/" class="brand">Vittring</a>
-      <nav class="topnav">
-        {% if user %}
-          <a href="/app" class="{% if request.url.path == '/app' %}active{% endif %}">Översikt</a>
-          <a href="/app/subscriptions" class="{% if request.url.path.startswith('/app/subscriptions') %}active{% endif %}">Prenumerationer</a>
-          <a href="/app/account">Inställningar</a>
-          <form method="post" action="/auth/logout" style="display:inline">
-      {{ csrf_input() }}
-            <button type="submit" class="btn btn-ghost btn-sm">Logga ut</button>
-          </form>
-          <span class="avatar">{{ (user.full_name or user.email)[:1].upper() }}</span>
-        {% else %}
-          <a href="/pricing">Priser</a>
-          <a href="/auth/login">Logga in</a>
-          <a href="/auth/signup" class="btn btn-primary btn-sm">Starta provperiod</a>
-        {% endif %}
-      </nav>
+  <nav class="v-nav">
+    <a href="/" class="v-nav-brand">
+      <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="18" stroke="var(--v-paper)" stroke-width="1"/>
+        <circle cx="20" cy="20" r="12" stroke="var(--v-paper)" stroke-width="1"/>
+        <circle cx="20" cy="20" r="6" stroke="var(--v-paper)" stroke-width="1"/>
+        <circle cx="20" cy="20" r="2.5" fill="var(--v-signal)"/>
+      </svg>
+      <span class="v-nav-brand-text">Vittring</span>
+    </a>
+    <div class="v-nav-links">
+      <a href="/#features">Funktioner</a>
+      <a href="/#sources">Datakällor</a>
+      <a href="/pricing">Priser</a>
     </div>
-  </header>
+    <div class="v-nav-actions">
+      {% if user %}
+        <a href="/app" class="v-button v-button--signal">Till dashboarden →</a>
+      {% else %}
+        <a href="/auth/login" class="v-button v-button--ghost-dark">Logga in</a>
+        <a href="/auth/signup" class="v-button v-button--signal">Starta provperiod →</a>
+      {% endif %}
+    </div>
+  </nav>
 
   <main>
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-row">
-        <span style="font-weight: 600; color: var(--color-text);">Vittring</span>
-        <a href="/legal/privacy">Integritetspolicy</a>
-        <a href="/legal/terms">Användarvillkor</a>
-        <a href="mailto:info@karimkhalil.se">Kontakt</a>
-        <span style="margin-left:auto; color: var(--color-text-subtle);">© 2026 Karim Khalil</span>
+  <footer style="background: var(--v-night); color: var(--v-mist); padding: 64px 48px 32px; border-top: 1px solid var(--v-night-3);">
+    <div style="max-width: 1200px; margin: 0 auto;">
+      <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 48px; padding-bottom: 48px; border-bottom: 1px solid var(--v-night-3);">
+        <div>
+          <div style="display: inline-flex; align-items: center; gap: 9px; color: var(--v-paper);">
+            <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+              <circle cx="20" cy="20" r="18" stroke="var(--v-paper)" stroke-width="1"/>
+              <circle cx="20" cy="20" r="12" stroke="var(--v-paper)" stroke-width="1"/>
+              <circle cx="20" cy="20" r="6" stroke="var(--v-paper)" stroke-width="1"/>
+              <circle cx="20" cy="20" r="2.5" fill="var(--v-signal)"/>
+            </svg>
+            <span style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.025em;">Vittring</span>
+          </div>
+          <p style="margin-top: 16px; font-size: 14px; color: var(--v-ink-4); line-height: 1.5; max-width: 280px;">Sales intelligence för bemanningsbranschen.</p>
+        </div>
+        <div>
+          <div class="t-eyebrow" style="color: var(--v-ink-4); margin-bottom: 16px;">Produkt</div>
+          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px;">
+            <a href="/pricing" style="color: var(--v-mist); text-decoration: none;">Priser</a>
+            <a href="/app" style="color: var(--v-mist); text-decoration: none;">Dashboard</a>
+            <a href="/auth/signup" style="color: var(--v-mist); text-decoration: none;">Starta provperiod</a>
+          </div>
+        </div>
+        <div>
+          <div class="t-eyebrow" style="color: var(--v-ink-4); margin-bottom: 16px;">Källor</div>
+          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: var(--v-mist);">
+            <span>JobTech Dev</span>
+            <span>Bolagsverket</span>
+            <span>TED</span>
+          </div>
+        </div>
+        <div>
+          <div class="t-eyebrow" style="color: var(--v-ink-4); margin-bottom: 16px;">Juridik</div>
+          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px;">
+            <a href="/legal/privacy" style="color: var(--v-mist); text-decoration: none;">Integritetspolicy</a>
+            <a href="/legal/terms" style="color: var(--v-mist); text-decoration: none;">Användarvillkor</a>
+            <a href="mailto:info@karimkhalil.se" style="color: var(--v-mist); text-decoration: none;">Kontakt</a>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding-top: 24px; font-size: 12px; color: var(--v-ink-4); flex-wrap: wrap; gap: 12px;">
+        <span class="t-mono">© 2026 Karim Khalil — Stockholm</span>
+        <span class="t-mono">EU data residency · GDPR · Hetzner Falkenstein</span>
       </div>
     </div>
   </footer>

@@ -1,270 +1,439 @@
 {% extends "_layout.html.j2" %}
 {% block content %}
+<style>
+  .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+  @media (max-width: 980px) { .hero-grid { grid-template-columns: 1fr; gap: 40px; } }
 
-<section class="hero">
-  <div class="container">
+  .hero-h1 {
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(56px, 7vw, 112px); line-height: 0.95;
+    letter-spacing: -0.035em; color: var(--v-paper); margin: 0 0 24px;
+  }
+  .hero-h1 em { color: var(--v-signal); font-style: italic; }
+  .hero-lede {
+    font-family: var(--font-sans); font-size: 19px; line-height: 1.5;
+    color: var(--v-mist); max-width: 520px; margin: 0 0 40px;
+  }
+
+  .live-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 8px 14px; border-radius: var(--r-pill);
+    background: rgba(184,224,74,0.08);
+    border: 1px solid rgba(184,224,74,0.25);
+    margin-bottom: 32px;
+  }
+
+  .ticker {
+    margin-top: 56px; padding: 16px;
+    background: rgba(200,204,196,0.04);
+    border: 1px solid rgba(200,204,196,0.1);
+    border-radius: var(--r-2); max-width: 560px;
+  }
+  .ticker-row {
+    display: grid; grid-template-columns: 60px 60px 1fr; gap: 12px;
+    font-family: var(--font-mono); font-size: 12px;
+    padding: 6px 0; color: var(--v-mist);
+  }
+  .ticker-row + .ticker-row { border-top: 1px dashed rgba(200,204,196,0.08); }
+
+  .preview-card {
+    background: var(--v-night-2); border-radius: var(--r-3);
+    border: 1px solid var(--v-night-3);
+    box-shadow: var(--shadow-night); overflow: hidden;
+  }
+  .preview-tab {
+    padding: 12px 16px; border-bottom: 1px solid var(--v-night-3);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .preview-dots { display: flex; gap: 5px; }
+  .preview-dots span { width: 10px; height: 10px; border-radius: 50%; }
+  .preview-stat {
+    padding: 24px; border-bottom: 1px solid var(--v-night-3);
+  }
+  .preview-row {
+    padding: 14px 24px; border-top: 1px solid var(--v-night-3);
+    border-left: 3px solid transparent;
+  }
+  .preview-row.priority { background: rgba(184,224,74,0.05); border-left-color: var(--v-signal); }
+  .preview-meta { display: flex; gap: 12px; align-items: center; margin-bottom: 4px; }
+  .preview-time { font-family: var(--font-mono); font-size: 10px; color: var(--v-ink-4); }
+  .preview-row.priority .preview-time { color: var(--v-signal); }
+  .preview-pill {
+    font-family: var(--font-mono); font-size: 9px; padding: 2px 7px;
+    border-radius: var(--r-pill); border: none;
+  }
+  .preview-pill--neutral { background: var(--v-night-3); color: var(--v-mist); }
+  .preview-pill--amber { background: rgba(200,117,62,0.15); color: var(--v-amber); }
+  .preview-title { font-size: 14px; font-weight: 500; color: var(--v-paper); margin-bottom: 2px; }
+  .preview-subtitle { font-family: var(--font-mono); font-size: 10px; color: var(--v-ink-4); }
+
+  .preview-annotation {
+    position: absolute; right: -24px; top: 100px;
+    background: var(--v-signal); color: var(--v-signal-ink);
+    padding: 10px 14px; border-radius: var(--r-2);
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    box-shadow: var(--shadow-2);
+  }
+
+  .step-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+    border-top: 1px solid var(--v-night-3); border-bottom: 1px solid var(--v-night-3);
+  }
+  @media (max-width: 880px) { .step-grid { grid-template-columns: 1fr; } }
+  .step-cell { padding: 40px; border-left: 1px solid var(--v-night-3); }
+  .step-cell:first-child { border-left: none; }
+  @media (max-width: 880px) {
+    .step-cell { border-left: none; border-top: 1px solid var(--v-night-3); }
+    .step-cell:first-child { border-top: none; }
+  }
+  .step-num { font-family: var(--font-mono); font-size: 11px; color: var(--v-signal); margin-bottom: 32px; letter-spacing: 0.1em; }
+  .step-title { font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.05; margin-bottom: 12px; color: var(--v-paper); }
+  .step-desc { font-size: 15px; line-height: 1.5; color: var(--v-mist); max-width: 320px; }
+
+  .source-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  @media (max-width: 880px) { .source-grid { grid-template-columns: 1fr; } }
+  .source-card {
+    border: 1px solid var(--v-night-3); border-radius: var(--r-3);
+    padding: 32px; background: var(--v-night);
+    position: relative; overflow: hidden;
+  }
+  .source-name { font-family: var(--font-display); font-size: 26px; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 8px; color: var(--v-paper); }
+  .source-url { font-family: var(--font-mono); font-size: 11px; color: var(--v-signal); margin-bottom: 16px; }
+  .source-desc { font-size: 14px; line-height: 1.5; color: var(--v-mist); }
+
+  .testimonial-block {
+    background: var(--v-night); border: 1px solid var(--v-night-3);
+    border-radius: var(--r-4); padding: 64px;
+    position: relative; overflow: hidden;
+  }
+  .testimonial-quote {
+    font-family: var(--font-display); font-size: clamp(28px, 3.4vw, 42px);
+    font-weight: 400; line-height: 1.15; letter-spacing: -0.025em;
+    color: var(--v-paper);
+  }
+
+  .faq-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 80px; }
+  @media (max-width: 880px) { .faq-grid { grid-template-columns: 1fr; gap: 32px; } }
+  .faq-list { border-top: 1px solid var(--v-night-3); }
+  .faq-list details { border-bottom: 1px solid var(--v-night-3); padding: 20px 0; }
+  .faq-list summary {
+    cursor: pointer; list-style: none;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--font-display); font-size: 22px; font-weight: 500;
+    letter-spacing: -0.02em; color: var(--v-paper);
+  }
+  .faq-list summary::-webkit-details-marker { display: none; }
+  .faq-list .plus { font-family: var(--font-mono); font-size: 18px; color: var(--v-signal); transition: transform 0.2s; }
+  .faq-list details[open] .plus { transform: rotate(45deg); }
+  .faq-list .faq-a { padding-top: 16px; font-size: 16px; line-height: 1.5; color: var(--v-mist); max-width: 720px; }
+
+  .final-cta {
+    max-width: 1280px; margin: 0 auto; border-radius: var(--r-4);
+    background: var(--v-night); border: 1px solid var(--v-night-3);
+    padding: 80px 64px; position: relative; overflow: hidden; color: var(--v-paper);
+  }
+  .final-cta-radar { position: absolute; right: -120px; top: -120px; opacity: 0.4; }
+  .final-cta h2 {
+    font-family: var(--font-display); font-size: clamp(48px, 6vw, 88px);
+    font-weight: 400; letter-spacing: -0.03em; line-height: 0.95; margin: 0 0 24px;
+  }
+  .final-cta h2 em { color: var(--v-signal); font-style: italic; }
+</style>
+
+<!-- HERO -->
+<section style="position: relative; padding: 64px 48px 80px; overflow: hidden;
+  background-image:
+    radial-gradient(circle at 50% 100%, rgba(184,224,74,0.06) 0%, transparent 60%),
+    linear-gradient(to right, rgba(200,204,196,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(200,204,196,0.04) 1px, transparent 1px);
+  background-size: 100% 100%, 48px 48px, 48px 48px;">
+  <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); opacity: 0.6; pointer-events: none;">
+    <svg width="900" height="900" viewBox="0 0 480 480" fill="none">
+      <circle cx="240" cy="240" r="60" stroke="rgba(200,204,196,0.15)" stroke-width="0.5"/>
+      <circle cx="240" cy="240" r="120" stroke="rgba(200,204,196,0.15)" stroke-width="0.5"/>
+      <circle cx="240" cy="240" r="180" stroke="rgba(200,204,196,0.15)" stroke-width="0.5"/>
+      <circle cx="240" cy="240" r="240" stroke="rgba(200,204,196,0.15)" stroke-width="0.5"/>
+      <circle cx="240" cy="240" r="3" fill="var(--v-signal)"/>
+      <circle cx="320" cy="180" r="3" fill="var(--v-signal)"/>
+      <circle cx="160" cy="290" r="3" fill="var(--v-signal)"/>
+      <line x1="240" y1="240" x2="420" y2="120" stroke="var(--v-signal)" stroke-width="0.5" opacity="0.5"/>
+    </svg>
+  </div>
+
+  <div style="position: relative; max-width: 1280px; margin: 0 auto;">
     <div class="hero-grid">
-      <div class="hero-copy">
-        <span class="eyebrow">Sales intelligence · Bemanning</span>
-        <h1>Bemanningsförsäljning som utgår från fakta, inte tur.</h1>
-        <p class="lead">
-          Tre offentliga datakällor, en kurerad digest 06:30. Hitta köparen innan de annonserar uppdraget.
-        </p>
-        <div class="hero-cta">
-          <a href="/auth/signup" class="btn btn-accent btn-lg">Starta provperiod</a>
-          <a href="/pricing" class="btn btn-secondary btn-lg">Se priser</a>
+      <div>
+        <div class="live-badge">
+          <span class="v-radar-dot"></span>
+          <span class="t-mono" style="font-size: 11px; color: var(--v-signal); letter-spacing: 0.08em;">— LIVE · 3 KÄLLOR ÖVERVAKAS —</span>
         </div>
-        <div class="hero-meta">
-          <span class="hero-meta-item"><span class="dot"></span> 14 dagar gratis</span>
-          <span class="hero-meta-item"><span class="dot"></span> Inget kreditkort</span>
-          <span class="hero-meta-item"><span class="dot"></span> EU-data, GDPR</span>
+
+        <h1 class="hero-h1">En radar för<br><em>köpsignaler.</em></h1>
+
+        <p class="hero-lede">Vittring scannar tre offentliga register dygnet runt. Du får det som rör dig — i din inbox 06:30, eller som push i appen.</p>
+
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <a href="/auth/signup" class="v-button v-button--signal v-button--lg">Starta provperiod →</a>
+          <a href="/app" class="v-button v-button--ghost-dark v-button--lg">Se live demo</a>
+        </div>
+
+        <div class="ticker">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+            <span class="t-mono" style="font-size: 10px; color: var(--v-ink-4); letter-spacing: 0.08em;">SENASTE 60 MIN</span>
+            <span class="t-mono" style="font-size: 10px; color: var(--v-signal);">● 12 nya</span>
+          </div>
+          <div class="ticker-row">
+            <span style="color: var(--v-ink-4);">16:42</span>
+            <span style="color: var(--v-amber);">Upph.</span>
+            <span>Region Stockholm — Ramavtal lager</span>
+          </div>
+          <div class="ticker-row">
+            <span style="color: var(--v-ink-4);">16:18</span>
+            <span style="color: var(--v-mist);">Jobb</span>
+            <span>Postnord 18 truckförare · Rosersberg</span>
+          </div>
+          <div class="ticker-row">
+            <span style="color: var(--v-ink-4);">15:54</span>
+            <span style="color: var(--v-mist);">Bolag</span>
+            <span>Ahlsell Logistik AB · Ny VD</span>
+          </div>
         </div>
       </div>
 
-      <aside class="digest" aria-label="Exempel på dagligt mejl">
-        <div class="digest-titlebar">
-          <span class="r"></span><span class="y"></span><span class="g"></span>
-          <span class="digest-titlebar-label mono">vittring · daily.eml</span>
-        </div>
-        <div class="digest-body">
-          <div class="digest-from">Från Vittring · Tis 5 maj · 06:30</div>
-          <div class="digest-subject">14 nya signaler — Lager &amp; logistik, Storstockholm</div>
-
-          <div class="digest-section-title">Storstockholm · Lager &amp; logistik</div>
-          <div class="digest-section-meta">5 prioriterade · 9 övriga</div>
-
-          <div class="digest-row">
-            <div class="digest-row-meta">
-              <span class="badge badge-success">Upphandling</span>
-              <span class="digest-row-date mono">04 maj · 16:42</span>
+      <!-- Right: dashboard preview -->
+      <div style="position: relative;">
+        <div class="preview-card">
+          <div class="preview-tab">
+            <div class="preview-dots">
+              <span style="background: #FF5F56;"></span>
+              <span style="background: #FFBD2E;"></span>
+              <span style="background: #27C93F;"></span>
             </div>
-            <div class="digest-row-title">Region Stockholm — Ramavtal lagerbemanning</div>
-            <div class="digest-row-detail mono">CPV 79620000 · 12 mkr · Anbud senast 12 jun</div>
-            <a href="#" class="digest-row-link">Visa upphandling →</a>
+            <span class="t-mono" style="font-size: 11px; color: var(--v-ink-4);">app.vittring.se / digest</span>
           </div>
 
-          <div class="digest-row">
-            <div class="digest-row-meta">
-              <span class="badge badge-accent">Jobb</span>
-              <span class="digest-row-date mono">04 maj · 14:32</span>
+          <div class="preview-stat">
+            <div class="t-mono" style="font-size: 10px; color: var(--v-ink-4); letter-spacing: 0.1em; margin-bottom: 8px;">SIGNALER · 7 DYGN</div>
+            <div style="display: flex; align-items: baseline; gap: 12px;">
+              <span style="font-family: var(--font-display); font-size: 64px; line-height: 1; color: var(--v-paper);">214</span>
+              <span class="t-mono" style="font-size: 13px; color: var(--v-signal);">+18% v/v</span>
             </div>
-            <div class="digest-row-title">Postnord Sverige AB söker 18 truckförare</div>
-            <div class="digest-row-detail">Rosersberg · SNI 53.100 · Heltid</div>
-            <a href="#" class="digest-row-link">Läs annonsen →</a>
+            <svg viewBox="0 0 320 60" style="width: 100%; margin-top: 12px;">
+              <defs>
+                <linearGradient id="sparkB" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0" stop-color="#B8E04A" stop-opacity="0.3"/>
+                  <stop offset="1" stop-color="#B8E04A" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,45 L40,42 L80,38 L120,40 L160,28 L200,30 L240,18 L280,22 L320,12 L320,60 L0,60 Z" fill="url(#sparkB)"/>
+              <polyline points="0,45 40,42 80,38 120,40 160,28 200,30 240,18 280,22 320,12" fill="none" stroke="var(--v-signal)" stroke-width="1.5"/>
+              <circle cx="320" cy="12" r="3" fill="var(--v-signal)"/>
+            </svg>
           </div>
 
-          <div class="digest-row">
-            <div class="digest-row-meta">
-              <span class="badge badge-highlight">Bolagsändring</span>
-              <span class="digest-row-date mono">04 maj · 09:15</span>
+          <div>
+            <div class="preview-row priority">
+              <div class="preview-meta">
+                <span class="preview-time">16:42</span>
+                <span class="preview-pill preview-pill--amber">Upph.</span>
+              </div>
+              <div class="preview-title">Region Stockholm — Ramavtal lager</div>
+              <div class="preview-subtitle">12 mkr · CPV 79620000</div>
             </div>
-            <div class="digest-row-title">Ahlsell Logistik AB · Ny VD</div>
-            <div class="digest-row-detail mono">5567 23‑1223 · Hallsberg</div>
-            <a href="#" class="digest-row-link">Läs kungörelsen →</a>
-          </div>
-
-          <div class="digest-row">
-            <div class="digest-row-meta">
-              <span class="badge badge-accent">Jobb</span>
-              <span class="digest-row-date mono">04 maj · 08:07</span>
+            <div class="preview-row">
+              <div class="preview-meta">
+                <span class="preview-time">14:32</span>
+                <span class="preview-pill preview-pill--neutral">Jobb</span>
+              </div>
+              <div class="preview-title">Postnord söker 18 truckförare</div>
+              <div class="preview-subtitle">Rosersberg · SNI 53.100</div>
             </div>
-            <div class="digest-row-title">Schenker AB — 6 lagermedarbetare, kvällsskift</div>
-            <div class="digest-row-detail">Jordbro · SNI 52.100 · Visstidsanställning</div>
-            <a href="#" class="digest-row-link">Läs annonsen →</a>
-          </div>
-
-          <div class="digest-row">
-            <div class="digest-row-meta">
-              <span class="badge badge-highlight">Bolagsändring</span>
-              <span class="digest-row-date mono">03 maj · 22:11</span>
+            <div class="preview-row">
+              <div class="preview-meta">
+                <span class="preview-time">09:15</span>
+                <span class="preview-pill preview-pill--neutral">Bolag</span>
+              </div>
+              <div class="preview-title">Ahlsell Logistik · Ny VD</div>
+              <div class="preview-subtitle">SE5567231223</div>
             </div>
-            <div class="digest-row-title">Norrlands Logistik AB · Nytt säte, Södertälje</div>
-            <div class="digest-row-detail mono">5566 04‑8812 · Tidigare Sundsvall</div>
-            <a href="#" class="digest-row-link">Läs kungörelsen →</a>
           </div>
         </div>
-      </aside>
-    </div>
-  </div>
-</section>
 
-<section class="stats-strip">
-  <div class="container">
-    <div class="stats-grid">
-      <div>
-        <div class="stat-num">3</div>
-        <div class="stat-label">offentliga datakällor</div>
-      </div>
-      <div>
-        <div class="stat-num mono">06:30</div>
-        <div class="stat-label">i din inbox, varje vardag</div>
-      </div>
-      <div>
-        <div class="stat-num">~5 000</div>
-        <div class="stat-label">signaler bevakade per dygn</div>
-      </div>
-      <div>
-        <div class="stat-num">EU</div>
-        <div class="stat-label">data residency</div>
+        <div class="preview-annotation">↘ ny signal<br><span style="opacity: 0.7;">1 min sedan</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="section">
-  <div class="container">
-    <div class="section-head">
-      <span class="eyebrow">Hur det funkar</span>
-      <h2>Från registrering till första samtalet — samma vecka.</h2>
+<!-- HOW IT WORKS -->
+<section id="features" style="padding: 96px 48px 0; background: var(--v-night-2);">
+  <div style="max-width: 1280px; margin: 0 auto;">
+    <div style="margin-bottom: 48px;">
+      <div class="t-eyebrow" style="color: var(--v-signal);">03 STEG</div>
+      <h2 style="font-family: var(--font-display); font-size: clamp(36px, 4.5vw, 56px); font-weight: 400; letter-spacing: -0.025em; line-height: 1.05; margin: 8px 0 0; color: var(--v-paper); max-width: 800px;">
+        Från registrering till första samtalet — <em style="color: var(--v-signal); font-style: italic;">samma vecka.</em>
+      </h2>
     </div>
-
-    <div class="feature-grid">
-      <div class="feature-card">
-        <div class="feature-icon">01</div>
-        <h3>Beskriv din nisch</h3>
-        <p>Roller, kommuner, SNI- och CPV-koder, nyckelord. Justera när du vill.</p>
+    <div class="step-grid">
+      <div class="step-cell">
+        <div class="step-num">01</div>
+        <div class="step-title">Beskriv din nisch</div>
+        <div class="step-desc">Roller, kommuner, SNI- och CPV-koder, nyckelord. Justera när du vill.</div>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">02</div>
-        <h3>Vi filtrerar bruset</h3>
-        <p>Matchningsmotorn släpper igenom det som rör dig. 99,5 % förkastas.</p>
+      <div class="step-cell">
+        <div class="step-num">02</div>
+        <div class="step-title">Vi filtrerar bruset</div>
+        <div class="step-desc">Matchningsmotorn släpper igenom det som rör dig. 99,5 % förkastas.</div>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">03</div>
-        <h3>Du läser ditt mejl</h3>
-        <p>06:30 ligger digesten i inboxen. Klart, daterat, direktlänkat.</p>
+      <div class="step-cell">
+        <div class="step-num">03</div>
+        <div class="step-title">Du läser ditt mejl</div>
+        <div class="step-desc">06:30 ligger digesten i inboxen. Klart, daterat, direktlänkat.</div>
       </div>
     </div>
   </div>
 </section>
 
-<div class="section-divider"></div>
+<!-- SOURCES -->
+<section id="sources" style="padding: 96px 48px; background: var(--v-night-2);">
+  <div style="max-width: 1280px; margin: 0 auto;">
+    <div class="t-eyebrow" style="color: var(--v-ink-4); margin-bottom: 16px;">DATAKÄLLOR</div>
+    <h2 style="font-family: var(--font-display); font-size: clamp(40px, 5vw, 64px); font-weight: 400; letter-spacing: -0.03em; line-height: 1; margin: 0 0 64px; color: var(--v-paper);">
+      Tre myndighetskällor.<br><em style="color: var(--v-signal); font-style: italic;">Inga gråzoner.</em>
+    </h2>
 
-<section class="section">
-  <div class="container">
-    <div class="section-head">
-      <span class="eyebrow">Datakällor</span>
-      <h2>Tre myndighetskällor. Inga gråzoner.</h2>
-    </div>
-
-    <div class="source-row">
-      <div class="source-item">
+    <div class="source-grid">
+      <div class="source-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="18" stroke="var(--v-mist)" stroke-width="1.5"/>
+            <circle cx="20" cy="20" r="12" stroke="var(--v-mist)" stroke-width="1.5"/>
+            <circle cx="20" cy="20" r="6" stroke="var(--v-mist)" stroke-width="1.5"/>
+            <circle cx="20" cy="20" r="2.5" fill="var(--v-signal)"/>
+          </svg>
+          <span class="t-mono" style="font-size: 10px; color: var(--v-signal);">● 12k/dygn</span>
+        </div>
         <div class="source-name">JobTech Dev</div>
-        <p>Arbetsförmedlingens öppna API. Alla jobbannonser i Sverige, daglig hämtning.</p>
-        <span class="source-tag mono">jobsearch.api.jobtechdev.se</span>
+        <div class="source-url">jobsearch.api.jobtechdev.se</div>
+        <div class="source-desc">Arbetsförmedlingens öppna API. Alla jobbannonser i Sverige, daglig hämtning.</div>
       </div>
-      <div class="source-item">
+      <div class="source-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="18" stroke="var(--v-mist)" stroke-width="1.5"/>
+            <circle cx="20" cy="20" r="12" stroke="var(--v-mist)" stroke-width="1.5"/>
+            <circle cx="20" cy="20" r="6" stroke="var(--v-mist)" stroke-width="1.5"/>
+            <circle cx="20" cy="20" r="2.5" fill="var(--v-signal)"/>
+          </svg>
+          <span class="t-mono" style="font-size: 10px; color: var(--v-signal);">● ~800/dygn</span>
+        </div>
         <div class="source-name">Bolagsverket</div>
-        <p>Kungörelser om VD, säte, styrelse, namn, likvidationer — dagen efter.</p>
-        <span class="source-tag mono">PoIT</span>
+        <div class="source-url">poit.bolagsverket.se</div>
+        <div class="source-desc">Kungörelser om VD, säte, styrelse, namn, likvidationer — dagen efter.</div>
       </div>
-      <div class="source-item">
+      <div class="source-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="18" stroke="var(--v-mist)" stroke-width="1.5"/>
+            <circle cx="20" cy="20" r="12" stroke="var(--v-mist)" stroke-width="1.5"/>
+            <circle cx="20" cy="20" r="6" stroke="var(--v-mist)" stroke-width="1.5"/>
+            <circle cx="20" cy="20" r="2.5" fill="var(--v-signal)"/>
+          </svg>
+          <span class="t-mono" style="font-size: 10px; color: var(--v-signal);">● ~120/dygn</span>
+        </div>
         <div class="source-name">TED</div>
-        <p>EU:s upphandlingsdatabas, filtrerad på CPV-koder för bemanning.</p>
-        <span class="source-tag mono">ted.europa.eu</span>
+        <div class="source-url">ted.europa.eu</div>
+        <div class="source-desc">EU:s upphandlingsdatabas, filtrerad på CPV-koder för bemanning.</div>
       </div>
     </div>
   </div>
 </section>
 
-<div class="section-divider"></div>
-
-<section class="section">
-  <div class="container">
-    <div class="section-head">
-      <span class="eyebrow">Priser</span>
-      <h2>Tre planer. Avbryt när du vill.</h2>
-    </div>
-
-    <div class="pricing-grid">
-      <div class="pricing-tier">
-        <div class="pricing-tier-name">Solo</div>
-        <div class="pricing-tier-price">1 500 kr <span class="per">/ mån</span></div>
-        <ul class="pricing-tier-features">
-          <li>5 prenumerationer</li>
-          <li>1 användare</li>
-          <li>Alla tre datakällor</li>
-          <li>14 dagars provperiod</li>
-        </ul>
-        <a href="/auth/signup" class="btn btn-secondary" style="width:100%;">Välj Solo</a>
+<!-- TESTIMONIAL -->
+<section style="padding: 0 48px 96px; background: var(--v-night-2);">
+  <div style="max-width: 1280px; margin: 0 auto;">
+    <div class="testimonial-block">
+      <div style="position: absolute; right: -120px; top: -120px; opacity: 0.2; pointer-events: none;">
+        <svg width="520" height="520" viewBox="0 0 480 480" fill="none">
+          <circle cx="240" cy="240" r="60" stroke="rgba(200,204,196,0.5)" stroke-width="0.5"/>
+          <circle cx="240" cy="240" r="120" stroke="rgba(200,204,196,0.5)" stroke-width="0.5"/>
+          <circle cx="240" cy="240" r="180" stroke="rgba(200,204,196,0.5)" stroke-width="0.5"/>
+          <circle cx="240" cy="240" r="240" stroke="rgba(200,204,196,0.5)" stroke-width="0.5"/>
+          <circle cx="240" cy="240" r="3" fill="var(--v-signal)"/>
+        </svg>
       </div>
-
-      <div class="pricing-tier featured">
-        <div class="pricing-tier-name">Team</div>
-        <div class="pricing-tier-price">2 500 kr <span class="per">/ mån</span></div>
-        <ul class="pricing-tier-features">
-          <li>20 prenumerationer</li>
-          <li>5 användare</li>
-          <li>Alla tre datakällor</li>
-          <li>Delade filter och taggar</li>
-        </ul>
-        <a href="/auth/signup" class="btn btn-accent" style="width:100%;">Välj Team</a>
-      </div>
-
-      <div class="pricing-tier">
-        <div class="pricing-tier-name">Pro</div>
-        <div class="pricing-tier-price">4 000 kr <span class="per">/ mån</span></div>
-        <ul class="pricing-tier-features">
-          <li>Obegränsade prenumerationer</li>
-          <li>15 användare</li>
-          <li>HubSpot-integration</li>
-          <li>API-åtkomst</li>
-        </ul>
-        <a href="/auth/signup" class="btn btn-secondary" style="width:100%;">Välj Pro</a>
-      </div>
-    </div>
-
-    <p class="subtle" style="margin-top: 16px; text-align: center;">
-      Exklusive moms. Årsbetalning ger 10 % rabatt. Volym? <a href="mailto:info@karimkhalil.se">Hör av dig.</a>
-    </p>
-  </div>
-</section>
-
-<div class="section-divider"></div>
-
-<section class="section">
-  <div class="container container-narrow">
-    <div class="section-head">
-      <span class="eyebrow">Vanliga frågor</span>
-      <h2>Det vi får mest frågor om.</h2>
-    </div>
-
-    <div class="faq">
-      <div class="faq-item">
-        <div class="faq-q">Är all data offentlig?</div>
-        <p class="faq-a">Ja. Svenska och europeiska myndighetskällor via öppna API:er. Ingen scraping, inga gråzoner.</p>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Hur snabbt syns en signal?</div>
-        <p class="faq-a">Inom 24 timmar från publicering. Hämtning sker tidig morgon, digesten lämnar oss 06:30.</p>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Var ligger min data?</div>
-        <p class="faq-a">Hetzner Falkenstein, EU. GDPR-säkrad med PUB-avtal med samtliga underbiträden.</p>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Kan jag avbryta?</div>
-        <p class="faq-a">När som helst, från ditt konto. Ingen uppsägningstid. Provperioden fakturerar inget.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="container">
-    <div class="cta-banner">
-      <div class="cta-banner-inner">
-        <div>
-          <h2>Sluta gissa.</h2>
-          <p>Starta provperioden idag. Inget kreditkort, inga åtaganden.</p>
-        </div>
-        <div style="display:flex; gap: var(--space-3); flex-wrap: wrap;">
-          <a href="/auth/signup" class="btn btn-on-dark btn-lg">Starta provperiod</a>
-          <a href="mailto:info@karimkhalil.se" class="btn btn-ghost btn-lg" style="color: var(--color-text-inverse);">Boka samtal</a>
+      <div style="position: relative; max-width: 720px;">
+        <div class="t-mono" style="font-size: 11px; color: var(--v-signal); letter-spacing: 0.1em; margin-bottom: 24px;">FRÅN VÅRA TIDIGA ANVÄNDARE</div>
+        <div class="testimonial-quote">"Vi har gått från att jaga rykten till att ringa kunder samma morgon som de annonserar. Tre samtal om dagen, alla kvalificerade."</div>
+        <div style="margin-top: 32px; display: flex; align-items: center; gap: 16px;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--v-amber), var(--v-amber-2)); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 20px; color: var(--v-paper); font-weight: 500;">LH</div>
+          <div>
+            <div style="font-weight: 500; color: var(--v-paper);">Lina Hellström</div>
+            <div class="t-mono" style="font-size: 11px; color: var(--v-ink-4);">KAM, Acme Bemanning</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
+<!-- FAQ -->
+<section style="padding: 96px 48px; background: var(--v-night-2);">
+  <div style="max-width: 1280px; margin: 0 auto;" class="faq-grid">
+    <div>
+      <div class="t-eyebrow" style="color: var(--v-ink-4); margin-bottom: 16px;">VANLIGA FRÅGOR</div>
+      <h2 style="font-family: var(--font-display); font-size: 48px; font-weight: 400; letter-spacing: -0.025em; line-height: 1; margin: 0; color: var(--v-paper);">
+        Det vi får mest <em style="color: var(--v-signal); font-style: italic;">frågor</em> om.
+      </h2>
+    </div>
+    <div class="faq-list">
+      <details open>
+        <summary>Är all data offentlig?<span class="plus">+</span></summary>
+        <div class="faq-a">Ja. Svenska och europeiska myndighetskällor via öppna API:er. Ingen scraping, inga gråzoner.</div>
+      </details>
+      <details>
+        <summary>Hur snabbt syns en signal?<span class="plus">+</span></summary>
+        <div class="faq-a">Inom 24 timmar från publicering. Hämtning sker tidig morgon, digesten lämnar oss 06:30.</div>
+      </details>
+      <details>
+        <summary>Var ligger min data?<span class="plus">+</span></summary>
+        <div class="faq-a">Hetzner Falkenstein, EU. GDPR-säkrad med PUB-avtal med samtliga underbiträden.</div>
+      </details>
+      <details>
+        <summary>Kan jag avbryta?<span class="plus">+</span></summary>
+        <div class="faq-a">När som helst, från ditt konto. Ingen uppsägningstid. Provperioden fakturerar inget.</div>
+      </details>
+      <details>
+        <summary>Stödjer ni HubSpot?<span class="plus">+</span></summary>
+        <div class="faq-a">Ja, på Pro-planen. CRM-synk skickar nya signaler som leads med rätt taggning.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section id="signup" style="padding: 0 48px 96px; background: var(--v-night-2);">
+  <div class="final-cta">
+    <div class="final-cta-radar">
+      <svg width="680" height="680" viewBox="0 0 480 480" fill="none">
+        <circle cx="240" cy="240" r="60" stroke="rgba(200,204,196,0.2)" stroke-width="0.6"/>
+        <circle cx="240" cy="240" r="120" stroke="rgba(200,204,196,0.2)" stroke-width="0.6"/>
+        <circle cx="240" cy="240" r="180" stroke="rgba(200,204,196,0.2)" stroke-width="0.6"/>
+        <circle cx="240" cy="240" r="240" stroke="rgba(200,204,196,0.2)" stroke-width="0.6"/>
+        <circle cx="240" cy="240" r="3" fill="var(--v-signal)"/>
+      </svg>
+    </div>
+    <div style="position: relative; max-width: 720px;">
+      <span class="v-radar-dot" style="margin-bottom: 24px; display: inline-block;"></span>
+      <h2>Sluta gissa. <em>Börja vittra.</em></h2>
+      <p style="font-size: 19px; line-height: 1.5; margin: 0 0 32px; color: var(--v-mist); max-width: 480px;">
+        Starta provperioden idag. Inget kreditkort, inga åtaganden, inga säljsamtal från oss.
+      </p>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <a href="/auth/signup" class="v-button v-button--signal v-button--lg">Starta provperiod →</a>
+        <a href="mailto:info@karimkhalil.se" class="v-button v-button--ghost-dark v-button--lg">Boka samtal</a>
+      </div>
+    </div>
+  </div>
+</section>
 {% endblock %}
