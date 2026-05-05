@@ -1,0 +1,111 @@
+{% extends "admin/_layout.html.j2" %}
+{% set active_nav = 'signals' %}
+{% set topbar_title = 'Signaler' %}
+
+{% block content %}
+  <div class="page-header">
+    <div class="eyebrow">Admin · Signaler</div>
+    <h1>Signaler</h1>
+    <div class="subtitle">Råa data från ingest-pipelines.</div>
+    <div style="display: flex; gap: 10px; margin-top: 14px; font-family: var(--font-mono); font-size: 11px;">
+      <span class="badge signal">Jobb 24h: {{ counts_24h.jobs }}</span>
+      <span class="badge amber">Bolag 24h: {{ counts_24h.changes }}</span>
+      <span class="badge amber">Upph 24h: {{ counts_24h.procurements }}</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <a href="/admin/signals?tab=jobs{% if q %}&q={{ q }}{% endif %}" class="tab {% if tab == 'jobs' %}active{% endif %}">Jobb</a>
+    <a href="/admin/signals?tab=changes{% if q %}&q={{ q }}{% endif %}" class="tab {% if tab == 'changes' %}active{% endif %}">Bolagsändringar</a>
+    <a href="/admin/signals?tab=procurements{% if q %}&q={{ q }}{% endif %}" class="tab {% if tab == 'procurements' %}active{% endif %}">Upphandlingar</a>
+  </div>
+
+  <div class="filter-bar">
+    <form method="get" action="/admin/signals">
+      <input type="hidden" name="tab" value="{{ tab }}">
+      <input type="text" name="q" value="{{ q|default('', true) }}" placeholder="Fritext..." style="min-width: 220px;">
+      <button class="btn" type="submit">Sök</button>
+      {% if q %}<a href="/admin/signals?tab={{ tab }}" class="btn">Rensa</a>{% endif %}
+    </form>
+  </div>
+
+  <div class="page-body">
+    {% if rows %}
+    <div class="card" style="padding: 0;">
+      <table class="t">
+        {% if tab == 'jobs' %}
+        <thead>
+          <tr><th>id</th><th>Arbetsgivare</th><th>Rubrik</th><th>Ort</th><th>Yrke</th><th>Publicerad</th><th>Ingestad</th></tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td class="mono">{{ r.id }}</td>
+            <td>{{ r.employer_name }}</td>
+            <td>{% if r.source_url %}<a href="{{ r.source_url }}" target="_blank" rel="noopener">{{ r.headline }}</a>{% else %}{{ r.headline }}{% endif %}</td>
+            <td>{{ r.workplace_municipality or '—' }}</td>
+            <td>{{ r.occupation_label or '—' }}</td>
+            <td class="mono">{{ r.published_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td class="mono">{{ r.ingested_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        {% elif tab == 'changes' %}
+        <thead>
+          <tr><th>id</th><th>Org.nr</th><th>Bolag</th><th>Typ</th><th>Förändring</th><th>Datum</th><th>Ingestad</th></tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td class="mono">{{ r.id }}</td>
+            <td class="mono">{{ r.orgnr }}</td>
+            <td>{{ r.company_name }}</td>
+            <td><span class="badge">{{ r.change_type }}</span></td>
+            <td>
+              {% if r.old_value or r.new_value %}
+              <details class="json-cell">
+                <summary>diff</summary>
+                <pre>old: {{ r.old_value|tojson(indent=2) }}
+new: {{ r.new_value|tojson(indent=2) }}</pre>
+              </details>
+              {% else %}
+              <span class="mono" style="color: var(--v-ink-4);">{% if r.personal_data_purged_at %}rensad{% else %}—{% endif %}</span>
+              {% endif %}
+            </td>
+            <td class="mono">{{ r.changed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td class="mono">{{ r.ingested_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        {% else %}
+        <thead>
+          <tr><th>id</th><th>Köpare</th><th>Titel</th><th>CPV</th><th>Värde (SEK)</th><th>Deadline</th><th>Källa</th><th>Ingestad</th></tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td class="mono">{{ r.id }}</td>
+            <td>{{ r.buyer_name }}</td>
+            <td>{% if r.source_url %}<a href="{{ r.source_url }}" target="_blank" rel="noopener">{{ r.title }}</a>{% else %}{{ r.title }}{% endif %}</td>
+            <td class="mono">{{ r.cpv_codes|join(', ') }}</td>
+            <td class="mono">{% if r.estimated_value_sek %}{{ '{:,}'.format(r.estimated_value_sek).replace(',', ' ') }}{% else %}—{% endif %}</td>
+            <td class="mono">{% if r.deadline %}{{ r.deadline.strftime('%Y-%m-%d') }}{% else %}—{% endif %}</td>
+            <td class="mono">{{ r.source }}</td>
+            <td class="mono">{{ r.ingested_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        {% endif %}
+      </table>
+    </div>
+
+    <div class="pager">
+      {% if prev_url %}<a href="{{ prev_url }}">← Föregående</a>{% else %}<span>← Föregående</span>{% endif %}
+      <span>Sida {{ page_num }}</span>
+      {% if next_url %}<a href="{{ next_url }}">Nästa →</a>{% else %}<span>Nästa →</span>{% endif %}
+    </div>
+    {% else %}
+    <div class="empty">Inga signaler matchar.</div>
+    {% endif %}
+  </div>
+{% endblock %}

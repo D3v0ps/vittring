@@ -1,0 +1,84 @@
+{% extends "admin/_layout.html.j2" %}
+{% set active_nav = 'users' %}
+{% set topbar_title = 'Användare' %}
+
+{% block content %}
+  <div class="page-header">
+    <div class="eyebrow">Admin · Användare</div>
+    <h1>Användare</h1>
+    <div class="subtitle">{{ total_label }} användare i plattformen.</div>
+  </div>
+
+  <div class="filter-bar">
+    <form method="get" action="/admin/users">
+      <input type="text" name="q" value="{{ q|default('', true) }}" placeholder="Sök e-post..." style="min-width: 220px;">
+      <select name="plan">
+        <option value="all" {% if plan == 'all' %}selected{% endif %}>Alla planer</option>
+        <option value="trial" {% if plan == 'trial' %}selected{% endif %}>Trial</option>
+        <option value="solo" {% if plan == 'solo' %}selected{% endif %}>Solo</option>
+        <option value="team" {% if plan == 'team' %}selected{% endif %}>Team</option>
+        <option value="pro" {% if plan == 'pro' %}selected{% endif %}>Pro</option>
+      </select>
+      <button class="btn" type="submit">Filtrera</button>
+      {% if q or (plan and plan != 'all') %}
+      <a href="/admin/users" class="btn">Rensa</a>
+      {% endif %}
+    </form>
+    <div style="margin-left: auto;">
+      <a href="/admin/users/new" class="btn primary">+ Skapa användare</a>
+    </div>
+  </div>
+
+  <div class="page-body">
+    {% if users %}
+    <div class="card" style="padding: 0;">
+      <table class="t">
+        <thead>
+          <tr>
+            <th>E-post</th>
+            <th>Namn</th>
+            <th>Plan</th>
+            <th>Verif.</th>
+            <th>Aktiv</th>
+            <th>Status</th>
+            <th>Skapad</th>
+            <th>Senast inloggad</th>
+            <th style="text-align:right;">Prenum.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td><a href="/admin/users/{{ u.id }}">{{ u.email }}</a></td>
+            <td>{{ u.full_name or '—' }}</td>
+            <td><span class="badge plan-{{ u.plan }}">{{ u.plan }}</span></td>
+            <td>{% if u.is_verified %}<span class="pip on" title="Verifierad"></span>{% else %}<span class="pip off" title="Ej verifierad"></span>{% endif %}</td>
+            <td>{% if u.is_active %}<span class="pip on" title="Aktiv"></span>{% else %}<span class="pip off" title="Inaktiv"></span>{% endif %}</td>
+            <td>
+              {% if u.is_superuser %}<span class="badge amber">Admin</span>{% endif %}
+              {% if u.locked_until %}<span class="badge danger">Låst</span>{% endif %}
+              {% if u.deletion_requested_at %}<span class="badge danger">Radering</span>{% endif %}
+              {% if not u.is_superuser and not u.locked_until and not u.deletion_requested_at %}<span class="mono">—</span>{% endif %}
+            </td>
+            <td class="mono">{{ u.created_at.strftime('%Y-%m-%d') }}</td>
+            <td class="mono">{% if u.last_login_at %}{{ u.last_login_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}</td>
+            <td class="mono" style="text-align:right;">{{ u.signal_count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pager">
+      {% if prev_url %}<a href="{{ prev_url }}">← Föregående</a>{% else %}<span>← Föregående</span>{% endif %}
+      <span>Sida {{ page_num }} · visar {{ users|length }} av sidstorlek {{ page_size }}</span>
+      {% if next_url %}<a href="{{ next_url }}">Nästa →</a>{% else %}<span>Nästa →</span>{% endif %}
+    </div>
+    {% else %}
+    <div class="empty">
+      Inga användare matchar filtret.
+      {% if q or (plan and plan != 'all') %}<br><a href="/admin/users" style="color: var(--v-amber);">Rensa filter</a>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+{% endblock %}

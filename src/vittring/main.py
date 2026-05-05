@@ -17,7 +17,15 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
-from vittring.api import account, auth, billing, health, public, subscriptions
+from vittring.api import (
+    account,
+    admin,
+    auth,
+    billing,
+    health,
+    public,
+    subscriptions,
+)
 from vittring.api import unsubscribe as unsubscribe_router
 from vittring.api import webhooks
 from vittring.config import get_settings
@@ -73,6 +81,7 @@ def create_app() -> FastAPI:
     app.include_router(billing.router)
     app.include_router(webhooks.router)
     app.include_router(unsubscribe_router.router)
+    app.include_router(admin.router)
 
     @app.exception_handler(VittringError)
     async def _vittring_handler(_: Request, exc: VittringError) -> JSONResponse:

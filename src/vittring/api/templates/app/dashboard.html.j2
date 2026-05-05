@@ -10,7 +10,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/css/brand.css">
 <style>
   body { background: var(--v-night); color: var(--v-mist); margin: 0; font-family: var(--font-sans); }
@@ -53,10 +53,22 @@
   .search {
     flex: 1; max-width: 480px; margin: 0 32px;
     background: var(--v-night-2); border: 1px solid var(--v-night-3);
-    border-radius: 8px; padding: 8px 14px;
+    border-radius: 8px; padding: 0 14px;
     display: flex; align-items: center; gap: 10px;
     color: var(--v-ink-4); font-family: var(--font-mono); font-size: 12px;
   }
+  .search input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--v-mist); font-family: var(--font-mono); font-size: 12px;
+    padding: 8px 0;
+  }
+  .search input::placeholder { color: var(--v-ink-4); }
+  .search button.search-submit {
+    background: transparent; border: none; padding: 4px;
+    color: var(--v-ink-4); cursor: pointer; font-family: var(--font-mono); font-size: 12px;
+  }
+  .inline-form { display: inline; margin: 0; padding: 0; }
+  .inline-form button.icon-btn { font-size: 11px; }
 
   .digest-header {
     padding: 32px;
@@ -155,7 +167,7 @@
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 11 L5 6 L8 8 L12 3"/></svg>
         Översikt
       </a>
-      <a href="#" class="nav-item">
+      <a href="/app/calendar" class="nav-item">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="10" height="10" rx="1"/><path d="M2 5 L12 5"/></svg>
         Kalender
       </a>
@@ -171,9 +183,9 @@
 
     <div class="nav-section">
       <h5>Bibliotek</h5>
-      <a href="#" class="nav-item">★ Sparade signaler</a>
-      <a href="#" class="nav-item">⏷ Arkiv</a>
-      <a href="#" class="nav-item">⌗ Taggar</a>
+      <a href="/app/saved" class="nav-item">★ Sparade signaler</a>
+      <a href="/app/archive" class="nav-item">⏷ Arkiv</a>
+      <a href="/app/tags" class="nav-item">⌗ Taggar</a>
       <a href="/app/account" class="nav-item">⚙ Inställningar</a>
     </div>
 
@@ -202,12 +214,14 @@
         <span style="font-family: var(--font-display); font-size: 16px; color: var(--v-paper); font-weight: 500;">{{ today_date }}</span>
         <span style="font-family: var(--font-mono); font-size: 11px; color: var(--v-signal); margin-left: 8px;">● Synkad {{ last_sync_time }}</span>
       </div>
-      <div class="search">
-        <span>⌕</span>
-        <span>Sök bolag, CPV, ort... <span style="color: var(--v-ink-4); margin-left: auto; opacity: 0.5;">⌘K</span></span>
-      </div>
+      <form method="get" action="/app" class="search" role="search">
+        <span aria-hidden="true">⌕</span>
+        <input type="search" name="q" value="{{ search_query|default('') }}"
+               placeholder="Sök bolag, CPV, ort…" aria-label="Sök bolag, CPV eller ort">
+        <button type="submit" class="search-submit" aria-label="Sök">↵</button>
+      </form>
       <div style="display: flex; gap: 8px;">
-        <a href="/app/account/export" class="icon-btn">↓ Exportera CSV</a>
+        <a href="/app/export.csv" class="icon-btn">↓ Exportera CSV</a>
         <a href="/app/subscriptions/new" class="icon-btn primary">+ Ny prenumeration</a>
       </div>
     </div>
@@ -218,8 +232,13 @@
         <div class="panel-sub" style="color: var(--v-signal);">↗ DAGENS DIGEST</div>
         <h1 class="panel-title" style="font-size: 40px; margin-top: 8px;">{{ digest_count }} {{ "ny signal" if digest_count == 1 else "nya signaler" }}</h1>
         <div style="font-size: 14px; color: var(--v-mist); margin-top: 6px;">
-          {{ digest_focus }}.
-          <span style="color: var(--v-ink-4);">{{ priority_count }} prioriterade matchar din profil exakt.</span>
+          {% if search_query %}
+            Filtrerar på <span style="color: var(--v-paper);">”{{ search_query }}”</span>.
+            <a href="/app" style="color: var(--v-ink-4); text-decoration: underline;">Rensa filter</a>
+          {% else %}
+            {{ digest_focus }}.
+            <span style="color: var(--v-ink-4);">{{ priority_count }} prioriterade matchar din profil exakt.</span>
+          {% endif %}
         </div>
         <div style="display: flex; gap: 8px; margin-top: 16px;">
           <span class="chip active">{{ priority_count }} prioriterade</span>
@@ -268,7 +287,7 @@
     <!-- FEED -->
     <div class="feed">
       {% for signal in priority_signals %}
-      <div class="row priority">
+      <div class="row priority" id="saved-{{ signal.id }}">
         <span class="time">{{ signal.date }}<br><span style="color: var(--v-ink-4);">{{ signal.time }}</span></span>
         <span class="pill-kind {{ signal.kind_class }}">{{ signal.kind }}</span>
         <div>
@@ -277,12 +296,21 @@
         </div>
         <div class="src">{{ signal.source }}</div>
         <div class="actions">
-          <button class="icon-btn" title="Spara">★</button>
-          <button class="icon-btn">↗ HubSpot</button>
+          <form method="post" action="/app/signals/save" class="inline-form">
+            {{ csrf_input() }}
+            <input type="hidden" name="signal_type" value="{{ signal.kind_class }}">
+            <input type="hidden" name="signal_id" value="{{ signal.id }}">
+            <button type="submit" class="icon-btn" title="Spara signal">★</button>
+          </form>
+          {% if user.plan == "pro" %}
+          <button type="button" class="icon-btn" title="Skicka till HubSpot">↗ HubSpot</button>
+          {% else %}
+          <a href="/pricing" class="icon-btn" title="Pro-funktion — uppgradera för att aktivera">↗ HubSpot</a>
+          {% endif %}
           {% if signal.url %}
           <a class="icon-btn primary" href="{{ signal.url }}" target="_blank" rel="noopener">Öppna →</a>
           {% else %}
-          <button class="icon-btn primary">Öppna →</button>
+          <a class="icon-btn primary" href="/app/saved" title="Källa saknas — visa i sparat">Öppna →</a>
           {% endif %}
         </div>
       </div>

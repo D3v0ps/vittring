@@ -51,6 +51,22 @@ async def current_verified_user(
     return user
 
 
+async def current_superuser(
+    user: Annotated[User, Depends(current_user)],
+) -> User:
+    """Allow only platform owners (``is_superuser=True``).
+
+    Depends on ``current_user`` (not ``current_verified_user``) on purpose: a
+    superuser whose own ``is_verified`` flag is somehow off must still be able
+    to operate the admin panel — they're the one who can fix it.
+    """
+    if not user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="admin_required"
+        )
+    return user
+
+
 def request_meta(request: Request) -> dict[str, str | None]:
     forwarded = request.headers.get("x-forwarded-for")
     ip = (
@@ -66,4 +82,5 @@ def request_meta(request: Request) -> dict[str, str | None]:
 
 CurrentUser = Annotated[User, Depends(current_user)]
 CurrentVerifiedUser = Annotated[User, Depends(current_verified_user)]
+CurrentSuperuser = Annotated[User, Depends(current_superuser)]
 OptionalUser = Annotated[User | None, Depends(current_user_or_none)]

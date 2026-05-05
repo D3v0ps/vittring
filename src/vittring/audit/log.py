@@ -36,6 +36,21 @@ class AuditAction(StrEnum):
     SUBSCRIPTION_DELETED = "subscription_deleted"
     DEPLOY = "deploy"
 
+    # Admin / superadmin actions
+    ADMIN_USER_CREATE = "admin_user_create"
+    ADMIN_USER_EDIT = "admin_user_edit"
+    ADMIN_USER_DELETE = "admin_user_delete"
+    ADMIN_USER_PROMOTE = "admin_user_promote"
+    ADMIN_USER_UNLOCK = "admin_user_unlock"
+    ADMIN_USER_VERIFICATION_RESEND = "admin_user_verification_resend"
+    ADMIN_USER_DELETE_REQUEST = "admin_user_delete_request"
+    ADMIN_USER_DELETE_CANCEL = "admin_user_delete_cancel"
+    ADMIN_PLAN_CHANGE = "admin_plan_change"
+    ADMIN_SUBSCRIPTION_TOGGLE = "admin_subscription_toggle"
+    ADMIN_TRIGGER_INGEST = "admin_trigger_ingest"
+    ADMIN_TRIGGER_DIGEST = "admin_trigger_digest"
+    ADMIN_TRIGGER_GDPR_SCRUB = "admin_trigger_gdpr_scrub"
+
 
 async def audit(
     session: AsyncSession,

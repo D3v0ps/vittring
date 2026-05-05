@@ -2,21 +2,23 @@
 
 from __future__ import annotations
 
+import csv
+import io
 import json
-from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Request, status
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from sqlalchemy import select
+from fastapi import APIRouter, Form, Request, status
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+from sqlalchemy import delete, select
 
 from vittring.api.deps import CurrentVerifiedUser, request_meta
 from vittring.api.templates import templates
 from vittring.audit.log import AuditAction, audit
 from vittring.db import SessionDep
-from vittring.models.subscription import DeliveredAlert, Subscription
 from vittring.models.audit import AuditLog
+from vittring.models.saved import SavedSignal
+from vittring.models.subscription import DeliveredAlert, Subscription
 
 router = APIRouter(prefix="/app", tags=["account"])
 
@@ -47,94 +49,126 @@ def _example_signals() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """
     priority = [
         {
+            "id": 1,
             "date": "04 maj", "time": "16:42",
             "kind": "Upphandling", "kind_class": "upph",
             "title": "Region Stockholm — Ramavtal lagerbemanning",
             "meta": "CPV 79620000 · Volym ~12 mkr · Anbud senast 2026-06-12 · 3 leverantörer förväntade",
-            "source": "TED · ted.europa.eu",
-            "url": "https://ted.europa.eu/",
+            "source": "Vittring",
+            "url": None,
         },
         {
+            "id": 2,
             "date": "04 maj", "time": "14:32",
             "kind": "Jobb", "kind_class": "jobb",
             "title": "Postnord Sverige AB söker 18 truckförare",
             "meta": "Rosersberg · SNI 53.100 · Heltid · Tredje volymrekrytering på sex månader",
-            "source": "JobTech · af.se",
-            "url": "https://arbetsformedlingen.se/",
+            "source": "Vittring",
+            "url": None,
         },
         {
+            "id": 3,
             "date": "04 maj", "time": "09:15",
             "kind": "Bolag", "kind_class": "bolag",
             "title": "Ahlsell Logistik AB · Ny VD tillträder",
             "meta": "SE5567231223 · Hallsberg · Helena Berg, tidigare COO DB Schenker",
-            "source": "Bolagsverket · PoIT",
+            "source": "Vittring",
             "url": None,
         },
         {
+            "id": 4,
             "date": "04 maj", "time": "08:07",
             "kind": "Jobb", "kind_class": "jobb",
             "title": "Schenker AB — 6 lagermedarbetare, kvällsskift",
             "meta": "Jordbro · SNI 52.100 · Visstidsanställning",
-            "source": "JobTech · af.se",
-            "url": "https://arbetsformedlingen.se/",
+            "source": "Vittring",
+            "url": None,
         },
         {
+            "id": 5,
             "date": "03 maj", "time": "22:11",
             "kind": "Bolag", "kind_class": "bolag",
             "title": "Norrlands Logistik AB · Nytt säte i Södertälje",
             "meta": "SE5566048812 · Tidigare Sundsvall · Indikerar utbyggnad i Mälardalen",
-            "source": "Bolagsverket · PoIT",
+            "source": "Vittring",
             "url": None,
         },
     ]
     others = [
         {
+            "id": 6,
             "date": "03 maj", "time": "17:44",
             "kind": "Upphandling", "kind_class": "upph",
             "title": "Trafikförvaltningen — Bemanningstjänster städ & logistik",
             "meta": "CPV 79620000 · ~8 mkr · Anbud 2026-05-30",
-            "source": "TED · ted.europa.eu",
-            "url": "https://ted.europa.eu/",
+            "source": "Vittring",
+            "url": None,
         },
         {
+            "id": 7,
             "date": "03 maj", "time": "15:22",
             "kind": "Jobb", "kind_class": "jobb",
             "title": "DSV — 4 lagerarbetare, dagtid",
             "meta": "Arlanda · SNI 52.100 · Tillsvidare",
-            "source": "JobTech",
-            "url": "https://arbetsformedlingen.se/",
+            "source": "Vittring",
+            "url": None,
         },
         {
+            "id": 8,
             "date": "03 maj", "time": "12:08",
             "kind": "Bolag", "kind_class": "bolag",
             "title": "Bring Frigoscandia AB — styrelseändring",
             "meta": "SE5567 · Två nya ledamöter, fokus tech",
-            "source": "Bolagsverket",
+            "source": "Vittring",
             "url": None,
         },
         {
+            "id": 9,
             "date": "03 maj", "time": "10:55",
             "kind": "Jobb", "kind_class": "jobb",
             "title": "DHL Supply Chain — 12 plockare",
             "meta": "Brunna · SNI 52.100 · Heltid",
-            "source": "JobTech",
-            "url": "https://arbetsformedlingen.se/",
+            "source": "Vittring",
+            "url": None,
         },
         {
+            "id": 10,
             "date": "03 maj", "time": "09:30",
             "kind": "Upphandling", "kind_class": "upph",
             "title": "Botkyrka kommun — Bemanning skola/förskola",
             "meta": "CPV 79620000 · ~3 mkr · Anbud 2026-05-25",
-            "source": "TED",
-            "url": "https://ted.europa.eu/",
+            "source": "Vittring",
+            "url": None,
         },
     ]
     return priority, others
 
 
+def _filter_signals(
+    signals: list[dict[str, Any]], q: str
+) -> list[dict[str, Any]]:
+    """Case-insensitive substring filter over title and meta fields."""
+    needle = q.strip().lower()
+    if not needle:
+        return signals
+    return [
+        s
+        for s in signals
+        if needle in s.get("title", "").lower()
+        or needle in s.get("meta", "").lower()
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Dashboard
+# ---------------------------------------------------------------------------
+
 @router.get("", response_class=HTMLResponse, include_in_schema=False)
 async def dashboard(
-    request: Request, session: SessionDep, user: CurrentVerifiedUser
+    request: Request,
+    session: SessionDep,
+    user: CurrentVerifiedUser,
+    q: str = "",
 ) -> HTMLResponse:
     subs_rows = (
         await session.execute(
@@ -152,6 +186,9 @@ async def dashboard(
     ]
 
     priority_signals, other_signals = _example_signals()
+    if q:
+        priority_signals = _filter_signals(priority_signals, q)
+        other_signals = _filter_signals(other_signals, q)
     digest_count = len(priority_signals) + len(other_signals)
 
     now = datetime.now(timezone.utc)
@@ -194,9 +231,214 @@ async def dashboard(
 
         "priority_signals": priority_signals,
         "other_signals": other_signals,
+        "search_query": q,
     }
     return templates.TemplateResponse(request, "app/dashboard.html.j2", context)
 
+
+# ---------------------------------------------------------------------------
+# Sidebar stubs ("Kommer snart")
+# ---------------------------------------------------------------------------
+
+def _stub_context(user: Any, active: str, title: str, description: str) -> dict[str, Any]:
+    name_for_initials = user.full_name or user.email.split("@")[0]
+    return {
+        "title": title,
+        "user": user,
+        "initials": _initials(name_for_initials),
+        "plan_label": PLAN_LABELS.get(user.plan, user.plan.capitalize()),
+        "subscriptions": [],
+        "active": active,
+        "stub_title": title,
+        "stub_description": description,
+    }
+
+
+@router.get("/calendar", response_class=HTMLResponse, include_in_schema=False)
+async def calendar_stub(request: Request, user: CurrentVerifiedUser) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "app/_stub.html.j2",
+        _stub_context(
+            user,
+            active="calendar",
+            title="Kalender",
+            description=(
+                "Här samlas kommande deadlines för upphandlingar och slutdatum för "
+                "provperioder, så att du aldrig missar ett anbud eller en uppföljning."
+            ),
+        ),
+    )
+
+
+@router.get("/saved", response_class=HTMLResponse, include_in_schema=False)
+async def saved_stub(request: Request, user: CurrentVerifiedUser) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "app/_stub.html.j2",
+        _stub_context(
+            user,
+            active="saved",
+            title="Sparade signaler",
+            description=(
+                "Signaler du stjärnmarkerat hamnar här — så att du kan återvända till "
+                "uppslag som väntar på uppföljning utan att leta bland dagens digest."
+            ),
+        ),
+    )
+
+
+@router.get("/archive", response_class=HTMLResponse, include_in_schema=False)
+async def archive_stub(request: Request, user: CurrentVerifiedUser) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "app/_stub.html.j2",
+        _stub_context(
+            user,
+            active="archive",
+            title="Arkiv",
+            description=(
+                "Signaler som är äldre än 30 dagar arkiveras automatiskt här. Använd "
+                "arkivet för att leta upp historik på ett bolag eller en upphandling."
+            ),
+        ),
+    )
+
+
+@router.get("/tags", response_class=HTMLResponse, include_in_schema=False)
+async def tags_stub(request: Request, user: CurrentVerifiedUser) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "app/_stub.html.j2",
+        _stub_context(
+            user,
+            active="tags",
+            title="Taggar",
+            description=(
+                "Kategorisera signaler för uppföljning — t.ex. ”ringt”, ”möte bokat” "
+                "eller egna kundsegment — och filtrera digesten på dina taggar."
+            ),
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# CSV export of recent delivered alerts
+# ---------------------------------------------------------------------------
+
+@router.get("/export.csv", include_in_schema=False)
+async def export_csv(
+    session: SessionDep, user: CurrentVerifiedUser
+) -> Response:
+    """Stream a CSV of the user's most recent 1 000 delivered alerts.
+
+    Header is always present even when no rows exist. Real DeliveredAlert
+    rows take precedence; if the user has no delivered alerts yet the body
+    contains only the header — empty digest is a valid state.
+    """
+    rows = (
+        await session.execute(
+            select(DeliveredAlert)
+            .where(DeliveredAlert.user_id == user.id)
+            .order_by(DeliveredAlert.delivered_at.desc())
+            .limit(1000)
+        )
+    ).scalars().all()
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(
+        [
+            "delivered_at",
+            "signal_type",
+            "signal_id",
+            "subscription_id",
+            "opened_at",
+            "clicked_at",
+        ]
+    )
+    for r in rows:
+        writer.writerow(
+            [
+                r.delivered_at.isoformat() if r.delivered_at else "",
+                r.signal_type,
+                r.signal_id,
+                r.subscription_id,
+                r.opened_at.isoformat() if r.opened_at else "",
+                r.clicked_at.isoformat() if r.clicked_at else "",
+            ]
+        )
+
+    return Response(
+        content=buf.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": 'attachment; filename=vittring-export.csv'
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Save / unsave signal
+# ---------------------------------------------------------------------------
+
+@router.post("/signals/save", include_in_schema=False)
+async def toggle_saved_signal(
+    request: Request,
+    session: SessionDep,
+    user: CurrentVerifiedUser,
+    signal_type: Annotated[str, Form()],
+    signal_id: Annotated[int, Form()],
+) -> RedirectResponse:
+    """Toggle a row in ``saved_signals``: insert if missing, delete if present."""
+    existing = (
+        await session.execute(
+            select(SavedSignal).where(
+                SavedSignal.user_id == user.id,
+                SavedSignal.signal_type == signal_type,
+                SavedSignal.signal_id == signal_id,
+            )
+        )
+    ).scalar_one_or_none()
+
+    meta = request_meta(request)
+    if existing is None:
+        session.add(
+            SavedSignal(
+                user_id=user.id,
+                signal_type=signal_type,
+                signal_id=signal_id,
+            )
+        )
+        await audit(
+            session,
+            action="signal_saved",
+            user_id=user.id,
+            ip=meta["ip"],
+            user_agent=meta["user_agent"],
+            metadata={"signal_type": signal_type, "signal_id": signal_id},
+        )
+    else:
+        await session.execute(
+            delete(SavedSignal).where(SavedSignal.id == existing.id)
+        )
+        await audit(
+            session,
+            action="signal_unsaved",
+            user_id=user.id,
+            ip=meta["ip"],
+            user_agent=meta["user_agent"],
+            metadata={"signal_type": signal_type, "signal_id": signal_id},
+        )
+
+    return RedirectResponse(
+        f"/app#saved-{signal_id}", status_code=status.HTTP_303_SEE_OTHER
+    )
+
+
+# ---------------------------------------------------------------------------
+# Account profile page
+# ---------------------------------------------------------------------------
 
 @router.get("/account", response_class=HTMLResponse, include_in_schema=False)
 async def account_page(

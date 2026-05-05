@@ -37,8 +37,8 @@
   --v-archive:      #9A9082;
 
   /* Typografi */
-  --font-display:   'Fraunces', 'Times New Roman', serif;
-  --font-sans:      'Inter Tight', 'Helvetica Neue', system-ui, sans-serif;
+  --font-display:   'Poppins', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-sans:      'Poppins', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-mono:      'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
 
   /* Skala (8pt grid) */

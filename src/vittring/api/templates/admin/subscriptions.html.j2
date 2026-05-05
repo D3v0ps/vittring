@@ -1,0 +1,83 @@
+{% extends "admin/_layout.html.j2" %}
+{% set active_nav = 'subscriptions' %}
+{% set topbar_title = 'Prenumerationer' %}
+
+{% block content %}
+  <div class="page-header">
+    <div class="eyebrow">Admin · Prenumerationer</div>
+    <h1>Prenumerationer</h1>
+    <div class="subtitle">Alla prenumerationer på plattformen, oavsett ägare.</div>
+  </div>
+
+  <div class="filter-bar">
+    <form method="get" action="/admin/subscriptions">
+      <select name="signal_type">
+        <option value="all" {% if signal_type == 'all' %}selected{% endif %}>Alla typer</option>
+        <option value="job" {% if signal_type == 'job' %}selected{% endif %}>Jobb</option>
+        <option value="company_change" {% if signal_type == 'company_change' %}selected{% endif %}>Bolagsändringar</option>
+        <option value="procurement" {% if signal_type == 'procurement' %}selected{% endif %}>Upphandlingar</option>
+      </select>
+      <button class="btn" type="submit">Filtrera</button>
+      {% if signal_type and signal_type != 'all' %}
+        <a href="/admin/subscriptions" class="btn">Rensa</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="page-body">
+    {% if subscriptions %}
+    <div class="card" style="padding: 0;">
+      <table class="t">
+        <thead>
+          <tr>
+            <th style="width: 60px;">id</th>
+            <th>Namn</th>
+            <th>Användare</th>
+            <th>Signaler</th>
+            <th>Kriterier</th>
+            <th>Aktiv</th>
+            <th>Skapad</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in subscriptions %}
+          <tr>
+            <td class="mono">{{ s.id }}</td>
+            <td>{{ s.name }}</td>
+            <td><a href="/admin/users/{{ s.user_id }}">{{ s.user_email }}</a></td>
+            <td>
+              {% for t in s.signal_types %}
+                <span class="badge {% if t == 'job' %}signal{% elif t == 'company_change' %}signal{% else %}amber{% endif %}">{{ t }}</span>
+              {% endfor %}
+            </td>
+            <td>
+              <details class="json-cell">
+                <summary>{{ s.criteria|tojson|truncate(60) }}</summary>
+                <pre>{{ s.criteria|tojson(indent=2) }}</pre>
+              </details>
+            </td>
+            <td>{% if s.active %}<span class="pip on"></span>{% else %}<span class="pip off"></span>{% endif %}</td>
+            <td class="mono">{{ s.created_at.strftime('%Y-%m-%d') }}</td>
+            <td>
+              <form method="post" action="/admin/subscriptions/{{ s.id }}/toggle" class="inline">
+                {{ csrf_input() }}
+                <button class="btn" type="submit">{{ 'Pausa' if s.active else 'Aktivera' }}</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pager">
+      {% if prev_url %}<a href="{{ prev_url }}">← Föregående</a>{% else %}<span>← Föregående</span>{% endif %}
+      <span>Sida {{ page_num }}</span>
+      {% if next_url %}<a href="{{ next_url }}">Nästa →</a>{% else %}<span>Nästa →</span>{% endif %}
+    </div>
+    {% else %}
+    <div class="empty">Inga prenumerationer matchar filtret.</div>
+    {% endif %}
+  </div>
+{% endblock %}
