@@ -31,6 +31,7 @@ from vittring.security.passwords import (
     verify_password,
 )
 from vittring.security.ratelimit import (
+    DEFAULT_BY_IP,
     LOGIN_BY_EMAIL,
     LOGIN_BY_IP,
     PASSWORD_RESET_BY_EMAIL,
@@ -359,7 +360,7 @@ async def password_reset_page(request: Request) -> HTMLResponse:
 
 @router.post(
     "/password-reset",
-    dependencies=[Depends(rate_limit(PASSWORD_RESET_BY_EMAIL, lambda r: r.headers.get("x-forwarded-for", r.client.host if r.client else "?")))],
+    dependencies=[Depends(rate_limit(DEFAULT_BY_IP, client_ip))],
     include_in_schema=False,
     response_model=None,
 )
@@ -368,6 +369,22 @@ async def password_reset_request(
     session: SessionDep,
     email: Annotated[EmailStr, Form()],
 ) -> HTMLResponse:
+    # Spec §13: 3 password-reset requests/hour per email. The dependency
+    # above can only see request headers, so the per-email bucket is taken
+    # here once the form body has been parsed. This stops an attacker from
+    # cycling through victim addresses to trigger reset emails — the
+    # per-email bucket rejects the 4th attempt regardless of source IP.
+    from vittring.utils.errors import RateLimitExceededError
+
+    try:
+        PASSWORD_RESET_BY_EMAIL.take(str(email))
+    except RateLimitExceededError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="rate_limit_exceeded",
+            headers={"Retry-After": str(exc.retry_after_seconds)},
+        ) from exc
+
     user = (
         await session.execute(select(User).where(User.email == email))
     ).scalar_one_or_none()

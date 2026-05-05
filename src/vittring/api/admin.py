@@ -1414,8 +1414,34 @@ async def system_test_email(
     Templates: ``test`` (plain admin smoke test), ``welcome``, ``verify``,
     ``reset_password``, ``digest`` (sample data, single section).
     Useful for demos and verifying the Resend domain end-to-end.
+
+    Recipient must be a registered user — otherwise an admin could spray
+    arbitrary outsiders via Vittring's verified Resend domain, putting our
+    sender reputation at risk and giving a phishing platform to anyone with
+    a superuser cookie.
     """
     from vittring.delivery.email import render, send_email
+
+    recipient = (
+        await session.execute(select(User).where(User.email == str(to)))
+    ).scalar_one_or_none()
+    meta = request_meta(request)
+    if recipient is None:
+        await audit(
+            session,
+            action="admin_test_email_rejected",
+            user_id=user.id,
+            ip=meta["ip"],
+            user_agent=meta["user_agent"],
+            metadata={"to": str(to), "reason": "recipient_not_registered"},
+        )
+        flash = urlencode({
+            "flash": f"Avbröts: {to} är ingen registrerad användare. Test-mejl får bara skickas till befintliga konton.",
+            "flash_kind": "error",
+        })
+        return RedirectResponse(
+            f"/admin/system?{flash}", status_code=status.HTTP_303_SEE_OTHER
+        )
 
     settings = get_settings()
     base = str(settings.app_base_url).rstrip("/")
@@ -1496,7 +1522,6 @@ async def system_test_email(
         )
         text = f"Testmejl från Vittring (admin: {user.email})."
 
-    meta = request_meta(request)
     flash_kind = "success"
     try:
         sent = await send_email(
