@@ -69,10 +69,14 @@ class BaseScraper[T](IngestAdapter[T]):
     ACTIVE_HOURS: ClassVar[tuple[int, int]] = (6, 22)
 
     # Subclass-provided attributes --------------------------------------------
-    name: ClassVar[str]
-    base_url: ClassVar[str]
-    domain: ClassVar[str]
-    source_value: ClassVar[str]
+    # ``name`` is declared as ``str`` on ``IngestAdapter`` (instance variable
+    # by mypy semantics, even though every adapter sets it as a class
+    # attribute). Keep that shape here so subclasses can mirror the existing
+    # JobTech / TED / Bolagsverket adapters.
+    name: str
+    base_url: str
+    domain: str
+    source_value: str
 
     # Per-process caches -------------------------------------------------------
     # robots.txt: domain -> (parser, fetched_at, status_code)

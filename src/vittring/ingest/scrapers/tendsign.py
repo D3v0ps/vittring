@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import ClassVar
 
 import structlog
 
@@ -22,10 +21,10 @@ logger = structlog.get_logger(__name__)
 
 
 class TendSignScraper(BaseScraper[ProcurementItem]):
-    name: ClassVar[str] = "tendsign"
-    base_url: ClassVar[str] = "https://www.opic.com"
-    domain: ClassVar[str] = "www.opic.com"
-    source_value: ClassVar[str] = "tendsign"
+    name = "tendsign"
+    base_url = "https://www.opic.com"
+    domain = "www.opic.com"
+    source_value = "tendsign"
 
     async def list_urls(self) -> list[str]:
         # TODO: enumerate active-tender listing pages.
