@@ -222,6 +222,35 @@ EOF
 systemctl enable --now fail2ban
 systemctl reload fail2ban
 
+# Sudoers drop-in so the vittring user can restart its own services without
+# a TTY password prompt. Required by scripts/deploy.sh and by manual restarts
+# during incident response. Inline kept in lockstep with
+# deploy/sudoers/vittring-systemctl — bootstrap runs from a stand-alone copy
+# of this file, so we cannot rely on the repo being checked out yet.
+SUDOERS_DST="/etc/sudoers.d/vittring-systemctl"
+cat > "${SUDOERS_DST}" <<'EOF'
+Cmnd_Alias VITTRING_SVC = \
+    /usr/bin/systemctl reload vittring-api.service, \
+    /usr/bin/systemctl reload-or-restart vittring-api.service, \
+    /usr/bin/systemctl restart vittring-api.service, \
+    /usr/bin/systemctl restart vittring-scheduler.service, \
+    /usr/bin/systemctl restart vittring-api.service vittring-scheduler.service, \
+    /usr/bin/systemctl status vittring-api.service, \
+    /usr/bin/systemctl status vittring-scheduler.service, \
+    /bin/systemctl reload vittring-api.service, \
+    /bin/systemctl reload-or-restart vittring-api.service, \
+    /bin/systemctl restart vittring-api.service, \
+    /bin/systemctl restart vittring-scheduler.service, \
+    /bin/systemctl restart vittring-api.service vittring-scheduler.service, \
+    /bin/systemctl status vittring-api.service, \
+    /bin/systemctl status vittring-scheduler.service
+
+vittring ALL=(root) NOPASSWD: VITTRING_SVC
+EOF
+chown root:root "${SUDOERS_DST}"
+chmod 440 "${SUDOERS_DST}"
+visudo -c -f "${SUDOERS_DST}" >/dev/null || fail "sudoers drop-in failed visudo validation"
+
 if [[ -d "${APP_HOME}/current/deploy/unattended-upgrades" ]]; then
     install -m 644 "${APP_HOME}/current/deploy/unattended-upgrades/50unattended-upgrades" \
         /etc/apt/apt.conf.d/50unattended-upgrades
