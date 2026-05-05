@@ -92,6 +92,21 @@ async def demo(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "public/demo.html.j2", context)
 
 
+@router.get("/bot", response_class=HTMLResponse, include_in_schema=False)
+async def bot(request: Request) -> HTMLResponse:
+    """Public crawler-disclosure page (CLAUDE.md §24.7).
+
+    Describes VittringBot, lists scraped sources with their domains and rate
+    limits, and tells site owners how to opt out. Linked from every
+    request's ``User-Agent`` header.
+    """
+    return templates.TemplateResponse(
+        request,
+        "public/bot.html.j2",
+        {"title": "VittringBot", "last_updated": "2026-05-05"},
+    )
+
+
 @router.get("/legal/privacy", response_class=HTMLResponse, include_in_schema=False)
 async def privacy(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(

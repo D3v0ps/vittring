@@ -1,157 +1,160 @@
-{% extends "_layout.html.j2" %}
-{% block content %}
-<div class="app-shell app-shell-narrow">
-  <header class="app-header">
-    <div class="app-header-copy">
-      <div class="eyebrow">Inställningar</div>
-      <h1>Konto</h1>
-      <p class="muted app-header-lead">
-        Profil, plan, säkerhet och dataskydd. Ändringar sparas direkt.
+{% extends "app/_app_shell.html.j2" %}
+{% set topbar_eyebrow = "Inställningar" %}
+{% set title = "Konto" %}
+{% set active = "account" %}
+{% block app_content %}
+<header class="page-head">
+  <div class="page-eyebrow">Inställningar</div>
+  <h1 class="page-title">Konto</h1>
+  <p class="page-lead">
+    Profil, plan, säkerhet och dataskydd. Ändringar sparas direkt.
+  </p>
+</header>
+
+{# --- Profile --- #}
+<section class="v-card">
+  <div class="v-card-head">
+    <div>
+      <h2>Profil</h2>
+      <p>Hur vi tilltalar dig och vart digesten skickas.</p>
+    </div>
+  </div>
+  <dl style="margin: 0;">
+    <div class="v-row">
+      <dt>E-post</dt>
+      <dd style="font-family: var(--font-mono); font-size: 13px;">{{ user.email }}</dd>
+    </div>
+    <div class="v-row">
+      <dt>Namn</dt>
+      <dd>{{ user.full_name or "—" }}</dd>
+    </div>
+    <div class="v-row">
+      <dt>Företag</dt>
+      <dd>{{ user.company_name or "—" }}</dd>
+    </div>
+    <div class="v-row">
+      <dt>Medlem sedan</dt>
+      <dd style="font-family: var(--font-mono); font-size: 13px;">{{ user.created_at.strftime("%Y-%m-%d") }}</dd>
+    </div>
+  </dl>
+</section>
+
+{# --- Plan --- #}
+<section class="v-card">
+  <div class="v-card-head">
+    <div>
+      <h2>Plan</h2>
+      <p>Din nuvarande prenumeration och fakturering.</p>
+    </div>
+    <a href="/pricing" class="v-btn v-btn--ghost">Se planer</a>
+  </div>
+  <div style="display: flex; gap: 20px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap;">
+    <div style="display: flex; gap: 16px; align-items: flex-start; flex: 1; min-width: 0;">
+      <span class="v-pill v-pill--{% if user.plan == 'trial' %}amber{% else %}signal{% endif %}" style="padding: 6px 14px; font-size: 12px;">
+        {% if user.plan == "trial" %}Provperiod
+        {% elif user.plan == "solo" %}Solo
+        {% elif user.plan == "team" %}Team
+        {% elif user.plan == "pro" %}Pro
+        {% else %}{{ user.plan|capitalize }}{% endif %}
+      </span>
+      <div style="flex: 1; min-width: 0;">
+        {% if user.plan == "trial" and user.trial_ends_at %}
+          <p style="margin: 0 0 6px; color: var(--v-paper); font-size: 14px; font-weight: 500;">
+            Provperiod aktiv till
+            <span style="font-family: var(--font-mono); color: var(--v-signal);">{{ user.trial_ends_at.strftime("%Y-%m-%d") }}</span>
+          </p>
+          <p style="margin: 0; color: var(--v-ink-4); font-size: 13px; line-height: 1.5;">
+            Efter provperioden behöver du välja en plan för att fortsätta få den dagliga digesten.
+          </p>
+        {% elif user.plan == "solo" %}
+          <p style="margin: 0 0 6px; color: var(--v-paper); font-size: 14px; font-weight: 500;">Solo · 5 prenumerationer</p>
+          <p style="margin: 0; color: var(--v-ink-4); font-size: 13px;">Daglig digest, alla tre datakällor.</p>
+        {% elif user.plan == "team" %}
+          <p style="margin: 0 0 6px; color: var(--v-paper); font-size: 14px; font-weight: 500;">Team · 20 prenumerationer</p>
+          <p style="margin: 0; color: var(--v-ink-4); font-size: 13px;">Daglig digest, alla tre datakällor, delade filter inom teamet.</p>
+        {% elif user.plan == "pro" %}
+          <p style="margin: 0 0 6px; color: var(--v-paper); font-size: 14px; font-weight: 500;">Pro · Obegränsat</p>
+          <p style="margin: 0; color: var(--v-ink-4); font-size: 13px;">Obegränsade prenumerationer och prioriterad support.</p>
+        {% else %}
+          <p style="margin: 0; color: var(--v-paper); font-size: 14px; font-weight: 500;">{{ user.plan|capitalize }}</p>
+        {% endif %}
+      </div>
+    </div>
+    {% if user.plan == "trial" %}
+      <a href="/pricing" class="v-btn v-btn--signal">Uppgradera</a>
+    {% endif %}
+  </div>
+</section>
+
+{# --- Security / 2FA --- #}
+<section class="v-card">
+  <div class="v-card-head">
+    <div>
+      <h2>Säkerhet</h2>
+      <p>Tvåfaktorsautentisering med en authenticator-app.</p>
+    </div>
+  </div>
+  <div style="display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+    <div style="display: flex; gap: 12px; align-items: center;">
+      {% if user.totp_enabled_at %}
+        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--v-signal); box-shadow: 0 0 10px rgba(184,224,74,0.6); flex-shrink: 0;"></span>
+        <div>
+          <p style="margin: 0 0 4px; color: var(--v-paper); font-size: 14px; font-weight: 500;">Tvåfaktor är aktivt</p>
+          <p style="margin: 0; color: var(--v-ink-4); font-size: 13px;">
+            Aktiverat sedan <span style="font-family: var(--font-mono); color: var(--v-mist);">{{ user.totp_enabled_at.strftime("%Y-%m-%d") }}</span>.
+          </p>
+        </div>
+      {% else %}
+        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--v-ink-4); flex-shrink: 0;"></span>
+        <div>
+          <p style="margin: 0 0 4px; color: var(--v-paper); font-size: 14px; font-weight: 500;">Inte aktiverat</p>
+          <p style="margin: 0; color: var(--v-ink-4); font-size: 13px;">
+            Skydda kontot med en kod från Google Authenticator, 1Password eller liknande.
+          </p>
+        </div>
+      {% endif %}
+    </div>
+    {% if user.totp_enabled_at %}
+      <form method="post" action="/auth/2fa/disable" style="display: inline;">
+        {{ csrf_input() }}
+        <button type="submit" class="v-btn v-btn--ghost">Inaktivera</button>
+      </form>
+    {% else %}
+      <a href="/auth/2fa/enable" class="v-btn v-btn--signal">Aktivera</a>
+    {% endif %}
+  </div>
+</section>
+
+{# --- GDPR --- #}
+<section class="v-card">
+  <div class="v-card-head">
+    <div>
+      <h2>Data &amp; integritet</h2>
+      <p>Du äger din data. Exportera den när du vill — eller radera kontot helt.</p>
+    </div>
+  </div>
+  <div style="display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 14px 0; border-top: 1px solid var(--v-night-3);">
+    <div style="flex: 1; min-width: 0;">
+      <p style="margin: 0 0 4px; color: var(--v-paper); font-size: 14px; font-weight: 500;">Exportera all min data</p>
+      <p style="margin: 0; color: var(--v-ink-4); font-size: 13px; line-height: 1.5;">
+        Du får en JSON-fil med profil, prenumerationer, levererade signaler och loggar.
       </p>
     </div>
-  </header>
-
-  {# --- Profile --- #}
-  <section class="settings-section card card-flush">
-    <div class="card-section settings-section-head">
-      <div>
-        <h3>Profil</h3>
-        <p class="muted">Hur vi tilltalar dig och vart digesten skickas.</p>
-      </div>
+    <a href="/app/account/export" class="v-btn v-btn--ghost">Exportera JSON</a>
+  </div>
+  <div style="display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 14px 0; border-top: 1px solid var(--v-night-3);">
+    <div style="flex: 1; min-width: 0;">
+      <p style="margin: 0 0 4px; color: var(--v-paper); font-size: 14px; font-weight: 500;">Radera kontot</p>
+      <p style="margin: 0; color: var(--v-ink-4); font-size: 13px; line-height: 1.5;">
+        Kontot inaktiveras direkt och raderas slutgiltigt efter
+        <span style="font-family: var(--font-mono); color: var(--v-mist);">30 dagars</span> karenstid. Innan dess kan du återaktivera via support.
+      </p>
     </div>
-    <div class="card-section">
-      <dl class="settings-list">
-        <div class="settings-row">
-          <dt>E-post</dt>
-          <dd class="mono">{{ user.email }}</dd>
-        </div>
-        <div class="settings-row">
-          <dt>Namn</dt>
-          <dd>{{ user.full_name or "—" }}</dd>
-        </div>
-        <div class="settings-row">
-          <dt>Företag</dt>
-          <dd>{{ user.company_name or "—" }}</dd>
-        </div>
-        <div class="settings-row">
-          <dt>Medlem sedan</dt>
-          <dd class="mono">{{ user.created_at.strftime("%Y-%m-%d") }}</dd>
-        </div>
-      </dl>
-    </div>
-  </section>
-
-  {# --- Plan --- #}
-  <section class="settings-section card card-flush">
-    <div class="card-section settings-section-head">
-      <div>
-        <h3>Plan</h3>
-        <p class="muted">Din nuvarande prenumeration och fakturering.</p>
-      </div>
-      <a href="/pricing" class="btn btn-secondary btn-sm">Se planer</a>
-    </div>
-    <div class="card-section settings-plan">
-      <div class="settings-plan-tier">
-        <span class="badge badge-accent plan-badge">
-          {% if user.plan == "trial" %}Provperiod
-          {% elif user.plan == "solo" %}Solo
-          {% elif user.plan == "team" %}Team
-          {% elif user.plan == "pro" %}Pro
-          {% else %}{{ user.plan|capitalize }}{% endif %}
-        </span>
-        <div class="settings-plan-meta">
-          {% if user.plan == "trial" and user.trial_ends_at %}
-            {% set days = (user.trial_ends_at - user.created_at).days %}
-            <p class="settings-plan-headline">
-              Provperiod aktiv till
-              <span class="mono">{{ user.trial_ends_at.strftime("%Y-%m-%d") }}</span>
-            </p>
-            <p class="muted">
-              Efter provperioden behöver du välja en plan för att fortsätta få den dagliga digesten.
-            </p>
-          {% elif user.plan == "solo" %}
-            <p class="settings-plan-headline">Solo · 5 prenumerationer</p>
-            <p class="muted">Daglig digest, alla tre datakällor.</p>
-          {% elif user.plan == "team" %}
-            <p class="settings-plan-headline">Team · 20 prenumerationer</p>
-            <p class="muted">Daglig digest, alla tre datakällor, delade filter inom teamet.</p>
-          {% elif user.plan == "pro" %}
-            <p class="settings-plan-headline">Pro · Obegränsat</p>
-            <p class="muted">Obegränsade prenumerationer och prioriterad support.</p>
-          {% else %}
-            <p class="settings-plan-headline">{{ user.plan|capitalize }}</p>
-          {% endif %}
-        </div>
-      </div>
-      {% if user.plan == "trial" %}
-        <a href="/pricing" class="btn btn-accent">Uppgradera</a>
-      {% endif %}
-    </div>
-  </section>
-
-  {# --- Security / 2FA --- #}
-  <section class="settings-section card card-flush">
-    <div class="card-section settings-section-head">
-      <div>
-        <h3>Säkerhet</h3>
-        <p class="muted">Tvåfaktorsautentisering med en authenticator-app.</p>
-      </div>
-    </div>
-    <div class="card-section settings-2fa">
-      {% if user.totp_enabled_at %}
-        <div class="settings-2fa-status">
-          <span class="status-pip status-pip-on" aria-hidden="true"></span>
-          <div>
-            <p class="settings-row-headline">Tvåfaktor är aktivt</p>
-            <p class="muted">Aktiverat sedan <span class="mono">{{ user.totp_enabled_at.strftime("%Y-%m-%d") }}</span>.</p>
-          </div>
-        </div>
-        <form method="post" action="/auth/2fa/disable">
+    <form method="post" action="/app/account/delete" style="display: inline;"
+          onsubmit="return confirm('Är du säker? Kontot inaktiveras nu och raderas slutgiltigt om 30 dagar.');">
       {{ csrf_input() }}
-          <button type="submit" class="btn btn-secondary">Inaktivera</button>
-        </form>
-      {% else %}
-        <div class="settings-2fa-status">
-          <span class="status-pip" aria-hidden="true"></span>
-          <div>
-            <p class="settings-row-headline">Inte aktiverat</p>
-            <p class="muted">Skydda kontot med en kod från Google Authenticator, 1Password eller liknande.</p>
-          </div>
-        </div>
-        <a href="/auth/2fa/enable" class="btn btn-primary">Aktivera</a>
-      {% endif %}
-    </div>
-  </section>
-
-  {# --- GDPR --- #}
-  <section class="settings-section card card-flush">
-    <div class="card-section settings-section-head">
-      <div>
-        <h3>Data &amp; integritet</h3>
-        <p class="muted">Du äger din data. Exportera den när du vill — eller radera kontot helt.</p>
-      </div>
-    </div>
-    <div class="card-section settings-gdpr-row">
-      <div>
-        <p class="settings-row-headline">Exportera all min data</p>
-        <p class="muted">Du får en JSON-fil med profil, prenumerationer, levererade signaler och loggar.</p>
-      </div>
-      <a href="/app/account/export" class="btn btn-secondary">Exportera JSON</a>
-    </div>
-    <div class="card-section settings-gdpr-row settings-gdpr-danger">
-      <div>
-        <p class="settings-row-headline">Radera kontot</p>
-        <p class="muted">
-          Kontot inaktiveras direkt och raderas slutgiltigt efter
-          <span class="mono">30 dagars</span> karenstid. Innan dess kan du återaktivera via support.
-        </p>
-      </div>
-      <form method="post" action="/app/account/delete"
-            onsubmit="return confirm('Är du säker? Kontot inaktiveras nu och raderas slutgiltigt om 30 dagar.');">
-      {{ csrf_input() }}
-        <button type="submit" class="btn btn-danger">Radera kontot</button>
-      </form>
-    </div>
-  </section>
-</div>
+      <button type="submit" class="v-btn v-btn--danger">Radera kontot</button>
+    </form>
+  </div>
+</section>
 {% endblock %}
