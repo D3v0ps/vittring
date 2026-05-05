@@ -45,6 +45,76 @@
   }
   .toggle button.active { background: var(--v-signal); color: var(--v-signal-ink); }
   .toggle .save { font-size: 10px; color: var(--v-signal); margin-left: 6px; }
+
+  .price-note {
+    max-width: 1200px; margin: 0 auto 32px; padding: 16px 20px;
+    background: var(--v-night-3); border: 1px solid rgba(200,204,196,0.08);
+    border-radius: var(--r-2);
+    font-family: var(--font-mono); font-size: 12px; color: var(--v-mist);
+    text-align: center; letter-spacing: 0.02em;
+  }
+
+  .compare-wrap { max-width: 1200px; margin: 64px auto 0; }
+  .compare-title { font-family: var(--font-display); font-size: 32px; font-weight: 500; letter-spacing: -0.02em; color: var(--v-paper); margin: 0 0 8px; text-align: center; }
+  .compare-sub { font-size: 14px; color: var(--v-mist); margin: 0 0 32px; text-align: center; }
+  .compare-table {
+    width: 100%; border-collapse: collapse;
+    background: var(--v-night-2);
+    border: 1px solid var(--v-night-3);
+    border-radius: var(--r-3); overflow: hidden;
+  }
+  .compare-table th, .compare-table td {
+    padding: 14px 20px; text-align: left;
+    border-top: 1px solid rgba(200,204,196,0.08);
+    font-size: 14px; color: var(--v-mist); vertical-align: middle;
+  }
+  .compare-table thead th {
+    border-top: none;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--v-paper); background: var(--v-night-3);
+  }
+  .compare-table tbody tr.section-row td {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--v-ink-4); background: rgba(200,204,196,0.03);
+    padding: 10px 20px;
+  }
+  .compare-table th:not(:first-child),
+  .compare-table td:not(:first-child) { text-align: center; width: 16%; }
+  .compare-table .col-team { background: rgba(99,209,156,0.04); }
+  .compare-table .icon-yes,
+  .compare-table .icon-no,
+  .compare-table .icon-text { display: inline-flex; align-items: center; justify-content: center; }
+  .compare-table .icon-text { color: var(--v-paper); font-family: var(--font-mono); font-size: 12px; }
+  .compare-table .row-feat { color: var(--v-paper); font-weight: 500; }
+  .compare-table .row-sub { display: block; color: var(--v-ink-4); font-size: 12px; font-weight: 400; margin-top: 2px; }
+
+  .price-microcopy {
+    max-width: 1200px; margin: 24px auto 0; text-align: center;
+    font-family: var(--font-mono); font-size: 12px; color: var(--v-ink-4);
+  }
+  .price-microcopy a { color: var(--v-signal); }
+
+  /* FAQ */
+  .faq-wrap { max-width: 760px; margin: 0 auto; }
+  .faq-wrap details {
+    border-top: 1px solid var(--v-night-3); padding: 20px 0;
+  }
+  .faq-wrap details:last-child { border-bottom: 1px solid var(--v-night-3); }
+  .faq-wrap summary {
+    list-style: none; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--font-display); font-size: 20px; font-weight: 500;
+    color: var(--v-paper); letter-spacing: -0.01em;
+  }
+  .faq-wrap summary::-webkit-details-marker { display: none; }
+  .faq-wrap summary .plus {
+    font-family: var(--font-mono); font-size: 20px; color: var(--v-signal);
+    transition: transform 0.2s ease;
+  }
+  .faq-wrap details[open] summary .plus { transform: rotate(45deg); }
+  .faq-wrap .faq-a { margin-top: 12px; font-size: 15px; color: var(--v-mist); line-height: 1.6; }
 </style>
 
 <!-- HEADER -->
@@ -64,14 +134,19 @@
       Tre planer.<br><em style="color: var(--v-signal); font-style: italic;">Avbryt när du vill.</em>
     </h1>
     <p style="font-family: var(--font-display); font-size: 22px; color: var(--v-mist); max-width: 600px; margin: 0 auto 40px; line-height: 1.4;">
-      Alla priser exklusive moms. 14 dagars provperiod på alla planer. Inget kreditkort krävs för start.
+      Välj efter teamstorlek och behov av integration. Större organisationer betalar för CSV-export, HubSpot-synk och dedikerad onboarding.
     </p>
   </div>
 </section>
 
 <!-- PRICING GRID -->
 <section style="padding: 24px 48px 96px; background: var(--v-night-2);">
+  <p class="price-note">
+    Alla priser exklusive moms. 14 dagars gratis provperiod på alla planer. Inget kreditkort krävs för start.
+  </p>
+
   <div class="price-grid">
+    <!-- SOLO -->
     <div class="price-card">
       <div class="price-name">Solo</div>
       <div class="price-tag">För en säljare som vill testa</div>
@@ -82,15 +157,20 @@
       <ul class="price-features">
         <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 5 prenumerationer</li>
         <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 1 användare</li>
-        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Alla tre datakällor</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Alla tre signaltyper (jobb, bolag, upphandling)</li>
         <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Daglig digest 06:30</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 14 dagars gratis provperiod</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> E-postsupport</li>
         <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> Delade filter och taggar</li>
+        <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> CSV/Excel-export</li>
         <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> HubSpot-integration</li>
-        <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> API-åtkomst</li>
+        <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> REST API</li>
+        <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> Prioriterad support</li>
       </ul>
-      <a href="/auth/signup" class="v-button v-button--ghost-dark v-button--lg" style="justify-content: center; width: 100%;">Välj Solo →</a>
+      <a href="/auth/signup" class="v-button v-button--ghost-dark v-button--lg" style="justify-content: center; width: 100%;">Välj Solo &rarr;</a>
     </div>
 
+    <!-- TEAM -->
     <div class="price-card featured">
       <div class="price-name">Team</div>
       <div class="price-tag">För säljteam som jobbar tillsammans</div>
@@ -101,15 +181,20 @@
       <ul class="price-features">
         <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 20 prenumerationer</li>
         <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 5 användare</li>
-        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Alla tre datakällor</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Alla tre signaltyper</li>
         <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Daglig digest 06:30</li>
         <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Delade filter och taggar</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Kommentarer per signal</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> CSV/Excel-export</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Prioriterad e-postsupport</li>
         <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> HubSpot-integration</li>
-        <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> API-åtkomst</li>
+        <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> REST API</li>
+        <li class="off"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg> Dedikerad onboarding</li>
       </ul>
-      <a href="/auth/signup" class="v-button v-button--signal v-button--lg" style="justify-content: center; width: 100%;">Välj Team →</a>
+      <a href="/auth/signup" class="v-button v-button--signal v-button--lg" style="justify-content: center; width: 100%;">Välj Team &rarr;</a>
     </div>
 
+    <!-- PRO -->
     <div class="price-card">
       <div class="price-name">Pro</div>
       <div class="price-tag">För bemanningsföretag i skala</div>
@@ -120,18 +205,181 @@
       <ul class="price-features">
         <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Obegränsade prenumerationer</li>
         <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 15 användare</li>
-        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Alla tre datakällor</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Alla tre signaltyper</li>
         <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Daglig digest 06:30</li>
-        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Delade filter och taggar</li>
-        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> HubSpot-integration</li>
-        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> API-åtkomst</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Delade filter, taggar, kommentarer och CSV-export</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> HubSpot tvåvägs-synk</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> REST API med rådata</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Teamstatistik och rapporter</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Dedikerad onboarding</li>
+        <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Prioriterad support inkl. telefon</li>
       </ul>
-      <a href="/auth/signup" class="v-button v-button--ghost-dark v-button--lg" style="justify-content: center; width: 100%;">Välj Pro →</a>
+      <a href="/auth/signup" class="v-button v-button--ghost-dark v-button--lg" style="justify-content: center; width: 100%;">Välj Pro &rarr;</a>
     </div>
   </div>
 
-  <p class="t-mono" style="margin-top: 40px; text-align: center; font-size: 12px; color: var(--v-ink-4);">
-    Alla priser exklusive moms · Behöver du volymavtal? <a href="mailto:info@karimkhalil.se" style="color: var(--v-signal);">Hör av dig direkt</a>
+  <p class="price-microcopy">
+    Behöver volymavtal eller integration mot annat CRM? Hör av dig till <a href="mailto:info@karimkhalil.se">info@karimkhalil.se</a>.
   </p>
+
+  <!-- COMPARISON TABLE -->
+  <div class="compare-wrap">
+    <h2 class="compare-title">Detaljerad jämförelse</h2>
+    <p class="compare-sub">Funktion för funktion, plan för plan.</p>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Funktion</th>
+          <th>Solo</th>
+          <th class="col-team">Team</th>
+          <th>Pro</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="section-row"><td colspan="4">Användning</td></tr>
+        <tr>
+          <td class="row-feat">Prenumerationer</td>
+          <td><span class="icon-text">5</span></td>
+          <td class="col-team"><span class="icon-text">20</span></td>
+          <td><span class="icon-text">Obegränsat</span></td>
+        </tr>
+        <tr>
+          <td class="row-feat">Användare</td>
+          <td><span class="icon-text">1</span></td>
+          <td class="col-team"><span class="icon-text">5</span></td>
+          <td><span class="icon-text">15</span></td>
+        </tr>
+        <tr>
+          <td class="row-feat">Signaltyper<span class="row-sub">Jobb, bolag, upphandling</span></td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+          <td class="col-team"><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+        </tr>
+        <tr>
+          <td class="row-feat">Daglig digest 06:30</td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+          <td class="col-team"><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+        </tr>
+
+        <tr class="section-row"><td colspan="4">Samarbete</td></tr>
+        <tr>
+          <td class="row-feat">Delade filter och taggar</td>
+          <td><svg class="icon-no" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+          <td class="col-team"><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+        </tr>
+        <tr>
+          <td class="row-feat">Kommentarer per signal</td>
+          <td><svg class="icon-no" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+          <td class="col-team"><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+        </tr>
+        <tr>
+          <td class="row-feat">CSV/Excel-export</td>
+          <td><svg class="icon-no" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+          <td class="col-team"><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+        </tr>
+        <tr>
+          <td class="row-feat">Teamstatistik och rapporter</td>
+          <td><svg class="icon-no" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+          <td class="col-team"><svg class="icon-no" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+        </tr>
+
+        <tr class="section-row"><td colspan="4">Integrationer</td></tr>
+        <tr>
+          <td class="row-feat">HubSpot tvåvägs-synk</td>
+          <td><svg class="icon-no" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+          <td class="col-team"><svg class="icon-no" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+        </tr>
+        <tr>
+          <td class="row-feat">REST API med rådata</td>
+          <td><svg class="icon-no" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+          <td class="col-team"><svg class="icon-no" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+        </tr>
+
+        <tr class="section-row"><td colspan="4">Support</td></tr>
+        <tr>
+          <td class="row-feat">E-postsupport</td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+          <td class="col-team"><span class="icon-text">Prioriterad</span></td>
+          <td><span class="icon-text">Prioriterad</span></td>
+        </tr>
+        <tr>
+          <td class="row-feat">Telefonsupport</td>
+          <td><svg class="icon-no" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+          <td class="col-team"><svg class="icon-no" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+        </tr>
+        <tr>
+          <td class="row-feat">Dedikerad onboarding</td>
+          <td><svg class="icon-no" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+          <td class="col-team"><svg class="icon-no" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7 L11 7" stroke="var(--v-ink-4)" stroke-width="1.6" stroke-linecap="round"/></svg></td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+        </tr>
+        <tr>
+          <td class="row-feat">14 dagars gratis provperiod</td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+          <td class="col-team"><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+          <td><svg class="icon-yes" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5 L5.5 11 L12 3.5" stroke="var(--v-signal)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section style="padding: 96px 48px; background: var(--v-night);">
+  <div style="max-width: 760px; margin: 0 auto 48px; text-align: center;">
+    <div class="t-eyebrow" style="margin-bottom: 16px; color: var(--v-signal);">VANLIGA FRÅGOR</div>
+    <h2 style="font-family: var(--font-display); font-size: clamp(40px, 5vw, 64px); font-weight: 400; letter-spacing: -0.025em; line-height: 1; margin: 0 0 24px; color: var(--v-paper);">
+      Frågor och svar
+    </h2>
+  </div>
+  <div class="faq-wrap">
+    <details open>
+      <summary>Hur räknas en prenumeration?<span class="plus">+</span></summary>
+      <div class="faq-a">En prenumeration är ett sparat filter — t.ex. "lagerarbetare i Storstockholm med minst tre annonser per arbetsgivare". Du kan ha flera per signaltyp.</div>
+    </details>
+    <details>
+      <summary>Kan jag byta plan när som helst?<span class="plus">+</span></summary>
+      <div class="faq-a">Ja. Uppgradera direkt från ditt konto, nedgradering träder i kraft vid nästa faktureringsperiod. Vi proportionerar aldrig av priset bakåt.</div>
+    </details>
+    <details>
+      <summary>Behöver jag ange kreditkort för att starta?<span class="plus">+</span></summary>
+      <div class="faq-a">Nej. Provperioden är 14 dagar utan kort. Vi mejlar en påminnelse innan den går ut.</div>
+    </details>
+    <details>
+      <summary>Vad händer när provperioden tar slut?<span class="plus">+</span></summary>
+      <div class="faq-a">Kontot pausas tills du väljer plan. Inga signaler skickas, men dina filter och inställningar finns kvar.</div>
+    </details>
+    <details>
+      <summary>Stödjer ni HubSpot?<span class="plus">+</span></summary>
+      <div class="faq-a">Ja, på Pro-planen. Tvåvägs-synk skickar nya signaler som leads med rätt taggning och uppdaterar status tillbaka i Vittring.</div>
+    </details>
+    <details>
+      <summary>Erbjuder ni årsbetalning?<span class="plus">+</span></summary>
+      <div class="faq-a">Ja, med 10 % rabatt på alla planer. Hör av dig till info@karimkhalil.se så fixar vi det.</div>
+    </details>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section style="padding: 96px 48px; background: var(--v-night-2); text-align: center;">
+  <div style="max-width: 720px; margin: 0 auto;">
+    <h2 style="font-family: var(--font-display); font-size: clamp(48px, 6vw, 80px); font-weight: 400; letter-spacing: -0.03em; line-height: 1; margin: 0 0 24px; color: var(--v-paper);">
+      Börja idag.<br><em style="color: var(--v-signal); font-style: italic;">Avbryt när du vill.</em>
+    </h2>
+    <p style="font-family: var(--font-display); font-size: 22px; color: var(--v-mist); margin: 0 0 40px; line-height: 1.4;">
+      14 dagar gratis. Inget kort. Inga förpliktelser.
+    </p>
+    <a href="/auth/signup" class="v-button v-button--signal v-button--lg">Skapa konto &rarr;</a>
+  </div>
 </section>
 {% endblock %}
+</content>
+</invoke>
