@@ -1,0 +1,17 @@
+{% extends "_base.html.j2" %}
+{% block content %}
+<h1 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; color: #141414; line-height: 1.2;">
+  Bekräfta din e-postadress
+</h1>
+<p style="margin: 0 0 16px 0; font-size: 16px; color: #141414; line-height: 1.65;">
+  Klicka på länken nedan för att bekräfta att <span class="mono">{{ email }}</span> tillhör dig. Länken är giltig i 24 timmar.
+</p>
+<p style="margin: 24px 0;">
+  <a href="{{ verify_url }}" style="display:inline-block;height:36px;line-height:36px;padding:0 16px;background:#1B3A4B;color:#FAFAF7;border-radius:6px;font-size:14px;font-weight:500;text-decoration:none;">
+    Bekräfta e-post
+  </a>
+</p>
+<p style="margin: 0; font-size: 13px; color: #8A8A85;">
+  Fungerar inte knappen? Kopiera länken: <span class="mono">{{ verify_url }}</span>
+</p>
+{% endblock %}
