@@ -870,7 +870,13 @@ The full system consists of these components.
 
 ---
 
-## 22. Definition of done
+## 22. Design system
+
+All visual design follows the strict specification in `design-system.md`. No exceptions without explicit approval.
+
+---
+
+## 23. Definition of done
 
 A feature is done when:
 
