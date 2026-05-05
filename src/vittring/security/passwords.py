@@ -1,33 +1,41 @@
 """Password hashing and strength check.
 
-Uses ``bcrypt_sha256`` rather than plain ``bcrypt`` so passphrases longer than
-72 bytes are not silently truncated (and modern ``bcrypt`` >= 4 raises on
-oversize input). The wrapper SHA-256-hashes the plaintext first, then bcrypts
-the digest — the resulting input to bcrypt is always 64 bytes regardless of
-the original length.
+Uses the ``bcrypt`` library directly. ``passlib`` and ``bcrypt`` 4+ have a
+compatibility issue that surfaces as a misleading "password cannot be longer
+than 72 bytes" error even for short inputs, so we bypass passlib.
+
+Long passphrases are pre-folded with SHA-256 + base64 so the bcrypt input is
+always 44 bytes regardless of the original length — no silent truncation.
 """
 
 from __future__ import annotations
 
-from passlib.context import CryptContext
+import base64
+import hashlib
+
+import bcrypt
 
 from vittring.utils.errors import WeakPasswordError
 
-_pwd_context = CryptContext(
-    schemes=["bcrypt_sha256"],
-    deprecated="auto",
-    bcrypt_sha256__rounds=12,
-)
-
+ROUNDS = 12
 MIN_PASSWORD_LENGTH = 12
 
 
+def _prepare(plain: str) -> bytes:
+    digest = hashlib.sha256(plain.encode("utf-8")).digest()
+    return base64.b64encode(digest)  # 44 bytes, well under bcrypt's 72
+
+
 def hash_password(plain: str) -> str:
-    return _pwd_context.hash(plain)
+    salt = bcrypt.gensalt(rounds=ROUNDS)
+    return bcrypt.hashpw(_prepare(plain), salt).decode("ascii")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return _pwd_context.verify(plain, hashed)
+    try:
+        return bcrypt.checkpw(_prepare(plain), hashed.encode("ascii"))
+    except (ValueError, TypeError):
+        return False
 
 
 def assert_strong_password(plain: str) -> None:
