@@ -490,12 +490,28 @@ async def toggle_saved_signal(
 
 @router.get("/account", response_class=HTMLResponse, include_in_schema=False)
 async def account_page(
-    request: Request, user: CurrentVerifiedUser
+    request: Request, session: SessionDep, user: CurrentVerifiedUser
 ) -> HTMLResponse:
+    subs_rows = (
+        await session.execute(
+            select(Subscription).where(
+                Subscription.user_id == user.id,
+                Subscription.active.is_(True),
+            ).order_by(Subscription.created_at.desc())
+        )
+    ).scalars().all()
+    name_for_initials = user.full_name or user.email.split("@")[0]
     return templates.TemplateResponse(
         request,
         "app/account.html.j2",
-        {"title": "Inställningar", "user": user},
+        {
+            "title": "Inställningar",
+            "user": user,
+            "subscriptions": [{"name": s.name} for s in subs_rows],
+            "initials": _initials(name_for_initials),
+            "plan_label": PLAN_LABELS.get(user.plan, user.plan.capitalize()),
+            "active": "account",
+        },
     )
 
 
