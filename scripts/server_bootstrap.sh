@@ -86,7 +86,7 @@ if ! id -u "${APP_USER}" >/dev/null 2>&1; then
     useradd --system --create-home --shell /bin/bash --groups sudo "${APP_USER}"
 fi
 
-install -d -m 750 -o "${APP_USER}" -g "${APP_USER}" "${APP_HOME}" "${APP_HOME}/var" "${APP_HOME}/releases"
+install -d -m 755 -o "${APP_USER}" -g "${APP_USER}" "${APP_HOME}" "${APP_HOME}/var" "${APP_HOME}/releases"
 install -d -m 755 -o "${APP_USER}" -g "${APP_USER}" "${LOG_DIR}"
 install -d -m 750 -o root -g "${APP_USER}" "${ENV_DIR}"
 
