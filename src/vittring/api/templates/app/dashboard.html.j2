@@ -322,7 +322,7 @@
       </div>
 
       {% for signal in other_signals %}
-      <div class="row">
+      <div class="row" id="saved-{{ signal.id }}">
         <span class="time">{{ signal.date }}<br><span style="color: var(--v-ink-4);">{{ signal.time }}</span></span>
         <span class="pill-kind {{ signal.kind_class }}">{{ signal.kind }}</span>
         <div>
@@ -331,17 +331,43 @@
         </div>
         <div class="src">{{ signal.source }}</div>
         <div class="actions">
-          <button class="icon-btn">★</button>
-          <button class="icon-btn">↗</button>
-          <button class="icon-btn">→</button>
+          <form method="post" action="/app/signals/save" class="inline-form">
+            {{ csrf_input() }}
+            <input type="hidden" name="signal_type" value="{{ signal.kind_class }}">
+            <input type="hidden" name="signal_id" value="{{ signal.id }}">
+            <button type="submit" class="icon-btn" title="Spara signal">★</button>
+          </form>
+          {% if user.plan == "pro" %}
+          <button type="button" class="icon-btn" title="Skicka till HubSpot">↗</button>
+          {% else %}
+          <a href="/pricing" class="icon-btn" title="Pro-funktion — uppgradera för att aktivera">↗</a>
+          {% endif %}
+          {% if signal.url %}
+          <a class="icon-btn" href="{{ signal.url }}" target="_blank" rel="noopener" title="Öppna källa">→</a>
+          {% else %}
+          <a class="icon-btn" href="/app/saved" title="Källa saknas">→</a>
+          {% endif %}
         </div>
       </div>
       {% endfor %}
       {% endif %}
 
+      {% if digest_count == 0 %}
+      <div style="padding: 48px 32px; text-align: center; color: var(--v-ink-4);">
+        <div style="font-family: var(--font-display); font-size: 22px; color: var(--v-paper); margin-bottom: 6px;">Inga träffar</div>
+        <div style="font-family: var(--font-mono); font-size: 12px;">
+          {% if search_query %}
+            Inga signaler matchar ”{{ search_query }}”. <a href="/app" style="color: var(--v-signal);">Rensa filter</a>
+          {% else %}
+            Dagens digest är tom — kom tillbaka imorgon.
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
       <div style="padding: 24px 32px; text-align: center; font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4);">
         — Slut på dagens digest. Nästa hämtning {{ next_sync_time }} imorgon. —
       </div>
+      {% endif %}
     </div>
   </main>
 </div>

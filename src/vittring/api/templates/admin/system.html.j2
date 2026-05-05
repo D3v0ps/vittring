@@ -1,0 +1,94 @@
+{% extends "admin/_layout.html.j2" %}
+{% set active_nav = 'system' %}
+{% set topbar_title = 'System' %}
+
+{% block content %}
+  <div class="page-header">
+    <div class="eyebrow">Admin · System</div>
+    <h1>Systemkontroll</h1>
+    <div class="subtitle">Schemaläggare, databas och tredjepartstjänster.</div>
+    <div style="margin-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4);">
+      Vittring v{{ app_version }} · Python {{ python_version }}
+    </div>
+  </div>
+
+  <div class="page-body stack">
+
+    {% if flash %}<div class="alert {{ flash_kind|default('ok') }}">{{ flash }}</div>{% endif %}
+
+    <!-- Schemaläggare -->
+    <div class="card">
+      <h2 class="card-h2">Schemaläggare</h2>
+      <p style="font-size: 13px; color: var(--v-ink-4); margin-top: 4px;">
+        Senast registrerade körningar (från audit-loggen och ingest-händelser).
+      </p>
+      <table class="t" style="margin-top: 12px;">
+        <thead>
+          <tr><th>Jobb</th><th>Schema</th><th>Senast lyckad</th><th>Trigga manuellt</th></tr>
+        </thead>
+        <tbody>
+          {% for j in jobs %}
+          <tr>
+            <td>{{ j.label }}</td>
+            <td class="mono">{{ j.schedule }}</td>
+            <td class="mono">{% if j.last_run %}{{ j.last_run.strftime('%Y-%m-%d %H:%M') }}{% else %}<span style="color: var(--v-ink-4);">Inga data ännu</span>{% endif %}</td>
+            <td>
+              <form method="post" action="/admin/system/trigger/{{ j.name }}" class="inline" onsubmit="return confirm('Trigga {{ j.label }} nu?');">
+                {{ csrf_input() }}
+                <button class="btn primary" type="submit">▶ Trigga</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Databas -->
+    <div class="card">
+      <h2 class="card-h2">Databas</h2>
+      <div class="stat-grid" style="margin-top: 12px; grid-template-columns: repeat(4, 1fr);">
+        {% for k, v in db_counts.items() %}
+        <div class="stat-card">
+          <div class="lbl">{{ k }}</div>
+          <div class="num" style="font-family: var(--font-mono); font-size: 26px;">{{ v }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Resend domän -->
+    <div class="card">
+      <h2 class="card-h2">Resend-domän</h2>
+      <table class="t" style="margin-top: 12px;">
+        <tbody>
+          <tr>
+            <td class="mono" style="width: 220px;">Domän</td>
+            <td class="mono">{{ resend.domain }}</td>
+          </tr>
+          <tr>
+            <td class="mono">Status</td>
+            <td>
+              {% if resend.status == 'verified' %}
+                <span class="badge signal">verifierad</span>
+              {% elif resend.status == 'pending' or resend.status == 'not_started' %}
+                <span class="badge amber">{{ resend.status }}</span>
+              {% elif resend.status == 'unreachable' %}
+                <span class="badge danger">{{ resend.status }}</span>
+              {% else %}
+                <span class="badge danger">{{ resend.status }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% if resend.detail %}
+          <tr>
+            <td class="mono">Detalj</td>
+            <td class="mono" style="color: var(--v-ink-4);">{{ resend.detail }}</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+{% endblock %}
