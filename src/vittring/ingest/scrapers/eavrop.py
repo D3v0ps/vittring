@@ -175,6 +175,17 @@ class EavropScraper(BaseScraper[ProcurementItem]):
                 source=self.source_value,
             )
 
+    # BaseScraper declares list_urls() and parse() as abstract for scrapers
+    # that follow the standard list-then-detail pattern. e-Avrop's detail
+    # pages are unreachable (see module docstring), so we override
+    # fetch_since() and these two are never called — but they still have
+    # to exist on the class for it to be instantiable.
+    async def list_urls(self) -> list[str]:
+        return []
+
+    def parse(self, body: str, url: str) -> ProcurementItem | None:
+        return None
+
     @staticmethod
     def _external_id_from_url(url: str) -> str:
         # Path is /{customer}/visa/{kind}.aspx where {kind} is "upphandling"
