@@ -4,7 +4,7 @@ After=network.target postgresql.service
 Wants=postgresql.service
 
 [Service]
-Type=notify
+Type=exec
 User=vittring
 Group=vittring
 WorkingDirectory=/opt/vittring/current
