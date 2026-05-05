@@ -393,7 +393,14 @@ class BaseScraper[T](IngestAdapter[T]):
             await asyncio.sleep(wait)
 
     async def _do_get(self, url: str, headers: dict[str, str]) -> tuple[str | None, int | None]:
-        """GET ``url`` with up to 3 retries on 5xx using exponential backoff."""
+        """GET ``url`` with up to 3 retries on 5xx using exponential backoff.
+
+        Follows up to 5 redirects (httpx default) so portals that 301 to a
+        canonical host or path resolve transparently. The robots.txt check
+        runs against the original URL only — if a redirect lands somewhere
+        we shouldn't fetch, the audit row will still log the original URL
+        and decision.
+        """
         attempt = 0
         backoff = 1.0
         last_status: int | None = None
@@ -402,6 +409,8 @@ class BaseScraper[T](IngestAdapter[T]):
             try:
                 async with httpx.AsyncClient(
                     timeout=httpx.Timeout(connect=5.0, read=30.0, write=10.0, pool=5.0),
+                    follow_redirects=True,
+                    max_redirects=5,
                 ) as client:
                     response = await client.get(url, headers=headers)
             except httpx.HTTPError as exc:
