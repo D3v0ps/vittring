@@ -1131,8 +1131,8 @@ async def _last_admin_run(
     stmt = select(func.max(AuditLog.created_at)).where(AuditLog.action == action.value)
     if source is not None:
         stmt = stmt.where(AuditLog.audit_metadata["source"].astext == source)
-    row = (await session.execute(stmt)).scalar()
-    return row
+    result = await session.execute(stmt)
+    return result.scalar()
 
 
 @router.get("/system", response_class=HTMLResponse, include_in_schema=False)
