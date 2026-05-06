@@ -1,0 +1,58 @@
+{% extends "_layout.html.j2" %}
+{% block content %}
+<section style="padding: 80px 48px 96px; background: var(--v-night-2);">
+  <div style="max-width: 720px; margin: 0 auto;">
+    <div class="t-eyebrow" style="margin-bottom: 16px; color: var(--v-signal);">JURIDIK</div>
+    <h1 style="font-family: var(--font-display); font-size: 56px; font-weight: 400; letter-spacing: -0.03em; line-height: 1; margin: 0 0 16px; color: var(--v-paper);">
+      Personuppgiftsbiträdesavtal.
+    </h1>
+    <p class="t-mono" style="font-size: 12px; color: var(--v-ink-4); margin-bottom: 48px;">SENAST UPPDATERAD 2026-05-06</p>
+
+    <div style="font-size: 16px; line-height: 1.7; color: var(--v-mist);">
+      <p>Detta är en kortversion av Vittrings personuppgiftsbiträdesavtal (DPA) under GDPR artikel 28. Behöver du den fullständiga signerade versionen? Mejla <a href="mailto:info@karimkhalil.se" style="color: var(--v-signal); text-decoration: none;">info@karimkhalil.se</a> så skickar vi den.</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Parter</h2>
+      <p><strong style="color: var(--v-paper);">Personuppgiftsansvarig</strong>: din organisation (kunden). <strong style="color: var(--v-paper);">Personuppgiftsbiträde</strong>: Karim Khalil som driver Vittring (org.nr på begäran).</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Behandlingens art och ändamål</h2>
+      <p>Behandling av era anställdas kontouppgifter (namn, e-post, IP-adress, inloggningshistorik) för att leverera Vittrings bevakningstjänst, samt era prenumerationskriterier för att driva matchningsmotorn.</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Kategorier av personuppgifter</h2>
+      <ul style="padding-left: 20px;">
+        <li>Identifierare: e-post, namn, organisation</li>
+        <li>Tekniska data: IP-adress, user-agent, sessionsmetadata</li>
+        <li>Beteendedata: vilka prenumerationer som skapats, vilka mejl som öppnats</li>
+        <li>Inga särskilda kategorier av personuppgifter behandlas (ingen hälsa, etnicitet, etc.)</li>
+      </ul>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Underbiträden</h2>
+      <ul style="padding-left: 20px;">
+        <li><strong style="color: var(--v-paper);">Hetzner Online GmbH</strong> — server och databas, Falkenstein (DE/EU).</li>
+        <li><strong style="color: var(--v-paper);">Resend, Inc.</strong> — utgående e-post, EU-region.</li>
+        <li><strong style="color: var(--v-paper);">Functional Software, Inc. (Sentry)</strong> — felövervakning, EU-region (Frankfurt).</li>
+        <li><strong style="color: var(--v-paper);">Stripe Payments Europe Ltd</strong> — betalningar, Irland (aktiveras när fakturering slås på).</li>
+      </ul>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Säkerhet</h2>
+      <p>Krypterad anslutning (TLS 1.3) hela vägen, krypterade backuper med GnuPG-symmetri, sårbarhetspatchar via <span class="t-mono" style="color: var(--v-signal);">unattended-upgrades</span>, principen om minst privilegier för applikationskontot, audit-logg på alla känsliga åtgärder.</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Lagringstid</h2>
+      <ul style="padding-left: 20px;">
+        <li>Användarkonton och prenumerationer: tills kontot raderas (30 dagars grace-period innan hård radering).</li>
+        <li>Bolagsverkets personuppgifter (namn på styrelseledamöter osv.): max 30 dagar om de inte surfats i en levererad signal — då <code>delivered_at + 30 dagar</code>.</li>
+        <li>Audit-logg: 24 månader (krav från bokföringslagen).</li>
+        <li>Hetzner-snapshots: 7 dagar rullande.</li>
+      </ul>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Era rättigheter</h2>
+      <p>Ni kan när som helst begära export, rättelse eller radering av era anställdas data. Export och radering finns som självservice under <span class="t-mono" style="color: var(--v-signal);">Konto → GDPR</span>. Övriga ärenden tar vi via <a href="mailto:info@karimkhalil.se" style="color: var(--v-signal); text-decoration: none;">info@karimkhalil.se</a> och svarar inom 30 dagar.</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Dataportabilitet</h2>
+      <p>Format: JSON. Allt som hör till ert konto (användare, prenumerationer, levererade signaler, audit-logg) ingår.</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Avtalets upphörande</h2>
+      <p>När avtalet upphör (uppsägning, kontoradering eller annan terminering) raderar vi era data inom 30 dagar, förutom det som måste behållas för legala krav (audit-logg 24 månader).</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

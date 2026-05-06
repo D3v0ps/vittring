@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from fastapi.templating import Jinja2Templates
 from jinja2 import pass_context, select_autoescape
 from markupsafe import Markup
+
+STOCKHOLM_TZ = ZoneInfo("Europe/Stockholm")
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 
@@ -43,5 +47,23 @@ def csrf_token(context: dict[str, Any]) -> str:
     return getattr(request.state, "csrf_token", "")
 
 
+def stockholm(value: datetime | None, fmt: str = "%Y-%m-%d %H:%M:%S") -> str:
+    """Render a UTC datetime in Europe/Stockholm.
+
+    All TIMESTAMPTZ values land in DB as UTC; rendering them raw makes
+    timestamps look an hour "off" to Swedish operators in summer and two
+    hours off in winter. Use ``{{ ts | stockholm }}`` everywhere a
+    timestamp is shown to a human.
+    """
+    if value is None:
+        return ""
+    if value.tzinfo is None:
+        from datetime import timezone
+
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(STOCKHOLM_TZ).strftime(fmt)
+
+
 templates.env.globals["csrf_input"] = csrf_input
 templates.env.globals["csrf_token"] = csrf_token
+templates.env.filters["stockholm"] = stockholm

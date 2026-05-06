@@ -1,0 +1,32 @@
+{% extends "_layout.html.j2" %}
+{% block content %}
+<section style="padding: 80px 48px 96px; background: var(--v-night-2);">
+  <div style="max-width: 720px; margin: 0 auto;">
+    <div class="t-eyebrow" style="margin-bottom: 16px; color: var(--v-signal);">JURIDIK</div>
+    <h1 style="font-family: var(--font-display); font-size: 56px; font-weight: 400; letter-spacing: -0.03em; line-height: 1; margin: 0 0 16px; color: var(--v-paper);">
+      Cookiepolicy.
+    </h1>
+    <p class="t-mono" style="font-size: 12px; color: var(--v-ink-4); margin-bottom: 48px;">SENAST UPPDATERAD 2026-05-06</p>
+
+    <div style="font-size: 16px; line-height: 1.7; color: var(--v-mist);">
+      <p>Vittring använder så få cookies som möjligt. Vi sätter inga marknadsföringscookies, inga tredjepartsspårare och ingen webbanalys utan ditt samtycke.</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Strikt nödvändiga cookies</h2>
+      <p>Följande cookies krävs för att tjänsten ska fungera och kräver enligt lag inget samtycke:</p>
+      <ul style="padding-left: 20px;">
+        <li><span class="t-mono" style="color: var(--v-signal);">vittring_session</span> — håller din inloggning aktiv. <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>. Livstid 15 minuter, förnyas automatiskt vid aktiv användning.</li>
+        <li><span class="t-mono" style="color: var(--v-signal);">vittring_csrf</span> — skyddar formulär mot CSRF-attacker (cross-site request forgery). <code>HttpOnly</code> är inte satt eftersom cookien måste läsas av JavaScript för att kunna skickas tillbaka i headern. Livstid 24 timmar.</li>
+      </ul>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Cookies som kräver samtycke</h2>
+      <p>Inga. När vi någon gång lägger till webbanalys eller A/B-test kommer vi visa en cookiebanner där du aktivt får samtycka innan något sätts.</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Hur du blockerar cookies</h2>
+      <p>Du kan radera eller blockera cookies i webbläsarens inställningar. Eftersom våra cookies bara hanterar session och CSRF kommer du inte kunna logga in om du blockerar dem helt.</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Frågor</h2>
+      <p>Mejla <a href="mailto:info@karimkhalil.se" style="color: var(--v-signal); text-decoration: none;">info@karimkhalil.se</a>.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

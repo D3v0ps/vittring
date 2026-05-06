@@ -587,8 +587,11 @@ async def export_csv(
             ]
         )
 
+    # utf-8-sig prefixes a UTF-8 BOM so Excel renders Swedish characters
+    # (å, ä, ö) correctly when the file is double-clicked. Plain utf-8
+    # without BOM otherwise shows mojibake on Windows defaults.
     return Response(
-        content=buf.getvalue(),
+        content=("﻿" + buf.getvalue()).encode("utf-8"),
         media_type="text/csv; charset=utf-8",
         headers={
             "Content-Disposition": 'attachment; filename=vittring-export.csv'

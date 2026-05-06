@@ -35,7 +35,7 @@
         <tbody>
           {% for r in rows %}
           <tr>
-            <td class="mono">{{ r.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            <td class="mono">{{ r.created_at | stockholm }}</td>
             <td>
               {% if r.user_email %}
                 <a href="/admin/users/{{ r.user_id }}">{{ r.user_email }}</a>
