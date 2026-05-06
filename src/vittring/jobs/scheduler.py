@@ -8,6 +8,7 @@ from the API process so a slow/failing API does not back up jobs.
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -61,8 +62,13 @@ async def _run_mercell() -> None:
 
 
 def build_scheduler() -> AsyncIOScheduler:
-    tz = get_settings().tz
-    return AsyncIOScheduler(timezone=tz)
+    # Pass a real ZoneInfo object — APScheduler 3.x interprets a bare
+    # string as the timezone *name* on some backends but silently falls
+    # back to the host clock on others, which DST-shifts every cron job
+    # twice a year. ZoneInfo locks behaviour to Europe/Stockholm
+    # regardless of host TZ.
+    tz_name = get_settings().tz
+    return AsyncIOScheduler(timezone=ZoneInfo(tz_name))
 
 
 def register_jobs(scheduler: AsyncIOScheduler) -> None:

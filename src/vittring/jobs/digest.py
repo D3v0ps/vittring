@@ -91,15 +91,30 @@ async def _load_user_signals(
 ) -> tuple[
     list[tuple[JobPosting, JobPostingItem]],
     list[tuple[CompanyChange, CompanyChangeItem, Company]],
-    list[tuple[Procurement, ProcurementItem]],
+    list[tuple[Procurement, ProcurementItem, str | None]],
 ]:
-    """Fetch all signals from the lookback window — once per digest run."""
+    """Fetch all signals from the lookback window — once per digest run.
+
+    Side-loads the Company table so JobPostingItem.employer_orgnr and
+    procurement buyer_municipality (passed as a separate per-row tuple
+    member) are populated. Without these, ``exclude_employer_orgnrs``
+    and the procurement municipality filter were silently no-ops.
+    """
     job_rows = (
         (await session.execute(select(JobPosting).where(JobPosting.published_at >= since)))
         .scalars()
         .all()
     )
-    jobs = [(row, _job_to_item(row)) for row in job_rows]
+
+    company_ids = {row.company_id for row in job_rows if row.company_id is not None}
+    orgnr_by_company_id: dict[int, str] = {}
+    if company_ids:
+        result = await session.execute(
+            select(Company.id, Company.orgnr).where(Company.id.in_(company_ids))
+        )
+        orgnr_by_company_id = dict(result.all())
+
+    jobs = [(row, _job_to_item(row, orgnr_by_company_id)) for row in job_rows]
 
     change_rows = (
         await session.execute(
@@ -119,15 +134,39 @@ async def _load_user_signals(
         .scalars()
         .all()
     )
-    procurements = [(row, _proc_to_item(row)) for row in proc_rows]
+
+    buyer_orgnrs = {row.buyer_orgnr for row in proc_rows if row.buyer_orgnr}
+    municipality_by_orgnr: dict[str, str | None] = {}
+    if buyer_orgnrs:
+        result = await session.execute(
+            select(Company.orgnr, Company.hq_municipality).where(
+                Company.orgnr.in_(buyer_orgnrs)
+            )
+        )
+        municipality_by_orgnr = dict(result.all())
+
+    procurements = [
+        (
+            row,
+            _proc_to_item(row),
+            municipality_by_orgnr.get(row.buyer_orgnr) if row.buyer_orgnr else None,
+        )
+        for row in proc_rows
+    ]
 
     return jobs, changes, procurements
 
 
-def _job_to_item(row: JobPosting) -> JobPostingItem:
+def _job_to_item(
+    row: JobPosting, orgnr_by_company_id: dict[int, str] | None = None
+) -> JobPostingItem:
     return JobPostingItem(
         external_id=row.external_id,
-        employer_orgnr=None,
+        employer_orgnr=(
+            (orgnr_by_company_id or {}).get(row.company_id)
+            if row.company_id is not None
+            else None
+        ),
         employer_name=row.employer_name,
         headline=row.headline,
         description=row.description,
@@ -291,10 +330,12 @@ async def assemble_user_digest(
                 )
 
         if "procurement" in sub.signal_types:
-            for row, item in procurements:
+            for row, item, buyer_municipality in procurements:
                 if row.id in delivered_procs:
                     continue
-                if not match_procurement(item, criteria):
+                if not match_procurement(
+                    item, criteria, buyer_municipality=buyer_municipality
+                ):
                     continue
                 items.append(
                     _DigestItem(
