@@ -208,6 +208,7 @@ async def dashboard(
         "subscriptions": subs,
         "initials": _initials(name_for_initials),
         "plan_label": PLAN_LABELS.get(user.plan, user.plan.capitalize()),
+        "active": "overview",
 
         "today_weekday": today_weekday,
         "today_date": today_date,

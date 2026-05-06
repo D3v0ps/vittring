@@ -21,6 +21,7 @@ class AuditAction(StrEnum):
     LOGOUT = "logout"
     SIGNUP = "signup"
     EMAIL_VERIFIED = "email_verified"
+    VERIFICATION_RESENT = "verification_resent"
     PASSWORD_CHANGE = "password_change"
     PASSWORD_RESET_REQUESTED = "password_reset_requested"
     PASSWORD_RESET_COMPLETED = "password_reset_completed"

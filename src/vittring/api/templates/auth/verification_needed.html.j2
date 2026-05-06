@@ -1,0 +1,40 @@
+{% extends "auth/_auth_base.html.j2" %}
+{% block auth_content %}
+<h1 class="auth-h1">Bekräfta din <em>e-post</em> först.</h1>
+<p class="auth-sub">
+  Du behöver klicka på bekräftelselänken vi skickade till
+  {% if email %}<strong>{{ email }}</strong>{% else %}din e-postadress{% endif %}
+  innan du kan logga in. Länken är giltig i 24 timmar.
+</p>
+{% if submitted %}
+<div class="alert-info" style="margin-bottom: 16px;">
+  Vi skickade en ny länk. Kolla inboxen — och skräpposten — om en stund.
+</div>
+{% elif error %}
+<div class="alert-error" style="margin-bottom: 16px;">{{ error }}</div>
+{% endif %}
+<form method="post" action="/auth/resend-verification" class="auth-form">
+  {{ csrf_input() }}
+  <div class="field">
+    <label for="email">E-post</label>
+    <input
+      class="input"
+      type="email"
+      id="email"
+      name="email"
+      value="{{ email or '' }}"
+      required
+      autocomplete="email"
+      placeholder="namn@företag.se"
+    />
+  </div>
+  <button type="submit" class="v-button v-button--primary v-button--block v-button--lg">
+    Skicka ny bekräftelselänk
+  </button>
+</form>
+<p class="auth-foot">
+  <a href="/auth/login">Tillbaka till inloggning</a>
+  <span style="margin: 0 var(--space-2); color: var(--color-text-subtle);">·</span>
+  <a href="mailto:info@karimkhalil.se">Kontakta support</a>
+</p>
+{% endblock %}

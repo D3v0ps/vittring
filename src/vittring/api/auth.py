@@ -182,6 +182,104 @@ async def check_email(request: Request) -> HTMLResponse:
 
 
 # ---------------------------------------------------------------------------
+# Verification-needed landing + resend
+# ---------------------------------------------------------------------------
+
+@router.get("/verification-needed", response_class=HTMLResponse, include_in_schema=False)
+async def verification_needed(
+    request: Request, email: str | None = None
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "auth/verification_needed.html.j2",
+        {
+            "title": "Bekräfta din e-post",
+            "email": email,
+            "submitted": False,
+            "error": None,
+        },
+    )
+
+
+@router.post(
+    "/resend-verification",
+    dependencies=[Depends(rate_limit(PASSWORD_RESET_BY_EMAIL, lambda r: "resend"))],
+    include_in_schema=False,
+    response_model=None,
+)
+async def resend_verification(
+    request: Request,
+    session: SessionDep,
+    email: Annotated[EmailStr, Form()],
+) -> HTMLResponse:
+    """Generate a fresh verification token and re-send the bekräfta-mejl.
+
+    Anti-enumeration: the rendered response is identical whether the email
+    matches a real account or not; only on a hit do we actually mint a
+    token + queue an email. The reused PASSWORD_RESET_BY_EMAIL bucket caps
+    abuse (3 req/hour per email).
+    """
+    user = (
+        await session.execute(select(User).where(User.email == email))
+    ).scalar_one_or_none()
+    if user is not None and not user.is_verified:
+        plain, hashed = new_url_token()
+        session.add(
+            EmailVerificationToken(
+                token_hash=hashed,
+                user_id=user.id,
+                expires_at=datetime.now(timezone.utc) + EMAIL_VERIFICATION_TTL,
+            )
+        )
+        meta = request_meta(request)
+        await audit(
+            session,
+            action=AuditAction.VERIFICATION_RESENT,
+            user_id=user.id,
+            ip=meta["ip"],
+            user_agent=meta["user_agent"],
+        )
+        settings = get_settings()
+        base = str(settings.app_base_url).rstrip("/")
+        verify_url = f"{base}/auth/verify?t={plain}"
+        html = render(
+            "verify.html.j2",
+            subject="Bekräfta din e-postadress",
+            from_address=settings.email_from_address,
+            email=user.email,
+            verify_url=verify_url,
+        )
+        text = f"Bekräfta din e-post genom att besöka: {verify_url}"
+        try:
+            await send_email(
+                to=user.email,
+                subject="Bekräfta din e-postadress hos Vittring",
+                html=html,
+                text=text,
+                tags={"kind": "verify_resent"},
+            )
+        except Exception as exc:
+            import structlog
+
+            structlog.get_logger(__name__).warning(
+                "resend_verification_email_failed",
+                user_id=user.id,
+                email=user.email,
+                error=str(exc),
+            )
+    return templates.TemplateResponse(
+        request,
+        "auth/verification_needed.html.j2",
+        {
+            "title": "Bekräfta din e-post",
+            "email": str(email),
+            "submitted": True,
+            "error": None,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
 # Email verification
 # ---------------------------------------------------------------------------
 

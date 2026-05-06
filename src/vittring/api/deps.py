@@ -46,16 +46,15 @@ async def current_verified_user(
 ) -> User:
     """Require a verified email; otherwise bounce to the friendly page.
 
-    Raising HTTPException(403) used to surface as raw JSON ``email_not_verified``
-    which dead-ended any user whose verification email got lost. Replace with
-    a 303 redirect to ``/auth/verification-needed`` so the user has somewhere
-    to go (resend link, contact support).
+    Raising HTTPException(303) with a Location header is honoured by the
+    HTTP exception handler in ``main.py``, which forwards 3xx exceptions
+    as real redirects rather than serialising them as JSON.
     """
     if not user.is_verified:
         raise HTTPException(
             status_code=status.HTTP_303_SEE_OTHER,
             detail="email_not_verified",
-            headers={"Location": "/auth/verification-needed"},
+            headers={"Location": f"/auth/verification-needed?email={user.email}"},
         )
     return user
 

@@ -116,6 +116,25 @@ async def create_subscription(
         else None,
     )
 
+    # Spec §8: an empty Criteria object matches nothing useful, so the API
+    # rejects creating a subscription without at least one selector. We
+    # check on the dumped dict so it's invariant under future Criteria
+    # field additions.
+    if not signal_types or not any(
+        v for v in criteria.model_dump(exclude_defaults=True).values()
+    ):
+        return templates.TemplateResponse(
+            request,
+            "app/subscription_form.html.j2",
+            {
+                "title": "Ny prenumeration",
+                "user": user,
+                "subscription": None,
+                "error": "Välj minst en signaltyp och minst ett filter (yrke, kommun, CPV-kod, nyckelord eller liknande).",
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
     sub = Subscription(
         user_id=user.id,
         name=name,
