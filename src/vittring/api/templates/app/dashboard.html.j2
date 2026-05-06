@@ -278,17 +278,34 @@
     <!-- FILTER -->
     <div class="filter-bar">
       <span style="font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4); margin-right: 8px;">FILTRERA:</span>
-      <span class="chip active">Alla typer <span class="x">×</span></span>
-      <span class="chip">Upphandlingar ({{ count_upph }})</span>
-      <span class="chip">Jobb ({{ count_jobb }})</span>
-      <span class="chip">Bolagsändringar ({{ count_bolag }})</span>
+      {% set qs = '?q=' ~ search_query if search_query else '' %}
+      <a class="chip {% if not active_type %}active{% endif %}" href="/app{{ qs }}" style="text-decoration: none;">
+        Alla typer{% if not active_type %} <span class="x">×</span>{% endif %}
+      </a>
+      <a class="chip {% if active_type == 'upph' %}active{% endif %}" href="/app?type=upph{% if search_query %}&q={{ search_query }}{% endif %}" style="text-decoration: none;">
+        Upphandlingar ({{ count_upph }})
+      </a>
+      <a class="chip {% if active_type == 'jobb' %}active{% endif %}" href="/app?type=jobb{% if search_query %}&q={{ search_query }}{% endif %}" style="text-decoration: none;">
+        Jobb ({{ count_jobb }})
+      </a>
+      <a class="chip {% if active_type == 'bolag' %}active{% endif %}" href="/app?type=bolag{% if search_query %}&q={{ search_query }}{% endif %}" style="text-decoration: none;">
+        Bolagsändringar ({{ count_bolag }})
+      </a>
+      {% if active_filters %}
       <span style="width: 1px; height: 18px; background: var(--v-night-3); margin: 0 8px;"></span>
       {% for f in active_filters %}
-      <span class="chip active">{{ f }} <span class="x">×</span></span>
+      <span class="chip active" title="Från din prenumeration — redigeras under Prenumerationer">{{ f }}</span>
       {% endfor %}
-      <span class="chip">+ filter</span>
+      {% endif %}
+      <a class="chip" href="/app/subscriptions" style="text-decoration: none;">+ filter</a>
       <span style="margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4);">Sortera: <span style="color: var(--v-mist);">Tid ↓</span></span>
     </div>
+
+    {% if is_sample_only %}
+    <div style="background: rgba(200,117,62,0.08); border-bottom: 1px solid rgba(200,117,62,0.25); padding: 10px 32px; font-size: 12px; color: var(--v-amber); font-family: var(--font-mono);">
+      EXEMPELDATA — skapa en prenumeration så ersätts den med riktiga signaler från ditt urval. <a href="/app/subscriptions/new" style="color: var(--v-signal); text-decoration: underline;">Ny prenumeration →</a>
+    </div>
+    {% endif %}
 
     <!-- FEED -->
     <div class="feed">
@@ -297,15 +314,19 @@
         <span class="time">{{ signal.date }}<br><span style="color: var(--v-ink-4);">{{ signal.time }}</span></span>
         <span class="pill-kind {{ signal.kind_class }}">{{ signal.kind }}</span>
         <div>
+          {% if signal.url %}
+          <a class="title" href="{{ signal.url }}" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;">{{ signal.title }}</a>
+          {% else %}
           <div class="title">{{ signal.title }}</div>
+          {% endif %}
           <div class="meta">{{ signal.meta }}</div>
         </div>
         <div class="src">{{ signal.source }}</div>
         <div class="actions">
           <form method="post" action="/app/signals/save" class="inline-form">
             {{ csrf_input() }}
-            <input type="hidden" name="signal_type" value="{{ signal.kind_class }}">
-            <input type="hidden" name="signal_id" value="{{ signal.id }}">
+            <input type="hidden" name="signal_type" value="{{ signal.signal_type or signal.kind_class }}">
+            <input type="hidden" name="signal_id" value="{{ signal.signal_id or signal.id }}">
             <button type="submit" class="icon-btn" title="Spara signal">★</button>
           </form>
           {% if user.plan == "pro" %}
@@ -332,15 +353,19 @@
         <span class="time">{{ signal.date }}<br><span style="color: var(--v-ink-4);">{{ signal.time }}</span></span>
         <span class="pill-kind {{ signal.kind_class }}">{{ signal.kind }}</span>
         <div>
+          {% if signal.url %}
+          <a class="title" href="{{ signal.url }}" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;">{{ signal.title }}</a>
+          {% else %}
           <div class="title">{{ signal.title }}</div>
+          {% endif %}
           <div class="meta">{{ signal.meta }}</div>
         </div>
         <div class="src">{{ signal.source }}</div>
         <div class="actions">
           <form method="post" action="/app/signals/save" class="inline-form">
             {{ csrf_input() }}
-            <input type="hidden" name="signal_type" value="{{ signal.kind_class }}">
-            <input type="hidden" name="signal_id" value="{{ signal.id }}">
+            <input type="hidden" name="signal_type" value="{{ signal.signal_type or signal.kind_class }}">
+            <input type="hidden" name="signal_id" value="{{ signal.signal_id or signal.id }}">
             <button type="submit" class="icon-btn" title="Spara signal">★</button>
           </form>
           {% if user.plan == "pro" %}

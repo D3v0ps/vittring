@@ -11,18 +11,28 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Form, Query, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from pydantic import ValidationError
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 
 from vittring.api.deps import CurrentVerifiedUser, request_meta
 from vittring.api.templates import templates
 from vittring.audit.log import AuditAction, audit
 from vittring.db import SessionDep
 from vittring.matching.criteria import Criteria
-from vittring.matching.engine import match_procurement
+from vittring.matching.engine import (
+    match_company_change,
+    match_job_posting,
+    match_procurement,
+)
 from vittring.models.audit import AuditLog
+from vittring.models.company import Company
 from vittring.models.saved import SavedSignal
+from vittring.models.signals import CompanyChange, JobPosting, Procurement
 from vittring.models.subscription import DeliveredAlert, Subscription
-from vittring.schemas.ingest import ProcurementItem
+from vittring.schemas.ingest import (
+    CompanyChangeItem,
+    JobPostingItem,
+    ProcurementItem,
+)
 
 router = APIRouter(prefix="/app", tags=["account"])
 
@@ -173,7 +183,19 @@ async def dashboard(
     session: SessionDep,
     user: CurrentVerifiedUser,
     q: str = "",
+    type: Annotated[str, Query()] = "",
 ) -> HTMLResponse:
+    """Today's digest, rendered live from the DB.
+
+    The user's active Subscription criteria filter every JobPosting,
+    CompanyChange and Procurement from the last 26 hours through the
+    matching engine. If the user has no subscriptions yet we fall back
+    to a sample feed so the page reads as something rather than blank.
+
+    Query params:
+      ``q``    case-insensitive substring filter over title + meta
+      ``type`` filter chip (one of ``upph``, ``jobb``, ``bolag``)
+    """
     subs_rows = (
         await session.execute(
             select(Subscription).where(
@@ -183,22 +205,70 @@ async def dashboard(
         )
     ).scalars().all()
 
-    # Counts per subscription — placeholder until DeliveredAlert join is wired
-    subs = [
-        {"name": s.name, "signal_count": None}
-        for s in subs_rows
-    ]
-
-    priority_signals, other_signals = _example_signals()
-    if q:
-        priority_signals = _filter_signals(priority_signals, q)
-        other_signals = _filter_signals(other_signals, q)
-    digest_count = len(priority_signals) + len(other_signals)
+    saved_count = (
+        await session.execute(
+            select(func.count())
+            .select_from(SavedSignal)
+            .where(SavedSignal.user_id == user.id)
+        )
+    ).scalar_one()
 
     now = datetime.now(timezone.utc)
+    since = now - timedelta(hours=26)
+    week_ago = now - timedelta(days=7)
+
+    week_count = (
+        await session.execute(
+            select(func.count())
+            .select_from(DeliveredAlert)
+            .where(
+                DeliveredAlert.user_id == user.id,
+                DeliveredAlert.delivered_at >= week_ago,
+            )
+        )
+    ).scalar_one()
+
+    all_signals = await _load_dashboard_signals(session, subs_rows, since=since)
+    has_real_data = bool(subs_rows) or bool(all_signals)
+    if not has_real_data:
+        priority_signals, other_signals = _example_signals()
+        all_signals = priority_signals + other_signals
+
+    if type and type in {"upph", "jobb", "bolag"}:
+        all_signals = [s for s in all_signals if s["kind_class"] == type]
+    if q:
+        all_signals = _filter_signals(all_signals, q)
+
+    # First five = priority strip, rest goes under "Övriga". With real
+    # data the matching engine has already done the work; ranking by
+    # recency keeps the most actionable items at the top.
+    priority_signals = all_signals[:5]
+    other_signals = all_signals[5:]
+    digest_count = len(all_signals)
+
     today_weekday = SWEDISH_WEEKDAYS[now.weekday()].capitalize()
     today_date = f"{now.day} {SWEDISH_MONTHS[now.month - 1]} {now.year}"
     week_num = now.isocalendar().week
+
+    subs = [{"name": s.name, "signal_count": None} for s in subs_rows]
+
+    # Surface the criteria that are actually doing the filtering so the
+    # user sees what's been selected (instead of a hardcoded list).
+    active_filters: list[str] = []
+    for s in subs_rows:
+        crit = s.criteria or {}
+        for muni in (crit.get("municipalities") or [])[:2]:
+            if muni and muni not in active_filters:
+                active_filters.append(muni)
+        for code in (crit.get("sni_codes") or [])[:2]:
+            label = f"SNI {code}"
+            if label not in active_filters:
+                active_filters.append(label)
+        for cpv in (crit.get("cpv_codes") or [])[:2]:
+            label = f"CPV {cpv}"
+            if label not in active_filters:
+                active_filters.append(label)
+    active_filters = active_filters[:4]
 
     name_for_initials = user.full_name or user.email.split("@")[0]
 
@@ -216,29 +286,273 @@ async def dashboard(
         "next_sync_time": "06:30",
 
         "digest_count": digest_count,
-        "digest_focus": "Lager & logistik · Storstockholm",
+        "digest_focus": subs[0]["name"] if subs else "Konfigurera en prenumeration",
         "priority_count": len(priority_signals),
         "other_count": len(other_signals),
-        "saved_count": 2,
+        "saved_count": saved_count,
+        "is_sample_only": not has_real_data,
 
-        "stat_week_count": "214",
-        "stat_week_delta": "+18%",
-        "stat_noise_pct": "99,5%",
-        "stat_noise_total": "4 982",
+        "stat_week_count": str(week_count) if has_real_data else "214",
+        "stat_week_delta": "" if has_real_data else "+18%",
+        "stat_noise_pct": "" if has_real_data else "99,5%",
+        "stat_noise_total": "" if has_real_data else "4 982",
         "stat_week_num": week_num,
-        "stat_conversions": "7",
-        "stat_conversions_delta": "+2",
+        "stat_conversions": "" if has_real_data else "7",
+        "stat_conversions_delta": "" if has_real_data else "+2",
 
-        "active_filters": ["Storstockholm", "SNI 53.* / 52.*"],
+        "active_filters": active_filters,
         "count_upph": sum(1 for s in priority_signals + other_signals if s["kind_class"] == "upph"),
         "count_jobb": sum(1 for s in priority_signals + other_signals if s["kind_class"] == "jobb"),
         "count_bolag": sum(1 for s in priority_signals + other_signals if s["kind_class"] == "bolag"),
+        "active_type": type if type in {"upph", "jobb", "bolag"} else "",
 
         "priority_signals": priority_signals,
         "other_signals": other_signals,
         "search_query": q,
     }
     return templates.TemplateResponse(request, "app/dashboard.html.j2", context)
+
+
+async def _load_dashboard_signals(
+    session: Any,
+    subs_rows: list[Subscription],
+    *,
+    since: datetime,
+) -> list[dict[str, Any]]:
+    """Return one unified, recency-sorted feed of signals matching subs.
+
+    Pulls JobPosting / CompanyChange / Procurement rows from the last
+    ``since``-window and runs each through the matching engine against
+    every active Subscription. If no procurement-targeting subscription
+    is active for a given signal type, that type isn't included — same
+    contract as the daily digest.
+    """
+    proc_criteria: list[Criteria] = []
+    job_criteria: list[Criteria] = []
+    change_criteria: list[Criteria] = []
+    for s in subs_rows:
+        try:
+            crit = Criteria.model_validate(s.criteria or {})
+        except ValidationError:
+            continue
+        signal_types = s.signal_types or []
+        if "procurement" in signal_types:
+            proc_criteria.append(crit)
+        if "job" in signal_types:
+            job_criteria.append(crit)
+        if "company_change" in signal_types:
+            change_criteria.append(crit)
+
+    out: list[dict[str, Any]] = []
+
+    # ---- procurements ----------------------------------------------------
+    if proc_criteria or not subs_rows:
+        proc_rows = (
+            await session.execute(
+                select(Procurement)
+                .where(Procurement.ingested_at >= since)
+                .order_by(Procurement.ingested_at.desc())
+                .limit(100)
+            )
+        ).scalars().all()
+
+        if proc_rows:
+            buyer_orgnrs = {r.buyer_orgnr for r in proc_rows if r.buyer_orgnr}
+            municipality_by_orgnr: dict[str, str | None] = {}
+            if buyer_orgnrs:
+                rows = await session.execute(
+                    select(Company.orgnr, Company.hq_municipality).where(
+                        Company.orgnr.in_(buyer_orgnrs)
+                    )
+                )
+                municipality_by_orgnr = dict(rows.all())
+
+            for r in proc_rows:
+                item = ProcurementItem(
+                    external_id=r.external_id,
+                    buyer_orgnr=r.buyer_orgnr,
+                    buyer_name=r.buyer_name,
+                    title=r.title,
+                    description=r.description,
+                    cpv_codes=list(r.cpv_codes or []),
+                    estimated_value_sek=r.estimated_value_sek,
+                    procedure_type=r.procedure_type,
+                    deadline=r.deadline,
+                    source_url=r.source_url,
+                    source=r.source,
+                )
+                buyer_muni = (
+                    municipality_by_orgnr.get(r.buyer_orgnr) if r.buyer_orgnr else None
+                )
+                if proc_criteria and not any(
+                    match_procurement(item, c, buyer_municipality=buyer_muni)
+                    for c in proc_criteria
+                ):
+                    continue
+                out.append(_signal_dict_procurement(r))
+
+    # ---- jobs ------------------------------------------------------------
+    if job_criteria or not subs_rows:
+        job_rows = (
+            await session.execute(
+                select(JobPosting)
+                .where(JobPosting.published_at >= since)
+                .order_by(JobPosting.published_at.desc())
+                .limit(100)
+            )
+        ).scalars().all()
+
+        if job_rows:
+            company_ids = {r.company_id for r in job_rows if r.company_id is not None}
+            orgnr_by_company_id: dict[int, str] = {}
+            if company_ids:
+                rows = await session.execute(
+                    select(Company.id, Company.orgnr).where(Company.id.in_(company_ids))
+                )
+                orgnr_by_company_id = dict(rows.all())
+
+            for r in job_rows:
+                item = JobPostingItem(
+                    external_id=r.external_id,
+                    employer_orgnr=orgnr_by_company_id.get(r.company_id)
+                    if r.company_id is not None
+                    else None,
+                    employer_name=r.employer_name,
+                    headline=r.headline,
+                    description=r.description,
+                    occupation_label=r.occupation_label,
+                    occupation_concept_id=r.occupation_concept_id,
+                    workplace_municipality=r.workplace_municipality,
+                    workplace_county=r.workplace_county,
+                    employment_type=r.employment_type,
+                    duration=r.duration,
+                    published_at=r.published_at,
+                    source_url=r.source_url,
+                )
+                if job_criteria and not any(match_job_posting(item, c) for c in job_criteria):
+                    continue
+                out.append(_signal_dict_job(r))
+
+    # ---- company changes -------------------------------------------------
+    if change_criteria or not subs_rows:
+        change_rows = (
+            await session.execute(
+                select(CompanyChange, Company)
+                .join(Company, CompanyChange.company_id == Company.id)
+                .where(CompanyChange.changed_at >= since)
+                .order_by(CompanyChange.changed_at.desc())
+                .limit(100)
+            )
+        ).all()
+
+        for change_row, company in change_rows:
+            item = CompanyChangeItem(
+                orgnr=company.orgnr,
+                company_name=company.name,
+                change_type=change_row.change_type,  # type: ignore[arg-type]
+                old_value=change_row.old_value,
+                new_value=change_row.new_value,
+                source_ref=change_row.source_ref,
+                changed_at=change_row.changed_at,
+            )
+            if change_criteria and not any(
+                match_company_change(item, c, hq_municipality=company.hq_municipality)
+                for c in change_criteria
+            ):
+                continue
+            out.append(_signal_dict_change(change_row, company))
+
+    out.sort(key=lambda s: s["sort_key"], reverse=True)
+    return out[:50]
+
+
+def _short_date(dt: datetime | None) -> tuple[str, str]:
+    if dt is None:
+        return "—", ""
+    return f"{dt.day:02d} {SWEDISH_MONTHS[dt.month - 1][:3]}", dt.strftime("%H:%M")
+
+
+def _signal_dict_procurement(r: Procurement) -> dict[str, Any]:
+    date, time = _short_date(r.ingested_at)
+    cpv = (r.cpv_codes or [None])[0]
+    deadline_label = (
+        f"Anbud {r.deadline.strftime('%Y-%m-%d')}" if r.deadline else "Ingen deadline"
+    )
+    parts: list[str] = []
+    if cpv:
+        parts.append(f"CPV {cpv}")
+    if r.estimated_value_sek:
+        parts.append(f"~{r.estimated_value_sek // 1_000_000} mkr")
+    parts.append(deadline_label)
+    return {
+        "id": f"proc-{r.id}",
+        "signal_id": r.id,
+        "signal_type": "procurement",
+        "date": date,
+        "time": time,
+        "kind": "Upphandling",
+        "kind_class": "upph",
+        "title": f"{r.buyer_name} — {r.title}",
+        "meta": " · ".join(parts),
+        "source": (r.source or "Vittring").capitalize(),
+        "url": r.source_url,
+        "sort_key": r.ingested_at,
+    }
+
+
+def _signal_dict_job(r: JobPosting) -> dict[str, Any]:
+    date, time = _short_date(r.published_at)
+    parts: list[str] = []
+    if r.workplace_municipality:
+        parts.append(r.workplace_municipality)
+    if r.occupation_label:
+        parts.append(r.occupation_label)
+    if r.employment_type:
+        parts.append(r.employment_type)
+    return {
+        "id": f"job-{r.id}",
+        "signal_id": r.id,
+        "signal_type": "job",
+        "date": date,
+        "time": time,
+        "kind": "Jobb",
+        "kind_class": "jobb",
+        "title": f"{r.employer_name} — {r.headline}",
+        "meta": " · ".join(parts) or "—",
+        "source": "JobTech",
+        "url": r.source_url,
+        "sort_key": r.published_at,
+    }
+
+
+def _signal_dict_change(r: CompanyChange, company: Company) -> dict[str, Any]:
+    date, time = _short_date(r.changed_at)
+    label = {
+        "ceo": "Ny VD",
+        "board_member": "Styrelseändring",
+        "address": "Adressändring",
+        "name": "Namnändring",
+        "remark": "Anmärkning",
+        "liquidation": "Likvidation",
+        "sni": "Verksamhetsändring",
+    }.get(r.change_type, "Bolagsändring")
+    parts = [company.orgnr]
+    if company.hq_municipality:
+        parts.append(company.hq_municipality)
+    return {
+        "id": f"change-{r.id}",
+        "signal_id": r.id,
+        "signal_type": "company_change",
+        "date": date,
+        "time": time,
+        "kind": "Bolag",
+        "kind_class": "bolag",
+        "title": f"{company.name} · {label}",
+        "meta": " · ".join(parts),
+        "source": "Bolagsverket",
+        "url": r.source_ref,
+        "sort_key": r.changed_at,
+    }
 
 
 # ---------------------------------------------------------------------------
