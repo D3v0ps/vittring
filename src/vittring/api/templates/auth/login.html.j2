@@ -11,6 +11,7 @@
 {% if error %}<div class="auth-error">{{ error }}</div>{% endif %}
 <form method="post" action="/auth/login" class="auth-form">
   {{ csrf_input() }}
+  {% if next %}<input type="hidden" name="next" value="{{ next }}" />{% endif %}
   <div class="field">
     <label for="email">E-post</label>
     <input class="input" type="email" id="email" name="email" value="{{ email_value or '' }}" required autocomplete="email" placeholder="namn@företag.se" />

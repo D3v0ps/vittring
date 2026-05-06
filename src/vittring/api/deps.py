@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Annotated
+from urllib.parse import quote
 
 from fastapi import Cookie, Depends, HTTPException, Request, status
 from sqlalchemy import select
@@ -12,6 +13,18 @@ from vittring.models.user import User
 from vittring.security.tokens import decode_access_token
 
 ACCESS_TOKEN_COOKIE = "vittring_session"
+
+
+def _safe_next(path: str) -> str:
+    """Sanitise a candidate ``?next=`` path so it can't open-redirect.
+
+    Only same-origin absolute paths (starting with a single ``/``) are
+    accepted — protocol-relative ``//evil.example.com`` and full URLs
+    are rejected and fall back to the default landing.
+    """
+    if not path or not path.startswith("/") or path.startswith("//"):
+        return "/app"
+    return path
 
 
 async def current_user_or_none(
@@ -32,11 +45,26 @@ async def current_user_or_none(
 
 
 async def current_user(
+    request: Request,
     user: Annotated[User | None, Depends(current_user_or_none)],
 ) -> User:
+    """Require an authenticated, active user.
+
+    Anonymous or inactive callers used to get a hard 401 with a JSON body
+    (``{"detail":"not_authenticated"}``), which dead-ended every page in
+    the logged-in shell once the 15-min session cookie expired. Bounce
+    them to ``/auth/login`` instead, preserving the original path in
+    ``?next=`` so they land back where they were after re-auth.
+    """
     if user is None or not user.is_active:
+        path = request.url.path or "/"
+        if request.url.query:
+            path = f"{path}?{request.url.query}"
+        next_param = quote(path, safe="/?&=")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="not_authenticated"
+            status_code=status.HTTP_303_SEE_OTHER,
+            detail="not_authenticated",
+            headers={"Location": f"/auth/login?next={next_param}"},
         )
     return user
 

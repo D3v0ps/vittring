@@ -329,12 +329,35 @@ async def verify_email(t: str, session: SessionDep, request: Request) -> HTMLRes
 # Login / logout
 # ---------------------------------------------------------------------------
 
+def _safe_next_path(value: str | None) -> str:
+    """Validate a candidate ``?next=`` post-login redirect target.
+
+    Only same-origin absolute paths are accepted — anything else (full
+    URLs, protocol-relative ``//host``, empty/None) falls back to
+    ``/app`` so the field can't be turned into an open redirect.
+    """
+    if not value or not value.startswith("/") or value.startswith("//"):
+        return "/app"
+    return value
+
+
 @router.get("/login", response_class=HTMLResponse, include_in_schema=False)
-async def login_page(request: Request, user: OptionalUser) -> HTMLResponse:
+async def login_page(
+    request: Request,
+    user: OptionalUser,
+    next: str | None = None,
+) -> HTMLResponse:
+    next_target = _safe_next_path(next)
     if user:
-        return RedirectResponse("/app", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(next_target, status_code=status.HTTP_303_SEE_OTHER)
     return templates.TemplateResponse(
-        request, "auth/login.html.j2", {"title": "Logga in", "error": None}
+        request,
+        "auth/login.html.j2",
+        {
+            "title": "Logga in",
+            "error": None,
+            "next": next_target if next_target != "/app" else "",
+        },
     )
 
 
@@ -350,8 +373,10 @@ async def login(
     email: Annotated[EmailStr, Form()],
     password: Annotated[str, Form()],
     totp: Annotated[str, Form()] = "",
+    next: Annotated[str, Form()] = "",
 ) -> HTMLResponse | RedirectResponse:
     LOGIN_BY_EMAIL.take(str(email))
+    next_target = _safe_next_path(next or None)
     user = (
         await session.execute(select(User).where(User.email == email))
     ).scalar_one_or_none()
@@ -381,7 +406,11 @@ async def login(
         return templates.TemplateResponse(
             request,
             "auth/login.html.j2",
-            {"title": "Logga in", "error": "Fel e-post eller lösenord."},
+            {
+                "title": "Logga in",
+                "error": "Fel e-post eller lösenord.",
+                "next": next_target if next_target != "/app" else "",
+            },
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
@@ -392,6 +421,7 @@ async def login(
             {
                 "title": "Logga in",
                 "error": "Kontot är tillfälligt låst på grund av för många misslyckade försök.",
+                "next": next_target if next_target != "/app" else "",
             },
             status_code=status.HTTP_403_FORBIDDEN,
         )
@@ -405,6 +435,7 @@ async def login(
                 "error": "Ange giltig 2FA-kod." if totp else None,
                 "require_2fa": True,
                 "email_value": email,
+                "next": next_target if next_target != "/app" else "",
             },
             status_code=status.HTTP_401_UNAUTHORIZED if totp else status.HTTP_200_OK,
         )
@@ -421,7 +452,7 @@ async def login(
         user_agent=meta["user_agent"],
     )
 
-    response = RedirectResponse("/app", status_code=status.HTTP_303_SEE_OTHER)
+    response = RedirectResponse(next_target, status_code=status.HTTP_303_SEE_OTHER)
     _set_session_cookie(response, user.id)
     return response
 
