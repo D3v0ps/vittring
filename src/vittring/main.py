@@ -17,7 +17,15 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
-from vittring.api import account, auth, billing, health, public, subscriptions
+from vittring.api import (
+    account,
+    admin,
+    auth,
+    billing,
+    health,
+    public,
+    subscriptions,
+)
 from vittring.api import unsubscribe as unsubscribe_router
 from vittring.api import webhooks
 from vittring.config import get_settings
@@ -73,6 +81,7 @@ def create_app() -> FastAPI:
     app.include_router(billing.router)
     app.include_router(webhooks.router)
     app.include_router(unsubscribe_router.router)
+    app.include_router(admin.router)
 
     @app.exception_handler(VittringError)
     async def _vittring_handler(_: Request, exc: VittringError) -> JSONResponse:
@@ -82,8 +91,22 @@ def create_app() -> FastAPI:
         )
 
     @app.exception_handler(HTTPException)
-    async def _http_handler(_: Request, exc: HTTPException) -> JSONResponse:
-        return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+    async def _http_handler(_: Request, exc: HTTPException):  # type: ignore[no-untyped-def]
+        # Forward 3xx exceptions with a Location header as real browser
+        # redirects — without this the JSON body wins and the user sees
+        # `{"detail": "..."}` instead of being bounced to the right page
+        # (e.g. unverified users from current_verified_user).
+        if 300 <= exc.status_code < 400:
+            location = (exc.headers or {}).get("Location") if exc.headers else None
+            if location:
+                from fastapi.responses import RedirectResponse
+
+                return RedirectResponse(location, status_code=exc.status_code)
+        return JSONResponse(
+            {"detail": exc.detail},
+            status_code=exc.status_code,
+            headers=dict(exc.headers or {}),
+        )
 
     return app
 

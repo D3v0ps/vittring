@@ -1,101 +1,83 @@
-{% extends "_layout.html.j2" %}
-{% block content %}
-<div class="app-shell">
-  <header class="app-header">
-    <div class="app-header-copy">
-      <div class="eyebrow">Prenumerationer</div>
-      <h1>Dina filter</h1>
-      <p class="muted app-header-lead">
-        Definiera vad som matchar i den dagliga digesten.
-        {% if subscriptions %}
-          Du har {{ subscriptions|length }} aktiv{{ "" if subscriptions|length == 1 else "a" }} just nu.
+{% extends "app/_app_shell.html.j2" %}
+{% set topbar_eyebrow = "Prenumerationer" %}
+{% set title = "Dina prenumerationer" %}
+{% block topbar_actions %}
+<a href="/app/subscriptions/new" class="v-btn v-btn--signal">Skapa prenumeration</a>
+{% endblock %}
+{% block app_content %}
+<header class="page-head">
+  <div class="page-eyebrow">Prenumerationer</div>
+  <h1 class="page-title">Dina prenumerationer</h1>
+  <p class="page-lead">
+    Definiera vad som matchar i den dagliga digesten.
+    {% if subscriptions %}
+      Du har {{ subscriptions|length }} aktiv{{ "" if subscriptions|length == 1 else "a" }} just nu.
+      Träffar levereras till <span style="font-family: var(--font-mono); color: var(--v-paper);">{{ user.email }}</span> kl 06:30.
+    {% endif %}
+  </p>
+</header>
+
+{% if subscriptions %}
+<section class="v-card" style="padding: 0;">
+  {% for sub in subscriptions %}
+  <div style="display: grid; grid-template-columns: minmax(200px, 1.4fr) minmax(160px, 1fr) auto auto auto; gap: 20px; padding: 18px 24px; align-items: center; {% if not loop.first %}border-top: 1px solid var(--v-night-3);{% endif %}">
+    <div>
+      <div style="color: var(--v-paper); font-weight: 500; font-size: 14px; margin-bottom: 4px;">{{ sub.name }}</div>
+      <div style="font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4);">#{{ sub.id }}</div>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+      {% for st in sub.signal_types %}
+        {% if st == "job" %}
+          <span class="v-pill v-pill--neutral">Jobb</span>
+        {% elif st == "company_change" %}
+          <span class="v-pill v-pill--signal">Bolag</span>
+        {% elif st == "procurement" %}
+          <span class="v-pill v-pill--amber">Upphandling</span>
+        {% else %}
+          <span class="v-pill v-pill--neutral">{{ st }}</span>
         {% endif %}
-      </p>
-    </div>
-    <div class="app-header-actions">
-      <a href="/app/subscriptions/new" class="btn btn-accent">Ny prenumeration</a>
-    </div>
-  </header>
-
-  {% if subscriptions %}
-    <section class="card card-flush subs-list">
-      <div class="subs-list-head">
-        <span>Namn</span>
-        <span>Signaler</span>
-        <span>Status</span>
-        <span>Skapad</span>
-        <span class="subs-list-head-actions">Åtgärder</span>
-      </div>
-      {% for sub in subscriptions %}
-        <article class="subs-list-row">
-          <div class="subs-list-name">
-            <span class="subs-list-name-label">{{ sub.name }}</span>
-            <span class="mono subtle subs-list-id">#{{ sub.id }}</span>
-          </div>
-          <div class="subs-list-types">
-            {% for st in sub.signal_types %}
-              <span class="badge badge-{% if st == 'procurement' %}accent{% elif st == 'job_ad' %}neutral{% else %}highlight{% endif %}">
-                {% if st == "procurement" %}Upphandling
-                {% elif st == "job_ad" %}Jobbannons
-                {% elif st == "company_event" %}Bolagshändelse
-                {% else %}{{ st }}{% endif %}
-              </span>
-            {% endfor %}
-          </div>
-          <div class="subs-list-status">
-            {% if sub.active %}
-              <span class="status-pip status-pip-on" aria-hidden="true"></span>
-              <span class="badge badge-success">Aktiv</span>
-            {% else %}
-              <span class="status-pip" aria-hidden="true"></span>
-              <span class="badge badge-neutral">Pausad</span>
-            {% endif %}
-          </div>
-          <div class="subs-list-date mono subtle">
-            {{ sub.created_at.strftime("%Y-%m-%d") }}
-          </div>
-          <div class="subs-list-actions">
-            <a href="/app/subscriptions/new?duplicate={{ sub.id }}" class="btn btn-ghost btn-sm">Duplicera</a>
-            <form method="post" action="/app/subscriptions/{{ sub.id }}/delete"
-                  onsubmit="return confirm('Radera prenumerationen {{ sub.name }}?');">
-      {{ csrf_input() }}
-              <button type="submit" class="btn btn-ghost btn-sm subs-list-delete">Radera</button>
-            </form>
-          </div>
-        </article>
       {% endfor %}
-    </section>
-
-    <p class="muted subs-list-footnote">
-      Dina filter levereras som en sammanfattning varje morgon kl 06:30 till
-      <span class="mono">{{ user.email }}</span>.
-    </p>
-  {% else %}
-    <section class="empty-state">
-      <div class="empty-state-icon" aria-hidden="true">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 6h18"/>
-          <path d="M6 12h12"/>
-          <path d="M10 18h4"/>
-        </svg>
-      </div>
-      <h2>Inga prenumerationer ännu</h2>
-      <p class="muted">
-        En prenumeration är ditt filter — t.ex. ”Lagerarbetare Storstockholm”
-        eller ”Konsultchefer norra Sverige”. Vi matchar mot tre datakällor och
-        levererar träffar i en daglig digest.
-      </p>
-      <div class="empty-state-actions">
-        <a href="/app/subscriptions/new" class="btn btn-accent">Skapa första prenumerationen</a>
-      </div>
-      <div class="empty-state-examples">
-        <span class="subtle">Exempel:</span>
-        <span class="badge badge-neutral">Lagerarbetare Storstockholm</span>
-        <span class="badge badge-neutral">Truckförare Skåne län</span>
-        <span class="badge badge-neutral">Konsultchefer norra Sverige</span>
-      </div>
-    </section>
-  {% endif %}
-</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      {% if sub.active %}
+        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--v-signal); box-shadow: 0 0 8px rgba(184,224,74,0.5);"></span>
+        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--v-signal); letter-spacing: 0.04em;">Aktiv</span>
+      {% else %}
+        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--v-ink-4);"></span>
+        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4); letter-spacing: 0.04em;">Pausad</span>
+      {% endif %}
+    </div>
+    <div style="font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4);">
+      {{ sub.created_at.strftime("%Y-%m-%d") }}
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <a href="/app/subscriptions/new?duplicate={{ sub.id }}" class="v-btn v-btn--ghost" style="padding: 6px 12px; font-size: 11px;">Duplicera</a>
+      <form method="post" action="/app/subscriptions/{{ sub.id }}/delete" style="display: inline;"
+            onsubmit="return confirm('Radera prenumerationen {{ sub.name }}?');">
+        {{ csrf_input() }}
+        <button type="submit" class="v-btn v-btn--danger" style="padding: 6px 12px; font-size: 11px;">Radera</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+{% else %}
+<section class="v-card" style="text-align: center; padding: 48px 24px;">
+  <div style="font-family: var(--font-display); font-size: 22px; color: var(--v-paper); margin-bottom: 8px; letter-spacing: -0.015em;">Inga prenumerationer ännu</div>
+  <p style="color: var(--v-mist); font-size: 14px; max-width: 480px; margin: 0 auto 20px; line-height: 1.6;">
+    En prenumeration är ditt filter — t.ex. &rdquo;Lagerarbetare Storstockholm&rdquo;
+    eller &rdquo;Konsultchefer norra Sverige&rdquo;. Vi matchar mot tre datakällor och
+    levererar träffar i en daglig digest kl 06:30.
+  </p>
+  <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 24px;">
+    <a href="/app/subscriptions/new" class="v-btn v-btn--signal v-btn--lg">Skapa första prenumerationen</a>
+  </div>
+  <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; align-items: center;">
+    <span style="font-family: var(--font-mono); font-size: 10px; color: var(--v-ink-4); letter-spacing: 0.08em; text-transform: uppercase;">Exempel</span>
+    <span class="v-pill v-pill--neutral">Lagerarbetare Storstockholm</span>
+    <span class="v-pill v-pill--neutral">Truckförare Skåne län</span>
+    <span class="v-pill v-pill--neutral">Konsultchefer norra Sverige</span>
+  </div>
+</section>
+{% endif %}
 {% endblock %}

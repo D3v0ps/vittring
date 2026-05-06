@@ -14,7 +14,7 @@ from typing import Any
 import structlog
 
 from vittring.config import get_settings
-from vittring.ingest._http import get_json_with_retry, http_client
+from vittring.ingest._http import http_client, post_json_with_retry
 from vittring.ingest._persist import insert_ignore
 from vittring.ingest.base import IngestAdapter
 from vittring.models.signals import Procurement
@@ -94,36 +94,44 @@ class TedAdapter(IngestAdapter[ProcurementItem]):
 
     async def fetch_since(self, since: datetime) -> AsyncIterator[ProcurementItem]:
         settings = get_settings()
-        query = (
-            "country=SE AND ("
-            + " OR ".join(f"classification-cpv={code}" for code in TED_CPV_CODES)
-            + f") AND publication-date>={since.date().isoformat()}"
+        # TED v3 expects a POST body, not query params, on /notices/search.
+        # Date range: TED's "publication-date" filter wants YYYYMMDD.
+        date_token = since.strftime("%Y%m%d")
+        cpv_filter = " OR ".join(
+            f"classification-cpv={code}" for code in TED_CPV_CODES
         )
-        params: dict[str, Any] = {
-            "query": query,
-            "fields": ",".join(
-                [
-                    "publication-number",
-                    "title",
-                    "description",
-                    "classification-cpv",
-                    "deadline-receipt-tender-date",
-                    "deadline-receipt-request",
-                    "total-value",
-                    "procedure-type",
-                    "organisations",
-                    "links",
-                ]
+        body_template: dict[str, Any] = {
+            "query": (
+                f"(country = SWE) AND ({cpv_filter}) "
+                f"AND (publication-date >= {date_token})"
             ),
+            "fields": [
+                "publication-number",
+                "notice-title",
+                "description-procurement",
+                "classification-cpv",
+                "deadline-receipt-tender-date-lot",
+                "total-value",
+                "procedure-type",
+                "buyer-name",
+                "links",
+            ],
             "limit": PAGE_SIZE,
             "page": 1,
+            "scope": "ALL",
         }
         async with http_client(base_url=str(settings.ted_base_url)) as client:
             while True:
-                payload = await get_json_with_retry(
-                    client, "/notices/search", params=dict(params)
-                )
-                notices: list[dict[str, Any]] = payload.get("notices", [])
+                try:
+                    payload = await post_json_with_retry(
+                        client, "/notices/search", json_body=body_template
+                    )
+                except Exception as exc:
+                    # TED's API surface evolves; surface the failure cleanly
+                    # instead of crashing the whole admin trigger.
+                    logger.warning("ted_request_failed", page=body_template["page"], error=str(exc))
+                    return
+                notices: list[dict[str, Any]] = payload.get("notices", []) or []
                 if not notices:
                     break
                 for notice in notices:
@@ -132,7 +140,7 @@ class TedAdapter(IngestAdapter[ProcurementItem]):
                         yield item
                 if len(notices) < PAGE_SIZE:
                     break
-                params["page"] += 1
+                body_template["page"] += 1
 
     async def persist(self, items: list[ProcurementItem]) -> int:
         if not items:

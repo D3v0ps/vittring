@@ -1,0 +1,64 @@
+{% extends "admin/_layout.html.j2" %}
+{% set active_nav = 'users' %}
+{% set topbar_title = 'Skapa användare' %}
+
+{% block content %}
+  <div class="page-header">
+    <div class="eyebrow">Admin · Användare</div>
+    <h1>Skapa användare</h1>
+    <div class="subtitle">Skapar en användare manuellt — användaren får inte automatiskt ett välkomstmail.</div>
+  </div>
+
+  <div class="page-body">
+    {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+
+    <form method="post" action="/admin/users/new" class="admin-form">
+      {{ csrf_input() }}
+
+      <div class="field">
+        <label for="email">E-post</label>
+        <input type="email" id="email" name="email" required value="{{ form.email|default('', true) }}">
+      </div>
+
+      <div class="field">
+        <label for="full_name">Fullständigt namn</label>
+        <input type="text" id="full_name" name="full_name" value="{{ form.full_name|default('', true) }}">
+      </div>
+
+      <div class="field">
+        <label for="company_name">Företag</label>
+        <input type="text" id="company_name" name="company_name" value="{{ form.company_name|default('', true) }}">
+      </div>
+
+      <div class="field">
+        <label for="plan">Plan</label>
+        <select id="plan" name="plan">
+          <option value="trial" {% if form.plan == 'trial' or not form.plan %}selected{% endif %}>Trial</option>
+          <option value="solo" {% if form.plan == 'solo' %}selected{% endif %}>Solo</option>
+          <option value="team" {% if form.plan == 'team' %}selected{% endif %}>Team</option>
+          <option value="pro" {% if form.plan == 'pro' %}selected{% endif %}>Pro</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="password">Lösenord (minst 12 tecken)</label>
+        <input type="password" id="password" name="password" required minlength="12">
+      </div>
+
+      <div class="field-row">
+        <input type="checkbox" id="is_verified" name="is_verified" value="1" {% if form.is_verified is not defined or form.is_verified %}checked{% endif %}>
+        <label for="is_verified" style="font-family: var(--font-sans); text-transform: none; letter-spacing: 0; color: var(--v-mist); font-size: 13px;">Markera som verifierad</label>
+      </div>
+
+      <div class="field-row">
+        <input type="checkbox" id="is_superuser" name="is_superuser" value="1" {% if form.is_superuser %}checked{% endif %}>
+        <label for="is_superuser" style="font-family: var(--font-sans); text-transform: none; letter-spacing: 0; color: var(--v-mist); font-size: 13px;">Superanvändare (kan komma åt /admin)</label>
+      </div>
+
+      <div class="btn-row" style="margin-top: 12px;">
+        <button type="submit" class="btn primary">Skapa användare</button>
+        <a href="/admin/users" class="btn">Avbryt</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

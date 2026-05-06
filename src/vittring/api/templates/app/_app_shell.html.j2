@@ -1,0 +1,242 @@
+{# Shared dark dashboard chrome for /app/* pages.
+   Copies the sidebar+topbar from dashboard.html.j2 so subscription_form,
+   subscriptions list and account settings get the same shell.
+   Context expected: user, subscriptions (list), initials, plan_label, active. #}
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Vittring — {{ title or "Konto" }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/brand.css">
+<style>
+  body { background: var(--v-night); color: var(--v-mist); margin: 0; font-family: var(--font-sans); }
+  .dash-shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  .dash-side {
+    background: var(--v-night);
+    border-right: 1px solid var(--v-night-3);
+    padding: 20px 16px;
+    display: flex; flex-direction: column; gap: 24px;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .dash-main { background: var(--v-night-2); }
+
+  .nav-section h5 {
+    font-family: var(--font-mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--v-ink-4); margin: 0 0 8px; padding: 0 8px; font-weight: 500;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 6px;
+    font-size: 13px; color: var(--v-mist); cursor: pointer;
+    text-decoration: none;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .nav-item:hover { background: var(--v-night-3); color: var(--v-paper); }
+  .nav-item.active { background: rgba(184,224,74,0.1); color: var(--v-signal); }
+
+  .topbar {
+    height: 60px; padding: 0 32px;
+    border-bottom: 1px solid var(--v-night-3);
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--v-night);
+  }
+  .topbar-title {
+    font-family: var(--font-display); font-size: 16px; color: var(--v-paper); font-weight: 500;
+  }
+  .topbar-eyebrow {
+    font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4);
+    letter-spacing: 0.08em; text-transform: uppercase; margin-right: 12px;
+  }
+
+  .page-wrap { padding: 32px 32px 64px; max-width: 1100px; }
+  .page-head { margin-bottom: 24px; }
+  .page-eyebrow {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--v-signal); margin-bottom: 10px;
+  }
+  .page-title {
+    font-family: var(--font-display); font-size: 32px; font-weight: 500;
+    letter-spacing: -0.02em; color: var(--v-paper); margin: 0 0 8px;
+  }
+  .page-lead { color: var(--v-mist); font-size: 14px; line-height: 1.6; max-width: 720px; margin: 0; }
+
+  .v-card {
+    background: var(--v-night); border: 1px solid var(--v-night-3);
+    border-radius: 10px; padding: 24px;
+  }
+  .v-card + .v-card { margin-top: 16px; }
+  .v-card-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 16px; margin-bottom: 16px;
+  }
+  .v-card-head h2 {
+    font-family: var(--font-display); font-size: 18px; font-weight: 500;
+    letter-spacing: -0.015em; color: var(--v-paper); margin: 0 0 4px;
+  }
+  .v-card-head p { margin: 0; color: var(--v-ink-4); font-size: 13px; }
+
+  .v-field { margin-bottom: 16px; }
+  .v-label {
+    display: block; font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--v-ink-4); margin-bottom: 8px;
+  }
+  .v-label .opt { color: var(--v-ink-4); margin-left: 6px; }
+  .v-input {
+    width: 100%; height: 40px; padding: 0 12px;
+    background: var(--v-night-2); color: var(--v-paper);
+    border: 1px solid var(--v-night-3); border-radius: 6px;
+    font-family: var(--font-sans); font-size: 14px;
+    transition: border-color 0.15s ease;
+  }
+  .v-input.mono { font-family: var(--font-mono); font-size: 13px; }
+  .v-input:hover { border-color: rgba(200,204,196,0.25); }
+  .v-input:focus {
+    outline: none; border-color: var(--v-signal);
+    box-shadow: 0 0 0 3px rgba(184,224,74,0.15);
+  }
+  .v-input::placeholder { color: var(--v-ink-4); }
+  .v-hint { font-size: 12px; color: var(--v-ink-4); margin: 6px 0 0; line-height: 1.5; }
+  .v-hint .mono { font-family: var(--font-mono); color: var(--v-mist); }
+
+  .v-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 16px; border-radius: 6px;
+    font-family: var(--font-sans); font-weight: 500; font-size: 13px;
+    border: 1px solid transparent; cursor: pointer; text-decoration: none;
+    transition: background 0.12s ease, border-color 0.12s ease;
+    line-height: 1;
+  }
+  .v-btn--signal { background: var(--v-signal); color: var(--v-signal-ink); }
+  .v-btn--signal:hover { background: var(--v-signal-2); }
+  .v-btn--ghost {
+    background: transparent; color: var(--v-mist);
+    border-color: var(--v-night-3);
+  }
+  .v-btn--ghost:hover { background: var(--v-night-3); color: var(--v-paper); }
+  .v-btn--danger { background: transparent; color: #E08585; border-color: rgba(224,133,133,0.3); }
+  .v-btn--danger:hover { background: rgba(224,133,133,0.1); }
+  .v-btn--lg { padding: 14px 22px; font-size: 14px; }
+
+  .v-row {
+    display: grid; grid-template-columns: 200px 1fr; gap: 16px;
+    padding: 14px 0; border-top: 1px solid var(--v-night-3);
+  }
+  .v-row:first-child { border-top: none; padding-top: 0; }
+  .v-row dt { color: var(--v-ink-4); font-size: 13px; }
+  .v-row dd { margin: 0; color: var(--v-paper); font-size: 14px; }
+
+  .v-pill {
+    display: inline-flex; align-items: center; padding: 3px 10px;
+    border-radius: 999px; font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.04em;
+  }
+  .v-pill--signal { background: rgba(184,224,74,0.12); color: var(--v-signal); border: 1px solid rgba(184,224,74,0.3); }
+  .v-pill--neutral { background: var(--v-night-3); color: var(--v-mist); }
+  .v-pill--amber { background: rgba(200,117,62,0.15); color: var(--v-amber); }
+
+  .v-alert {
+    background: rgba(200,117,62,0.1); border: 1px solid rgba(200,117,62,0.3);
+    color: var(--v-amber); padding: 12px 14px; border-radius: 6px;
+    font-size: 13px; margin-bottom: 16px;
+  }
+
+  .logout-form { display: inline; }
+  .logout-form button {
+    background: transparent; border: none; padding: 0;
+    color: inherit; font: inherit; cursor: pointer; width: 100%; text-align: left;
+  }
+</style>
+{% block head_extra %}{% endblock %}
+</head>
+<body data-screen-label="{{ title or 'App' }}">
+
+<div class="dash-shell">
+  <aside class="dash-side">
+    <a href="/" style="display: flex; align-items: center; gap: 10px; padding: 4px 8px; text-decoration: none;">
+      <svg width="22" height="22" viewBox="0 0 22 22">
+        <circle cx="11" cy="11" r="10" fill="none" stroke="var(--v-paper)" stroke-width="1"/>
+        <circle cx="11" cy="11" r="6" fill="none" stroke="var(--v-paper)" stroke-width="1"/>
+        <circle cx="11" cy="11" r="2.2" fill="var(--v-signal)"/>
+      </svg>
+      <span style="font-family: var(--font-display); font-size: 18px; color: var(--v-paper); font-weight: 500; letter-spacing: -0.025em;">Vittring</span>
+    </a>
+
+    <div class="nav-section">
+      <h5>Idag</h5>
+      <a href="/app" class="nav-item{% if active == 'overview' %} active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="6"/><circle cx="7" cy="7" r="3"/><circle cx="7" cy="7" r="1" fill="currentColor"/></svg>
+        Dagens digest
+      </a>
+      <a href="/app/calendar" class="nav-item{% if active == 'calendar' %} active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="10" height="10" rx="1"/><path d="M2 5 L12 5"/></svg>
+        Kalender
+      </a>
+    </div>
+
+    {% if user and user.is_superuser %}
+    <div class="nav-section">
+      <h5>Plattform</h5>
+      <a href="/admin" class="nav-item" style="color: var(--v-amber);">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 1 L12 4 L12 10 L7 13 L2 10 L2 4 Z"/><circle cx="7" cy="7" r="2"/></svg>
+        Admin-panel →
+      </a>
+    </div>
+    {% endif %}
+
+    <div class="nav-section">
+      <h5>Prenumerationer</h5>
+      {% for sub in subscriptions %}
+      <a href="/app/subscriptions" class="nav-item{% if active == 'subscriptions' %} active{% endif %}">⚑ {{ sub.name }}</a>
+      {% endfor %}
+      <a href="/app/subscriptions/new" class="nav-item{% if active == 'subscription_new' %} active{% endif %}" style="color: var(--v-ink-4);">+ ny prenumeration</a>
+    </div>
+
+    <div class="nav-section">
+      <h5>Bibliotek</h5>
+      <a href="/app/saved" class="nav-item{% if active == 'saved' %} active{% endif %}">★ Sparade signaler</a>
+      <a href="/app/archive" class="nav-item{% if active == 'archive' %} active{% endif %}">⏷ Arkiv</a>
+      <a href="/app/tags" class="nav-item{% if active == 'tags' %} active{% endif %}">⌗ Taggar</a>
+      <a href="/app/account" class="nav-item{% if active == 'account' %} active{% endif %}">⚙ Inställningar</a>
+    </div>
+
+    <div style="margin-top: auto; padding: 12px 8px; border-top: 1px solid var(--v-night-3);">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--v-amber), var(--v-amber-2)); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 12px; color: var(--v-paper); font-weight: 500;">{{ initials }}</div>
+        <div style="min-width: 0; flex: 1;">
+          <div style="font-size: 12px; color: var(--v-paper); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ user.full_name or user.email }}</div>
+          <div style="font-family: var(--font-mono); font-size: 10px; color: var(--v-ink-4);">{% if user.company_name %}{{ user.company_name }} · {% endif %}{{ plan_label }}</div>
+        </div>
+      </div>
+      <form method="post" action="/auth/logout" class="logout-form" style="margin-top: 12px;">
+        {{ csrf_input() }}
+        <button type="submit" style="font-family: var(--font-mono); font-size: 10px; color: var(--v-ink-4); letter-spacing: 0.08em; text-transform: uppercase;">Logga ut →</button>
+      </form>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="topbar">
+      {% block topbar %}
+      <div>
+        <span class="topbar-eyebrow">{{ topbar_eyebrow or "Konto" }}</span>
+        <span class="topbar-title">{{ title }}</span>
+      </div>
+      <div>{% block topbar_actions %}{% endblock %}</div>
+      {% endblock %}
+    </div>
+
+    <div class="page-wrap">
+      {% block app_content %}{% endblock %}
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

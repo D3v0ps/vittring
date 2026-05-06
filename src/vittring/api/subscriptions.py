@@ -8,6 +8,7 @@ from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 
+from vittring.api.account import PLAN_LABELS, _initials
 from vittring.api.deps import CurrentVerifiedUser, request_meta
 from vittring.api.templates import templates
 from vittring.audit.log import AuditAction, audit
@@ -41,10 +42,17 @@ async def list_subscriptions(
             .order_by(Subscription.created_at.desc())
         )
     ).scalars().all()
+    name_for_initials = user.full_name or user.email.split("@")[0]
     return templates.TemplateResponse(
         request,
         "app/subscriptions.html.j2",
-        {"title": "Prenumerationer", "user": user, "subscriptions": rows},
+        {
+            "title": "Prenumerationer",
+            "user": user,
+            "subscriptions": rows,
+            "initials": _initials(name_for_initials),
+            "plan_label": PLAN_LABELS.get(user.plan, user.plan.capitalize()),
+        },
     )
 
 
@@ -107,6 +115,25 @@ async def create_subscription(
         if min_procurement_value_sek
         else None,
     )
+
+    # Spec §8: an empty Criteria object matches nothing useful, so the API
+    # rejects creating a subscription without at least one selector. We
+    # check on the dumped dict so it's invariant under future Criteria
+    # field additions.
+    if not signal_types or not any(
+        v for v in criteria.model_dump(exclude_defaults=True).values()
+    ):
+        return templates.TemplateResponse(
+            request,
+            "app/subscription_form.html.j2",
+            {
+                "title": "Ny prenumeration",
+                "user": user,
+                "subscription": None,
+                "error": "Välj minst en signaltyp och minst ett filter (yrke, kommun, CPV-kod, nyckelord eller liknande).",
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     sub = Subscription(
         user_id=user.id,

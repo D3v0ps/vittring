@@ -1,25 +1,7 @@
-{% extends "_layout.html.j2" %}
-{% block content %}
-<section class="auth-shell">
-  <div class="auth-card">
-    <a href="/" class="auth-mark">
-      <span class="auth-mark-dot"></span>
-      Vittring
-    </a>
-    <div class="auth-state">
-      <div class="auth-state-icon auth-state-icon-error">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M12 8v5M12 16.5v.01M4.5 19.5h15a1.5 1.5 0 001.3-2.25l-7.5-12.5a1.5 1.5 0 00-2.6 0l-7.5 12.5a1.5 1.5 0 001.3 2.25z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <h1>Verifiering misslyckades</h1>
-      <p>Länken är ogiltig eller har gått ut. Logga in så skickar vi en ny verifieringslänk.</p>
-    </div>
-    <div class="auth-divider"></div>
-    <a href="/auth/login" class="btn btn-primary btn-lg" style="width: 100%;">Till inloggning</a>
-    <p class="auth-foot">
-      Problemet kvarstår? <a href="mailto:info@karimkhalil.se">Kontakta support</a>.
-    </p>
-  </div>
-</section>
+{% extends "auth/_auth_base.html.j2" %}
+{% block auth_content %}
+<h1 class="auth-h1">Verifiering <em>misslyckades</em>.</h1>
+<p class="auth-sub">Länken är ogiltig eller har gått ut. Logga in så skickar vi en ny verifieringslänk.</p>
+<a href="/auth/login" class="v-button v-button--ghost-dark v-button--lg v-button--block">Till inloggning →</a>
+<p class="auth-foot">Problemet kvarstår? <a href="mailto:info@karimkhalil.se">Kontakta support</a>.</p>
 {% endblock %}

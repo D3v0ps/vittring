@@ -31,6 +31,7 @@ from vittring.security.passwords import (
     verify_password,
 )
 from vittring.security.ratelimit import (
+    DEFAULT_BY_IP,
     LOGIN_BY_EMAIL,
     LOGIN_BY_IP,
     PASSWORD_RESET_BY_EMAIL,
@@ -181,6 +182,104 @@ async def check_email(request: Request) -> HTMLResponse:
 
 
 # ---------------------------------------------------------------------------
+# Verification-needed landing + resend
+# ---------------------------------------------------------------------------
+
+@router.get("/verification-needed", response_class=HTMLResponse, include_in_schema=False)
+async def verification_needed(
+    request: Request, email: str | None = None
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "auth/verification_needed.html.j2",
+        {
+            "title": "Bekräfta din e-post",
+            "email": email,
+            "submitted": False,
+            "error": None,
+        },
+    )
+
+
+@router.post(
+    "/resend-verification",
+    dependencies=[Depends(rate_limit(PASSWORD_RESET_BY_EMAIL, lambda r: "resend"))],
+    include_in_schema=False,
+    response_model=None,
+)
+async def resend_verification(
+    request: Request,
+    session: SessionDep,
+    email: Annotated[EmailStr, Form()],
+) -> HTMLResponse:
+    """Generate a fresh verification token and re-send the bekräfta-mejl.
+
+    Anti-enumeration: the rendered response is identical whether the email
+    matches a real account or not; only on a hit do we actually mint a
+    token + queue an email. The reused PASSWORD_RESET_BY_EMAIL bucket caps
+    abuse (3 req/hour per email).
+    """
+    user = (
+        await session.execute(select(User).where(User.email == email))
+    ).scalar_one_or_none()
+    if user is not None and not user.is_verified:
+        plain, hashed = new_url_token()
+        session.add(
+            EmailVerificationToken(
+                token_hash=hashed,
+                user_id=user.id,
+                expires_at=datetime.now(timezone.utc) + EMAIL_VERIFICATION_TTL,
+            )
+        )
+        meta = request_meta(request)
+        await audit(
+            session,
+            action=AuditAction.VERIFICATION_RESENT,
+            user_id=user.id,
+            ip=meta["ip"],
+            user_agent=meta["user_agent"],
+        )
+        settings = get_settings()
+        base = str(settings.app_base_url).rstrip("/")
+        verify_url = f"{base}/auth/verify?t={plain}"
+        html = render(
+            "verify.html.j2",
+            subject="Bekräfta din e-postadress",
+            from_address=settings.email_from_address,
+            email=user.email,
+            verify_url=verify_url,
+        )
+        text = f"Bekräfta din e-post genom att besöka: {verify_url}"
+        try:
+            await send_email(
+                to=user.email,
+                subject="Bekräfta din e-postadress hos Vittring",
+                html=html,
+                text=text,
+                tags={"kind": "verify_resent"},
+            )
+        except Exception as exc:
+            import structlog
+
+            structlog.get_logger(__name__).warning(
+                "resend_verification_email_failed",
+                user_id=user.id,
+                email=user.email,
+                error=str(exc),
+            )
+    return templates.TemplateResponse(
+        request,
+        "auth/verification_needed.html.j2",
+        {
+            "title": "Bekräfta din e-post",
+            "email": str(email),
+            "submitted": True,
+            "error": None,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
 # Email verification
 # ---------------------------------------------------------------------------
 
@@ -230,12 +329,35 @@ async def verify_email(t: str, session: SessionDep, request: Request) -> HTMLRes
 # Login / logout
 # ---------------------------------------------------------------------------
 
+def _safe_next_path(value: str | None) -> str:
+    """Validate a candidate ``?next=`` post-login redirect target.
+
+    Only same-origin absolute paths are accepted — anything else (full
+    URLs, protocol-relative ``//host``, empty/None) falls back to
+    ``/app`` so the field can't be turned into an open redirect.
+    """
+    if not value or not value.startswith("/") or value.startswith("//"):
+        return "/app"
+    return value
+
+
 @router.get("/login", response_class=HTMLResponse, include_in_schema=False)
-async def login_page(request: Request, user: OptionalUser) -> HTMLResponse:
+async def login_page(
+    request: Request,
+    user: OptionalUser,
+    next: str | None = None,
+) -> HTMLResponse:
+    next_target = _safe_next_path(next)
     if user:
-        return RedirectResponse("/app", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(next_target, status_code=status.HTTP_303_SEE_OTHER)
     return templates.TemplateResponse(
-        request, "auth/login.html.j2", {"title": "Logga in", "error": None}
+        request,
+        "auth/login.html.j2",
+        {
+            "title": "Logga in",
+            "error": None,
+            "next": next_target if next_target != "/app" else "",
+        },
     )
 
 
@@ -251,8 +373,10 @@ async def login(
     email: Annotated[EmailStr, Form()],
     password: Annotated[str, Form()],
     totp: Annotated[str, Form()] = "",
+    next: Annotated[str, Form()] = "",
 ) -> HTMLResponse | RedirectResponse:
     LOGIN_BY_EMAIL.take(str(email))
+    next_target = _safe_next_path(next or None)
     user = (
         await session.execute(select(User).where(User.email == email))
     ).scalar_one_or_none()
@@ -282,7 +406,11 @@ async def login(
         return templates.TemplateResponse(
             request,
             "auth/login.html.j2",
-            {"title": "Logga in", "error": "Fel e-post eller lösenord."},
+            {
+                "title": "Logga in",
+                "error": "Fel e-post eller lösenord.",
+                "next": next_target if next_target != "/app" else "",
+            },
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
@@ -293,6 +421,7 @@ async def login(
             {
                 "title": "Logga in",
                 "error": "Kontot är tillfälligt låst på grund av för många misslyckade försök.",
+                "next": next_target if next_target != "/app" else "",
             },
             status_code=status.HTTP_403_FORBIDDEN,
         )
@@ -306,6 +435,7 @@ async def login(
                 "error": "Ange giltig 2FA-kod." if totp else None,
                 "require_2fa": True,
                 "email_value": email,
+                "next": next_target if next_target != "/app" else "",
             },
             status_code=status.HTTP_401_UNAUTHORIZED if totp else status.HTTP_200_OK,
         )
@@ -322,7 +452,7 @@ async def login(
         user_agent=meta["user_agent"],
     )
 
-    response = RedirectResponse("/app", status_code=status.HTTP_303_SEE_OTHER)
+    response = RedirectResponse(next_target, status_code=status.HTTP_303_SEE_OTHER)
     _set_session_cookie(response, user.id)
     return response
 
@@ -359,7 +489,7 @@ async def password_reset_page(request: Request) -> HTMLResponse:
 
 @router.post(
     "/password-reset",
-    dependencies=[Depends(rate_limit(PASSWORD_RESET_BY_EMAIL, lambda r: r.headers.get("x-forwarded-for", r.client.host if r.client else "?")))],
+    dependencies=[Depends(rate_limit(DEFAULT_BY_IP, client_ip))],
     include_in_schema=False,
     response_model=None,
 )
@@ -368,6 +498,22 @@ async def password_reset_request(
     session: SessionDep,
     email: Annotated[EmailStr, Form()],
 ) -> HTMLResponse:
+    # Spec §13: 3 password-reset requests/hour per email. The dependency
+    # above can only see request headers, so the per-email bucket is taken
+    # here once the form body has been parsed. This stops an attacker from
+    # cycling through victim addresses to trigger reset emails — the
+    # per-email bucket rejects the 4th attempt regardless of source IP.
+    from vittring.utils.errors import RateLimitExceededError
+
+    try:
+        PASSWORD_RESET_BY_EMAIL.take(str(email))
+    except RateLimitExceededError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="rate_limit_exceeded",
+            headers={"Retry-After": str(exc.retry_after_seconds)},
+        ) from exc
+
     user = (
         await session.execute(select(User).where(User.email == email))
     ).scalar_one_or_none()
@@ -480,7 +626,21 @@ async def password_reset_confirm(
 
 @router.get("/2fa/enable", response_class=HTMLResponse, include_in_schema=False)
 async def two_factor_setup_page(request: Request, user: CurrentUser) -> HTMLResponse:
-    secret = user.totp_secret or generate_secret()
+    """Show the QR / secret for setting up 2FA.
+
+    The pending secret is persisted on ``user.totp_secret`` *immediately* but
+    the ``totp_enabled_at`` flag remains null until the user confirms with a
+    valid 6-digit code. That way the POST handler does not have to trust a
+    client-supplied ``secret`` field — it reads the freshly stored value
+    server-side. Until ``totp_enabled_at`` is set, login still allows access
+    without TOTP, so a half-finished setup does not lock the user out.
+    """
+    if not user.totp_secret or user.totp_enabled_at is not None:
+        # Either no setup in progress, or 2FA already activated and the
+        # operator wants to re-pair (rotate). Issue a fresh secret either way.
+        user.totp_secret = generate_secret()
+        user.totp_enabled_at = None
+    secret = user.totp_secret
     uri = provisioning_uri(secret, account_name=user.email)
     return templates.TemplateResponse(
         request,
@@ -494,9 +654,19 @@ async def two_factor_enable(
     request: Request,
     session: SessionDep,
     user: CurrentUser,
-    secret: Annotated[str, Form()],
     code: Annotated[str, Form()],
 ) -> HTMLResponse | RedirectResponse:
+    """Confirm a pending 2FA setup by checking the user's authenticator code.
+
+    The secret is read from ``user.totp_secret`` (set by the GET handler) —
+    we never trust a hidden form field, so a malicious client cannot pin the
+    server's OTP secret to one they control.
+    """
+    secret = user.totp_secret
+    if not secret:
+        return RedirectResponse(
+            "/auth/2fa/enable", status_code=status.HTTP_303_SEE_OTHER
+        )
     if not verify_code(secret, code):
         uri = provisioning_uri(secret, account_name=user.email)
         return templates.TemplateResponse(
@@ -505,7 +675,6 @@ async def two_factor_enable(
             {"title": "Aktivera 2FA", "secret": secret, "uri": uri, "error": "Fel kod."},
             status_code=status.HTTP_400_BAD_REQUEST,
         )
-    user.totp_secret = secret
     user.totp_enabled_at = datetime.now(timezone.utc)
     meta = request_meta(request)
     await audit(

@@ -1,0 +1,109 @@
+{% extends "app/_app_shell.html.j2" %}
+{% set topbar_eyebrow = "Idag" %}
+{% set title = "Kalender" %}
+{% set active = "calendar" %}
+{% block app_content %}
+<header class="page-head">
+  <div class="page-eyebrow">Kalender</div>
+  <h1 class="page-title">Kommande deadlines</h1>
+  <p class="page-lead">
+    Anbudsfrister från upphandlingar som matchar dina filter, plus dina egna milstolpar.
+    {% if total_events %}
+      <span style="font-family: var(--font-mono); color: var(--v-mist);">{{ total_events }} händelser inom 90 dagar.</span>
+    {% endif %}
+  </p>
+</header>
+
+<form method="get" action="/app/calendar" class="v-card" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px 16px; margin-bottom: 16px;">
+  <label for="cal-q" style="font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4); letter-spacing: 0.05em;">SÖK</label>
+  <input
+    id="cal-q"
+    type="text"
+    name="q"
+    value="{{ q or '' }}"
+    placeholder="t.ex. bemanning, lager, vårdpersonal"
+    autocomplete="off"
+    style="flex: 1; min-width: 200px; background: var(--v-night-2); border: 1px solid var(--v-night-3); color: var(--v-paper); padding: 8px 12px; border-radius: 6px; font-size: 13px;"
+  />
+  <button type="submit" class="v-btn v-btn--primary" style="padding: 8px 16px; font-size: 12px;">Filtrera</button>
+  {% if q %}
+    <a href="/app/calendar" class="v-btn v-btn--ghost" style="padding: 8px 12px; font-size: 12px;">Rensa</a>
+  {% endif %}
+</form>
+
+{% if filter_active %}
+<div style="background: rgba(56,134,168,0.08); border: 1px solid rgba(56,134,168,0.25); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: var(--v-mist); font-family: var(--font-mono);">
+  {% if subscription_filter_count and q %}
+    Filtrerat på {{ subscription_filter_count }} prenumeration(er) + sökord “{{ q }}”
+  {% elif subscription_filter_count %}
+    Filtrerat på {{ subscription_filter_count }} prenumeration(er) som täcker upphandlingar
+  {% elif q %}
+    Filtrerat på sökord “{{ q }}”
+  {% endif %}
+  · {{ matched_procurements }}/{{ total_procurements }} träffar inom 90 dagar
+</div>
+{% endif %}
+
+{% if is_sample_only %}
+<div style="background: rgba(200,117,62,0.08); border: 1px solid rgba(200,117,62,0.25); border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; font-size: 13px; color: var(--v-amber);">
+  Visar exempel-deadlines tills första upphandlingsingest har körts. Riktiga datum dyker upp automatiskt när upphandlingar matchar dina filter.
+</div>
+{% endif %}
+
+{% if grouped %}
+<section class="v-card" style="padding: 0;">
+  {% for date_key, events in grouped.items() %}
+  <div style="display: grid; grid-template-columns: 120px 1fr; gap: 24px; padding: 20px 24px; {% if not loop.first %}border-top: 1px solid var(--v-night-3);{% endif %}">
+    <div style="font-family: var(--font-mono); font-size: 13px; color: var(--v-paper); padding-top: 2px;">
+      {{ events[0].date.strftime("%d %b") }}
+      <div style="font-size: 11px; color: var(--v-ink-4); margin-top: 4px;">{{ events[0].date.strftime("%Y") }}</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      {% for ev in events %}
+      <div style="display: flex; gap: 12px; align-items: flex-start;">
+        <span class="v-pill v-pill--{% if ev.kind_class == 'upph' %}amber{% elif ev.kind_class == 'trial' %}signal{% else %}neutral{% endif %}" style="flex-shrink: 0; margin-top: 2px;">{{ ev.kind }}</span>
+        <div style="flex: 1; min-width: 0;">
+          <div style="color: var(--v-paper); font-size: 14px; font-weight: 500; margin-bottom: 2px;">
+            {{ ev.title }}{% if ev.is_sample %} <span style="font-family: var(--font-mono); font-size: 10px; color: var(--v-amber); letter-spacing: 0.05em;">EXEMPEL</span>{% endif %}
+          </div>
+          {% if ev.detail %}<div style="font-size: 12px; color: var(--v-mist); margin-bottom: 4px;">{{ ev.detail }}</div>{% endif %}
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4);">
+            {{ ev.date.strftime("%H:%M") }} ·
+            {% set days_left = (ev.date.date() - now_date).days %}
+            {% if days_left == 0 %}idag
+            {% elif days_left == 1 %}imorgon
+            {% else %}om {{ days_left }} dagar{% endif %}
+          </div>
+        </div>
+        {% if ev.url %}
+        <a href="{{ ev.url }}" {% if ev.url.startswith('/') %}{% else %}target="_blank" rel="noopener"{% endif %} class="v-btn v-btn--ghost" style="padding: 6px 12px; font-size: 11px; flex-shrink: 0;">Öppna →</a>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+{% else %}
+<section class="v-card" style="text-align: center; padding: 48px 24px;">
+  {% if filter_active %}
+  <div style="font-family: var(--font-display); font-size: 22px; color: var(--v-paper); margin-bottom: 8px;">Inga träffar med dina filter</div>
+  <p style="color: var(--v-mist); font-size: 14px; max-width: 480px; margin: 0 auto 20px;">
+    Inga upphandlingar matchar
+    {% if q %} sökordet “{{ q }}”{% endif %}
+    {% if subscription_filter_count %} dina prenumerationskriterier{% endif %}
+    inom de närmaste 90 dagarna. Pröva att rensa sökrutan eller justera prenumerationen.
+  </p>
+  <a href="/app/calendar" class="v-btn v-btn--ghost" style="margin-right: 8px;">Rensa filter</a>
+  <a href="/app/subscriptions" class="v-btn v-btn--signal">Mina prenumerationer</a>
+  {% else %}
+  <div style="font-family: var(--font-display); font-size: 22px; color: var(--v-paper); margin-bottom: 8px;">Inga kommande deadlines</div>
+  <p style="color: var(--v-mist); font-size: 14px; max-width: 480px; margin: 0 auto 20px;">
+    Lägg till en prenumeration som inkluderar upphandlingar — så hamnar varje anbudsfrist här
+    automatiskt så fort vi hittar en match mot dina filter.
+  </p>
+  <a href="/app/subscriptions/new" class="v-btn v-btn--signal">Skapa prenumeration</a>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

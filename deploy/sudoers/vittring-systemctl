@@ -1,0 +1,25 @@
+# Allow the vittring service user to manage its own systemd units without a
+# password prompt. Without this, `scripts/deploy.sh` and any manual restart
+# (`sudo systemctl restart vittring-api ...`) blocks on a TTY prompt that the
+# vittring account has no password for.
+#
+# Installed by scripts/server_bootstrap.sh to /etc/sudoers.d/vittring-systemctl
+# (mode 440, root:root). Always validate with `visudo -c` after editing.
+
+Cmnd_Alias VITTRING_SVC = \
+    /usr/bin/systemctl reload vittring-api.service, \
+    /usr/bin/systemctl reload-or-restart vittring-api.service, \
+    /usr/bin/systemctl restart vittring-api.service, \
+    /usr/bin/systemctl restart vittring-scheduler.service, \
+    /usr/bin/systemctl restart vittring-api.service vittring-scheduler.service, \
+    /usr/bin/systemctl status vittring-api.service, \
+    /usr/bin/systemctl status vittring-scheduler.service, \
+    /bin/systemctl reload vittring-api.service, \
+    /bin/systemctl reload-or-restart vittring-api.service, \
+    /bin/systemctl restart vittring-api.service, \
+    /bin/systemctl restart vittring-scheduler.service, \
+    /bin/systemctl restart vittring-api.service vittring-scheduler.service, \
+    /bin/systemctl status vittring-api.service, \
+    /bin/systemctl status vittring-scheduler.service
+
+vittring ALL=(root) NOPASSWD: VITTRING_SVC

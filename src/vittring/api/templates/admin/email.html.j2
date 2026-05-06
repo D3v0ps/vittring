@@ -1,0 +1,64 @@
+{% extends "admin/_layout.html.j2" %}
+{% set active_nav = 'email' %}
+{% set topbar_title = 'E-post' %}
+
+{% block content %}
+  <div class="page-header">
+    <div class="eyebrow">Admin · E-post</div>
+    <h1>E-postaktivitet</h1>
+    <div class="subtitle">Skickade digester och engagemang.</div>
+  </div>
+
+  <div class="page-body stack">
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="lbl">Levererade 7d</div>
+        <div class="num">{{ stats.sent_7d }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Öppningsfrekvens</div>
+        <div class="num">{{ stats.open_rate }}%</div>
+        <div class="delta">{{ stats.opened_7d }} öppningar</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Klickfrekvens</div>
+        <div class="num">{{ stats.click_rate }}%</div>
+        <div class="delta">{{ stats.clicked_7d }} klick</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Distinkta mottagare 7d</div>
+        <div class="num">{{ stats.distinct_users_7d }}</div>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="section-title">Senaste 50 leveranser</h2>
+      {% if rows %}
+      <div class="card" style="padding: 0;">
+        <table class="t">
+          <thead>
+            <tr><th>Levererad</th><th>Användare</th><th>Typ</th><th>Signal-id</th><th>Öppnad</th><th>Klickad</th><th>Resend-id</th></tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+            <tr>
+              <td class="mono">{{ r.delivered_at.strftime('%Y-%m-%d %H:%M') }}</td>
+              <td><a href="/admin/users/{{ r.user_id }}">{{ r.user_email }}</a></td>
+              <td class="mono">{{ r.signal_type }}</td>
+              <td class="mono">{{ r.signal_id }}</td>
+              <td class="mono">{% if r.opened_at %}<span style="color: var(--v-signal);">●</span> {{ r.opened_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}</td>
+              <td class="mono">{% if r.clicked_at %}<span style="color: var(--v-amber);">●</span> {{ r.clicked_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}</td>
+              <td class="mono" style="font-size: 10px;">{{ r.resend_message_id or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty">Inga e-postleveranser ännu.</div>
+      {% endif %}
+    </div>
+
+  </div>
+{% endblock %}

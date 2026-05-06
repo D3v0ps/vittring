@@ -1,0 +1,71 @@
+{% extends "admin/_layout.html.j2" %}
+{% set active_nav = 'audit' %}
+{% set topbar_title = 'Audit' %}
+
+{% block content %}
+  <div class="page-header">
+    <div class="eyebrow">Admin · Audit</div>
+    <h1>Audit-logg</h1>
+    <div class="subtitle">Alla känsliga händelser. Kvarstår 24 månader.</div>
+  </div>
+
+  <div class="filter-bar">
+    <form method="get" action="/admin/audit">
+      <select name="action">
+        <option value="all" {% if filter_action == 'all' %}selected{% endif %}>Alla händelser</option>
+        {% for a in available_actions %}
+          <option value="{{ a }}" {% if filter_action == a %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+      <input type="number" name="user_id" value="{{ filter_user_id|default('', true) }}" placeholder="user_id" style="width: 110px;">
+      <button class="btn" type="submit">Filtrera</button>
+      {% if filter_action != 'all' or filter_user_id %}
+        <a href="/admin/audit" class="btn">Rensa</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="page-body">
+    {% if rows %}
+    <div class="card" style="padding: 0;">
+      <table class="t">
+        <thead>
+          <tr><th>Tid</th><th>Användare</th><th>Händelse</th><th>IP</th><th>Metadata</th></tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td class="mono">{{ r.created_at | stockholm }}</td>
+            <td>
+              {% if r.user_email %}
+                <a href="/admin/users/{{ r.user_id }}">{{ r.user_email }}</a>
+              {% else %}
+                <span class="mono">—</span>
+              {% endif %}
+            </td>
+            <td class="mono">{{ r.action }}</td>
+            <td class="mono">{{ r.ip or '—' }}</td>
+            <td>
+              {% if r.audit_metadata %}
+              <details class="json-cell">
+                <summary>{{ r.audit_metadata|tojson|truncate(80) }}</summary>
+                <pre>{{ r.audit_metadata|tojson(indent=2) }}</pre>
+              </details>
+              {% else %}<span class="mono">—</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pager">
+      {% if prev_url %}<a href="{{ prev_url }}">← Föregående</a>{% else %}<span>← Föregående</span>{% endif %}
+      <span>Sida {{ page_num }}</span>
+      {% if next_url %}<a href="{{ next_url }}">Nästa →</a>{% else %}<span>Nästa →</span>{% endif %}
+    </div>
+    {% else %}
+    <div class="empty">Inga händelser matchar filtret.</div>
+    {% endif %}
+  </div>
+{% endblock %}

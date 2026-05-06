@@ -1,44 +1,22 @@
-{% extends "_layout.html.j2" %}
-{% block content %}
-<section class="auth-shell" style="max-width: 520px;">
-  <div class="auth-card">
-    <a href="/" class="auth-mark">
-      <span class="auth-mark-dot"></span>
-      Vittring
-    </a>
-    <h1 class="auth-heading">Aktivera tvåfaktor</h1>
-    <p class="auth-sub">Lägg till ett extra steg vid inloggning med en authenticator-app som 1Password, Authy eller Google Authenticator.</p>
-    {% if error %}
-      <div class="alert-error">{{ error }}</div>
-    {% endif %}
+{% extends "auth/_auth_base.html.j2" %}
+{% block auth_content %}
+<h1 class="auth-h1">Aktivera <em>tvåfaktor</em>.</h1>
+<p class="auth-sub">Lägg till ett extra steg vid inloggning med en authenticator-app som 1Password, Authy eller Google Authenticator.</p>
+{% if error %}<div class="auth-error">{{ error }}</div>{% endif %}
 
-    <ol class="auth-steps">
-      <li>Öppna din authenticator-app och välj <strong>Lägg till konto</strong></li>
-      <li>Skanna QR-koden eller mata in nyckeln nedan manuellt</li>
-      <li>Skriv in den 6-siffriga koden från appen för att bekräfta</li>
-    </ol>
+<div style="margin-bottom: 24px;">
+  <div style="font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px;">Hemlig nyckel</div>
+  <code style="display: block; background: var(--v-night-2); border: 1px solid var(--v-night-3); padding: 12px 14px; border-radius: var(--r-2); font-family: var(--font-mono); font-size: 13px; color: var(--v-signal); word-break: break-all; user-select: all;">{{ secret }}</code>
+  <div class="helper" style="margin-top: 8px;">Skanna QR-koden i din authenticator-app eller mata in nyckeln manuellt. URI: <span style="color: var(--v-mist); font-family: var(--font-mono);">{{ uri }}</span></div>
+</div>
 
-    <div style="margin-top: var(--space-5);">
-      <span class="auth-code-label">Hemlig nyckel</span>
-      <code class="auth-code mono">{{ secret }}</code>
-      <p class="auth-code-uri" title="otpauth-URI">{{ uri }}</p>
-    </div>
-
-    <div class="auth-divider"></div>
-
-    <form method="post" action="/auth/2fa/enable" class="auth-form">
-      {{ csrf_input() }}
-      <input type="hidden" name="secret" value="{{ secret }}" />
-      <div class="field">
-        <label for="code">Bekräftelsekod</label>
-        <input class="input mono" type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code" placeholder="123 456" autofocus />
-        <span class="password-requirements">6 siffror. Koden förnyas var 30:e sekund.</span>
-      </div>
-      <button type="submit" class="btn btn-primary btn-lg">Aktivera tvåfaktor</button>
-    </form>
-    <p class="auth-foot">
-      Förvara nyckeln säkert om du behöver återaktivera senare.
-    </p>
+<form method="post" action="/auth/2fa/enable" class="auth-form">
+  {{ csrf_input() }}
+  <div class="field">
+    <label for="code">Bekräftelsekod</label>
+    <input class="input mono" type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code" placeholder="123 456" autofocus />
+    <div class="helper">6 siffror. Koden förnyas var 30:e sekund.</div>
   </div>
-</section>
+  <button type="submit" class="v-button v-button--full-signal v-button--lg v-button--block">Aktivera tvåfaktor →</button>
+</form>
 {% endblock %}

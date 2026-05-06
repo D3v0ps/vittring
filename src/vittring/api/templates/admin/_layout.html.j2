@@ -1,0 +1,388 @@
+{# Admin standalone layout — does NOT extend the public _layout.html.j2.
+   Mirrors the dashboard's dark "Night" theme but uses --v-amber as the
+   active accent so the operator can tell at a glance they're in admin. #}
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Vittring Admin — {{ title|default('Admin') }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/brand.css">
+<style>
+  body { background: var(--v-night); color: var(--v-mist); margin: 0; font-family: var(--font-sans); }
+  a { color: inherit; text-decoration: none; }
+  .admin-shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+  .admin-side {
+    background: var(--v-night);
+    border-right: 1px solid var(--v-night-3);
+    padding: 20px 16px;
+    display: flex; flex-direction: column; gap: 24px;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .admin-main { background: var(--v-night-2); }
+
+  .nav-section h5 {
+    font-family: var(--font-mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--v-ink-4); margin: 0 0 8px; padding: 0 8px; font-weight: 500;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 6px;
+    font-size: 13px; color: var(--v-mist); cursor: pointer;
+    text-decoration: none;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .nav-item:hover { background: var(--v-night-3); color: var(--v-paper); }
+  .nav-item.active { background: rgba(200,117,62,0.12); color: var(--v-amber); }
+  .nav-item .count {
+    margin-left: auto; font-family: var(--font-mono); font-size: 11px;
+    color: var(--v-ink-4);
+  }
+  .nav-item.active .count { color: var(--v-amber); }
+
+  .admin-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(200,117,62,0.14);
+    color: var(--v-amber);
+    border: 1px solid rgba(200,117,62,0.35);
+    padding: 2px 8px; border-radius: 999px;
+    font-family: var(--font-mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+
+  .topbar {
+    height: 60px; padding: 0 32px;
+    border-bottom: 1px solid var(--v-night-3);
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--v-night);
+  }
+  .topbar .title-block { display: flex; align-items: center; gap: 14px; }
+  .topbar h1 {
+    font-family: var(--font-display); font-size: 18px;
+    color: var(--v-paper); font-weight: 500; margin: 0;
+    letter-spacing: -0.02em;
+  }
+
+  .page-header {
+    padding: 32px 32px 20px;
+    border-bottom: 1px solid var(--v-night-3);
+  }
+  .page-header .eyebrow {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--v-amber); letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .page-header h1 {
+    font-family: var(--font-display); font-size: 40px; line-height: 1;
+    color: var(--v-paper); margin: 8px 0 0; font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+  .page-header .subtitle {
+    font-size: 14px; color: var(--v-ink-4); margin-top: 8px;
+  }
+
+  .page-body { padding: 24px 32px 64px; }
+
+  /* Cards */
+  .card {
+    background: var(--v-night); border: 1px solid var(--v-night-3);
+    border-radius: 8px;
+    padding: 20px;
+  }
+  .card .card-title {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--v-ink-4); text-transform: uppercase;
+    letter-spacing: 0.1em; margin: 0 0 12px;
+  }
+  .card .card-h2 {
+    font-family: var(--font-display); font-size: 22px; color: var(--v-paper);
+    font-weight: 500; margin: 0 0 6px; letter-spacing: -0.02em;
+  }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .stat-card {
+    background: var(--v-night); border: 1px solid var(--v-night-3);
+    padding: 18px 20px; border-radius: 8px;
+  }
+  .stat-card .lbl {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--v-ink-4); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .stat-card .num {
+    font-family: var(--font-display); font-size: 38px; line-height: 1;
+    color: var(--v-paper); margin-top: 6px; letter-spacing: -0.025em;
+  }
+  .stat-card .delta {
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--v-amber); margin-top: 6px;
+  }
+
+  /* Tables */
+  table.t {
+    width: 100%; border-collapse: collapse;
+    font-size: 13px; color: var(--v-mist);
+  }
+  table.t th {
+    text-align: left; font-family: var(--font-mono); font-size: 10px;
+    color: var(--v-ink-4); letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 10px 12px; border-bottom: 1px solid var(--v-night-3);
+    background: var(--v-night);
+    font-weight: 500;
+  }
+  table.t td {
+    padding: 11px 12px; border-bottom: 1px solid var(--v-night-3);
+    vertical-align: middle;
+  }
+  table.t tr:hover td { background: rgba(200,204,196,0.03); }
+  table.t .mono { font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4); }
+  table.t a { color: var(--v-paper); }
+  table.t a:hover { color: var(--v-amber); }
+
+  /* Pills + badges */
+  .pip {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--v-night-3); vertical-align: middle;
+  }
+  .pip.on { background: var(--v-signal); }
+  .pip.off { background: var(--v-amber-2); }
+  .pip.warn { background: #b94f4f; }
+
+  .badge {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 999px;
+    font-family: var(--font-mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    border: 1px solid var(--v-night-3); color: var(--v-mist);
+    background: var(--v-night-3);
+  }
+  .badge.plan-trial { background: var(--v-night-3); color: var(--v-mist); }
+  .badge.plan-solo  { background: rgba(184,224,74,0.10); color: var(--v-signal); border-color: rgba(184,224,74,0.25); }
+  .badge.plan-team  { background: rgba(200,117,62,0.10); color: var(--v-amber); border-color: rgba(200,117,62,0.25); }
+  .badge.plan-pro   { background: rgba(200,117,62,0.20); color: var(--v-amber); border-color: rgba(200,117,62,0.45); }
+  .badge.danger     { background: rgba(185,79,79,0.18); color: #e89595; border-color: rgba(185,79,79,0.4); }
+  .badge.signal     { background: rgba(184,224,74,0.10); color: var(--v-signal); border-color: rgba(184,224,74,0.25); }
+  .badge.amber      { background: rgba(200,117,62,0.14); color: var(--v-amber); border-color: rgba(200,117,62,0.35); }
+
+  /* Buttons */
+  .btn {
+    background: transparent; border: 1px solid var(--v-night-3);
+    color: var(--v-mist); padding: 7px 12px; border-radius: 6px;
+    font-family: var(--font-mono); font-size: 11px; cursor: pointer;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    line-height: 1.2;
+  }
+  .btn:hover { background: var(--v-night-3); color: var(--v-paper); }
+  .btn.primary {
+    background: var(--v-amber); color: var(--v-night);
+    border-color: transparent; font-weight: 500;
+  }
+  .btn.primary:hover { background: var(--v-amber-2); color: var(--v-paper); }
+  .btn.signal {
+    background: var(--v-signal); color: var(--v-signal-ink);
+    border-color: transparent;
+  }
+  .btn.signal:hover { background: var(--v-signal-2); }
+  .btn.danger {
+    background: transparent; color: #e89595;
+    border-color: rgba(185,79,79,0.45);
+  }
+  .btn.danger:hover { background: rgba(185,79,79,0.18); }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* Forms */
+  form.admin-form { display: grid; gap: 14px; max-width: 560px; }
+  form.inline { display: inline; }
+  .field { display: grid; gap: 4px; }
+  .field label {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--v-ink-4); letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .field input[type=text],
+  .field input[type=email],
+  .field input[type=password],
+  .field input[type=datetime-local],
+  .field select,
+  .field textarea {
+    background: var(--v-night-2); border: 1px solid var(--v-night-3);
+    color: var(--v-paper); padding: 9px 11px; border-radius: 6px;
+    font-family: var(--font-sans); font-size: 14px;
+  }
+  .field textarea {
+    font-family: var(--font-mono); font-size: 12px; min-height: 90px;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none; border-color: var(--v-amber);
+  }
+  .field-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+
+  .alert {
+    border-radius: 6px; padding: 10px 14px; font-size: 13px;
+    margin-bottom: 16px;
+  }
+  .alert.error { background: rgba(185,79,79,0.16); color: #e89595; border: 1px solid rgba(185,79,79,0.4); }
+  .alert.ok    { background: rgba(184,224,74,0.10); color: var(--v-signal); border: 1px solid rgba(184,224,74,0.3); }
+  .alert.warn  { background: rgba(200,117,62,0.14); color: var(--v-amber); border: 1px solid rgba(200,117,62,0.4); }
+
+  .filter-bar {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    padding: 14px 32px; border-bottom: 1px solid var(--v-night-3);
+    background: var(--v-night);
+  }
+  .filter-bar form {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .filter-bar input, .filter-bar select {
+    background: var(--v-night-2); border: 1px solid var(--v-night-3);
+    color: var(--v-paper); padding: 7px 10px; border-radius: 6px;
+    font-family: var(--font-mono); font-size: 12px;
+  }
+
+  .pager { margin-top: 18px; display: flex; gap: 12px; font-family: var(--font-mono); font-size: 12px; }
+  .pager a { color: var(--v-amber); }
+  .pager span { color: var(--v-ink-4); }
+
+  .empty {
+    padding: 40px 24px; text-align: center;
+    color: var(--v-ink-4); font-family: var(--font-mono); font-size: 12px;
+    letter-spacing: 0.06em;
+  }
+
+  .tabs {
+    display: flex; gap: 8px; padding: 14px 32px;
+    border-bottom: 1px solid var(--v-night-3); background: var(--v-night);
+  }
+  .tab {
+    padding: 8px 14px; border-radius: 6px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--v-mist); border: 1px solid transparent;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .tab.active {
+    background: rgba(200,117,62,0.14); color: var(--v-amber);
+    border-color: rgba(200,117,62,0.35);
+  }
+  .tab:hover { background: var(--v-night-3); color: var(--v-paper); }
+
+  details.json-cell {
+    font-family: var(--font-mono); font-size: 11px; color: var(--v-mist);
+  }
+  details.json-cell summary {
+    cursor: pointer; color: var(--v-ink-4);
+    list-style: none;
+  }
+  details.json-cell summary::-webkit-details-marker { display: none; }
+  details.json-cell pre {
+    margin-top: 6px; max-width: 560px; max-height: 280px;
+    overflow: auto; background: var(--v-night-2);
+    padding: 10px; border-radius: 4px; font-size: 11px;
+    white-space: pre-wrap;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .stack { display: grid; gap: 18px; }
+  .section-title {
+    font-family: var(--font-display); font-size: 22px;
+    color: var(--v-paper); margin: 32px 0 14px; font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body data-screen-label="Admin">
+
+<div class="admin-shell">
+  <aside class="admin-side">
+    <a href="/" style="display: flex; align-items: center; gap: 10px; padding: 4px 8px; text-decoration: none;">
+      <svg width="22" height="22" viewBox="0 0 22 22">
+        <circle cx="11" cy="11" r="10" fill="none" stroke="var(--v-paper)" stroke-width="1"/>
+        <circle cx="11" cy="11" r="6" fill="none" stroke="var(--v-paper)" stroke-width="1"/>
+        <circle cx="11" cy="11" r="2.2" fill="var(--v-amber)"/>
+      </svg>
+      <span style="font-family: var(--font-display); font-size: 18px; color: var(--v-paper); font-weight: 500; letter-spacing: -0.025em;">Vittring</span>
+      <span class="admin-pill" style="margin-left: auto;">Admin</span>
+    </a>
+
+    <div class="nav-section">
+      <h5>Översikt</h5>
+      <a href="/admin" class="nav-item {% if active_nav == 'overview' %}active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 11 L5 6 L8 8 L12 3"/></svg>
+        Översikt
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <h5>Plattform</h5>
+      <a href="/admin/users" class="nav-item {% if active_nav == 'users' %}active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="5" r="2.2"/><path d="M2 12 C2 9.5 4 8 7 8 C10 8 12 9.5 12 12"/></svg>
+        Användare
+      </a>
+      <a href="/admin/subscriptions" class="nav-item {% if active_nav == 'subscriptions' %}active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4 H12 M2 7 H12 M2 10 H8"/></svg>
+        Prenumerationer
+      </a>
+      <a href="/admin/signals" class="nav-item {% if active_nav == 'signals' %}active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="6"/><circle cx="7" cy="7" r="3"/></svg>
+        Signaler
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <h5>Drift</h5>
+      <a href="/admin/audit" class="nav-item {% if active_nav == 'audit' %}active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 2 L11 2 L11 12 L3 12 Z M5 5 H9 M5 7 H9 M5 9 H7"/></svg>
+        Audit
+      </a>
+      <a href="/admin/system" class="nav-item {% if active_nav == 'system' %}active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="2.2"/><path d="M7 1 V3 M7 11 V13 M1 7 H3 M11 7 H13 M2.5 2.5 L4 4 M10 10 L11.5 11.5 M2.5 11.5 L4 10 M10 4 L11.5 2.5"/></svg>
+        System
+      </a>
+      <a href="/admin/email" class="nav-item {% if active_nav == 'email' %}active{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="10" height="8" rx="1"/><path d="M2 4 L7 8 L12 4"/></svg>
+        E-post
+      </a>
+    </div>
+
+    <div style="margin-top: auto; padding: 12px 8px; border-top: 1px solid var(--v-night-3);">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--v-amber), var(--v-amber-2)); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 12px; color: var(--v-paper); font-weight: 500;">{{ admin_initials }}</div>
+        <div style="min-width: 0; flex: 1;">
+          <div style="font-size: 12px; color: var(--v-paper); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ user.email }}</div>
+          <div style="font-family: var(--font-mono); font-size: 10px; color: var(--v-amber); letter-spacing: 0.06em;">SUPERADMIN</div>
+        </div>
+      </div>
+      <div style="margin-top: 10px; display: flex; gap: 6px;">
+        <a href="/app" class="btn" style="flex: 1; justify-content: center; font-size: 10px;">↩ Dashboard</a>
+        <form method="post" action="/auth/logout" style="display: inline; flex: 1;">
+          {{ csrf_input() }}
+          <button type="submit" class="btn" style="width: 100%; justify-content: center; font-size: 10px;">Logga ut</button>
+        </form>
+      </div>
+    </div>
+  </aside>
+
+  <main class="admin-main">
+    <div class="topbar">
+      <div class="title-block">
+        <span class="admin-pill">Admin</span>
+        <h1>{{ topbar_title|default(title) }}</h1>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        {% block topbar_actions %}{% endblock %}
+        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4); letter-spacing: 0.06em;">{{ user.email }}</span>
+      </div>
+    </div>
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+</body>
+</html>

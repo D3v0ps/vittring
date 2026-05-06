@@ -28,6 +28,7 @@ dependencies = [
     # HTTP client
     "httpx>=0.28",
     "tenacity>=9.0",
+    "selectolax>=0.3",
 
     # Auth / security
     "fastapi-users[sqlalchemy]>=14.0",

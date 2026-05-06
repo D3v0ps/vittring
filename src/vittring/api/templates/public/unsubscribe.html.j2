@@ -1,13 +1,18 @@
 {% extends "_layout.html.j2" %}
 {% block content %}
-<section class="section">
-  <div class="container container-narrow">
+<section style="padding: 120px 48px; min-height: 60vh; display: flex; align-items: center; justify-content: center;">
+  <div style="max-width: 520px; text-align: center;">
     {% if ok %}
-      <h1>Avregistrerad</h1>
-      <p>Dina prenumerationer är pausade. Logga in för att aktivera dem igen om du ändrar dig.</p>
+      <div class="t-eyebrow" style="margin-bottom: 16px; color: var(--v-signal);">AVREGISTRERAD</div>
+      <h1 style="font-family: var(--font-display); font-size: 48px; font-weight: 400; letter-spacing: -0.03em; line-height: 1; margin: 0 0 16px; color: var(--v-paper);">
+        Klart. Vi <em style="color: var(--v-signal); font-style: italic;">skickar inte mer</em>.
+      </h1>
+      <p style="font-size: 16px; color: var(--v-mist); line-height: 1.6;">Dina prenumerationer är pausade. Logga in för att aktivera dem igen om du ändrar dig.</p>
     {% else %}
-      <h1>Kunde inte avregistrera</h1>
-      <p>Länken är ogiltig eller har gått ut. Logga in i ditt konto för att hantera prenumerationerna manuellt.</p>
+      <div class="t-eyebrow" style="margin-bottom: 16px; color: var(--v-amber);">FELAKTIG LÄNK</div>
+      <h1 style="font-family: var(--font-display); font-size: 48px; font-weight: 400; letter-spacing: -0.03em; line-height: 1; margin: 0 0 16px; color: var(--v-paper);">Kunde inte avregistrera.</h1>
+      <p style="font-size: 16px; color: var(--v-mist); line-height: 1.6;">Länken är ogiltig eller har gått ut. Logga in i ditt konto för att hantera prenumerationerna manuellt.</p>
+      <a href="/auth/login" class="v-button v-button--ghost-dark v-button--lg" style="margin-top: 24px;">Till inloggning →</a>
     {% endif %}
   </div>
 </section>

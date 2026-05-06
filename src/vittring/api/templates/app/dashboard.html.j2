@@ -1,174 +1,382 @@
-{% extends "_layout.html.j2" %}
-{% block content %}
-<div class="app-shell">
-  {# --- Header: welcome + plan --- #}
-  <header class="app-header">
-    <div class="app-header-copy">
-      <div class="eyebrow">Översikt</div>
-      <h1>Hej {{ (user.full_name or user.email).split(" ")[0] }}</h1>
-      <p class="muted app-header-lead">
-        {% if subscriptions %}
-          Här är vad som hänt sedan senaste digest.
-        {% else %}
-          Välkommen till Vittring. Skapa din första prenumeration för att börja få dagliga signaler.
-        {% endif %}
-      </p>
+{# Standalone dark dashboard layout — bypasses _layout.html.j2 because the
+   topbar / sidebar / colour scheme differ entirely from the public site.
+   Implementation of the design at vittring/project/Vittring - Dashboard.html. #}
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Vittring — Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/brand.css">
+<style>
+  body { background: var(--v-night); color: var(--v-mist); margin: 0; font-family: var(--font-sans); }
+  .dash-shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+  .dash-side {
+    background: var(--v-night);
+    border-right: 1px solid var(--v-night-3);
+    padding: 20px 16px;
+    display: flex; flex-direction: column; gap: 24px;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .dash-main { background: var(--v-night-2); }
+  .nav-section h5 {
+    font-family: var(--font-mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--v-ink-4); margin: 0 0 8px; padding: 0 8px; font-weight: 500;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 6px;
+    font-size: 13px; color: var(--v-mist); cursor: pointer;
+    text-decoration: none;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .nav-item:hover { background: var(--v-night-3); color: var(--v-paper); }
+  .nav-item.active { background: rgba(184,224,74,0.1); color: var(--v-signal); }
+  .nav-item .count {
+    margin-left: auto; font-family: var(--font-mono); font-size: 11px;
+    color: var(--v-ink-4);
+  }
+  .nav-item.active .count { color: var(--v-signal); }
+
+  .topbar {
+    height: 60px; padding: 0 32px;
+    border-bottom: 1px solid var(--v-night-3);
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--v-night);
+  }
+  .search {
+    flex: 1; max-width: 480px; margin: 0 32px;
+    background: var(--v-night-2); border: 1px solid var(--v-night-3);
+    border-radius: 8px; padding: 0 14px;
+    display: flex; align-items: center; gap: 10px;
+    color: var(--v-ink-4); font-family: var(--font-mono); font-size: 12px;
+  }
+  .search input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--v-mist); font-family: var(--font-mono); font-size: 12px;
+    padding: 8px 0;
+  }
+  .search input::placeholder { color: var(--v-ink-4); }
+  .search button.search-submit {
+    background: transparent; border: none; padding: 4px;
+    color: var(--v-ink-4); cursor: pointer; font-family: var(--font-mono); font-size: 12px;
+  }
+  .inline-form { display: inline; margin: 0; padding: 0; }
+  .inline-form button.icon-btn { font-size: 11px; }
+
+  .digest-header {
+    padding: 32px;
+    border-bottom: 1px solid var(--v-night-3);
+    display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 32px;
+  }
+
+  .stat-card .lbl { font-family: var(--font-mono); font-size: 10px; color: var(--v-ink-4); letter-spacing: 0.1em; text-transform: uppercase; }
+  .stat-card .num { font-family: var(--font-display); font-size: 40px; line-height: 1; color: var(--v-paper); margin-top: 6px; letter-spacing: -0.025em; }
+  .stat-card .delta { font-family: var(--font-mono); font-size: 12px; color: var(--v-signal); margin-left: 6px; }
+
+  .filter-bar {
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--v-night-3);
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .chip {
+    background: var(--v-night-3); border: 1px solid transparent;
+    padding: 6px 10px; border-radius: 999px;
+    font-family: var(--font-mono); font-size: 11px; color: var(--v-mist);
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  }
+  .chip.active { background: rgba(184,224,74,0.12); color: var(--v-signal); border-color: rgba(184,224,74,0.3); }
+  .chip .x { opacity: 0.5; cursor: pointer; }
+
+  .feed { padding: 0; }
+  .row {
+    display: grid; grid-template-columns: 80px 100px 1fr 200px 120px;
+    gap: 16px; padding: 14px 32px;
+    border-bottom: 1px solid var(--v-night-3);
+    align-items: center;
+    transition: background 0.15s;
+  }
+  .row:hover { background: rgba(200,204,196,0.03); }
+  .row.priority { background: rgba(184,224,74,0.04); border-left: 3px solid var(--v-signal); padding-left: 29px; }
+  .row .time { font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4); white-space: nowrap; }
+  .row.priority .time { color: var(--v-signal); }
+  .row .title { color: var(--v-paper); font-size: 14px; font-weight: 500; }
+  .row .meta { font-family: var(--font-mono); font-size: 10px; color: var(--v-ink-4); margin-top: 3px; }
+  .row .src { font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4); }
+  .row .actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+  .row:hover .actions { opacity: 1; }
+
+  .icon-btn {
+    background: transparent; border: 1px solid var(--v-night-3);
+    color: var(--v-mist); padding: 5px 9px; border-radius: 5px;
+    font-size: 11px; cursor: pointer; font-family: var(--font-mono);
+    text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .icon-btn:hover { background: var(--v-night-3); color: var(--v-paper); }
+  .icon-btn.primary { background: var(--v-signal); color: var(--v-signal-ink); border-color: transparent; }
+  .icon-btn.primary:hover { background: var(--v-signal-2); }
+
+  .panel-title { font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.02em; color: var(--v-paper); margin: 0; }
+  .panel-sub { font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4); margin-top: 4px; letter-spacing: 0.06em; }
+
+  .pill-kind {
+    font-family: var(--font-mono); font-size: 10px;
+    padding: 2px 7px; border-radius: 999px; display: inline-block;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .pill-kind.upph { background: rgba(200,117,62,0.15); color: var(--v-amber); }
+  .pill-kind.jobb { background: var(--v-night-3); color: var(--v-mist); }
+  .pill-kind.bolag { background: rgba(184,224,74,0.1); color: var(--v-signal); }
+
+  .logout-form { display: inline; }
+  .logout-form button {
+    background: transparent; border: none; padding: 0;
+    color: inherit; font: inherit; cursor: pointer;
+    width: 100%; text-align: left;
+  }
+</style>
+</head>
+<body data-screen-label="Dashboard">
+
+<div class="dash-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="dash-side">
+    <a href="/" style="display: flex; align-items: center; gap: 10px; padding: 4px 8px; text-decoration: none;">
+      <svg width="22" height="22" viewBox="0 0 22 22">
+        <circle cx="11" cy="11" r="10" fill="none" stroke="var(--v-paper)" stroke-width="1"/>
+        <circle cx="11" cy="11" r="6" fill="none" stroke="var(--v-paper)" stroke-width="1"/>
+        <circle cx="11" cy="11" r="2.2" fill="var(--v-signal)"/>
+      </svg>
+      <span style="font-family: var(--font-display); font-size: 18px; color: var(--v-paper); font-weight: 500; letter-spacing: -0.025em;">Vittring</span>
+    </a>
+
+    <div class="nav-section">
+      <h5>Idag</h5>
+      <a href="/app" class="nav-item active">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="6"/><circle cx="7" cy="7" r="3"/><circle cx="7" cy="7" r="1" fill="currentColor"/></svg>
+        Dagens digest <span class="count">{{ digest_count }}</span>
+      </a>
+      <a href="/app/calendar" class="nav-item">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="10" height="10" rx="1"/><path d="M2 5 L12 5"/></svg>
+        Kalender
+      </a>
     </div>
-    <div class="app-header-meta">
-      <span class="badge badge-accent plan-badge">
-        {% if user.plan == "trial" %}Provperiod
-        {% elif user.plan == "solo" %}Solo
-        {% elif user.plan == "team" %}Team
-        {% elif user.plan == "pro" %}Pro
-        {% else %}{{ user.plan|capitalize }}{% endif %}
-      </span>
-      {% if user.trial_ends_at %}
-        <span class="subtle mono">slutar {{ user.trial_ends_at.strftime("%Y-%m-%d") }}</span>
-      {% endif %}
+
+    {% if user.is_superuser %}
+    <div class="nav-section">
+      <h5>Plattform</h5>
+      <a href="/admin" class="nav-item" style="color: var(--v-amber);">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 1 L12 4 L12 10 L7 13 L2 10 L2 4 Z"/><circle cx="7" cy="7" r="2"/></svg>
+        Admin-panel →
+      </a>
     </div>
-  </header>
+    {% endif %}
 
-  {% if not subscriptions %}
-    {# --- Empty state for first-time users --- #}
-    <section class="empty-state">
-      <div class="empty-state-icon" aria-hidden="true">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 4h16v6H4z"/>
-          <path d="M4 14h10v6H4z"/>
-          <path d="M18 14h2v6h-2z"/>
-        </svg>
-      </div>
-      <h2>Skapa din första prenumeration</h2>
-      <p class="muted">
-        Definiera vilka yrken, regioner och signaltyper du vill bevaka.
-        Vi levererar matchande upphandlingar, jobbannonser och bolagshändelser
-        i ett enda mejl varje morgon kl 06:30.
-      </p>
-      <div class="empty-state-actions">
-        <a href="/app/subscriptions/new" class="btn btn-accent">Kom igång</a>
-        <a href="/pricing" class="btn btn-ghost">Se planer</a>
-      </div>
-      <ul class="empty-state-tips">
-        <li><span class="dot"></span>Tre offentliga datakällor — Arbetsförmedlingen, TED, Bolagsverket</li>
-        <li><span class="dot"></span>Daglig digest 06:30, lagom innan första kaffet</li>
-        <li><span class="dot"></span>Avregistrera när du vill — inget fördolt</li>
-      </ul>
-    </section>
-  {% else %}
-    {# --- Metric cards --- #}
-    {% set delivered_7 = recent_alerts|selectattr("delivered_at")|list %}
-    {% set opened = recent_alerts|selectattr("opened_at")|list %}
-    {% set last = recent_alerts[0] if recent_alerts else None %}
-    <section class="metric-grid">
-      <div class="metric-card">
-        <div class="metric-card-label">Aktiva prenumerationer</div>
-        <div class="metric-card-value mono">{{ subscriptions|length }}</div>
-        <div class="metric-card-meta subtle">av {% if user.plan == "pro" %}obegränsat{% elif user.plan == "team" %}20{% else %}5{% endif %} på din plan</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-card-label">Levererade signaler</div>
-        <div class="metric-card-value mono">{{ delivered_7|length }}</div>
-        <div class="metric-card-meta subtle">senaste 7 dagar</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-card-label">Öppnade</div>
-        <div class="metric-card-value mono">{{ opened|length }}</div>
-        <div class="metric-card-meta subtle">{% if delivered_7|length %}{{ ((opened|length / delivered_7|length) * 100)|round(0)|int }}% öppningsfrekvens{% else %}—{% endif %}</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-card-label">Senaste digest</div>
-        <div class="metric-card-value mono">
-          {% if last %}{{ last.delivered_at.strftime("%d %b") }}{% else %}—{% endif %}
-        </div>
-        <div class="metric-card-meta subtle">
-          {% if last %}{{ last.delivered_at.strftime("kl %H:%M") }}{% else %}Levereras 06:30{% endif %}
+    <div class="nav-section">
+      <h5>Prenumerationer</h5>
+      {% for sub in subscriptions %}
+      <a href="/app/subscriptions" class="nav-item">⚑ {{ sub.name }} {% if sub.signal_count %}<span class="count">{{ sub.signal_count }}</span>{% endif %}</a>
+      {% endfor %}
+      <a href="/app/subscriptions/new" class="nav-item" style="color: var(--v-ink-4);">+ ny prenumeration</a>
+    </div>
+
+    <div class="nav-section">
+      <h5>Bibliotek</h5>
+      <a href="/app/saved" class="nav-item">★ Sparade signaler</a>
+      <a href="/app/archive" class="nav-item">⏷ Arkiv</a>
+      <a href="/app/tags" class="nav-item">⌗ Taggar</a>
+      <a href="/app/account" class="nav-item">⚙ Inställningar</a>
+    </div>
+
+    <div style="margin-top: auto; padding: 12px 8px; border-top: 1px solid var(--v-night-3);">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--v-amber), var(--v-amber-2)); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 12px; color: var(--v-paper); font-weight: 500;">{{ initials }}</div>
+        <div style="min-width: 0; flex: 1;">
+          <div style="font-size: 12px; color: var(--v-paper); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ user.full_name or user.email }}</div>
+          <div style="font-family: var(--font-mono); font-size: 10px; color: var(--v-ink-4);">{% if user.company_name %}{{ user.company_name }} · {% endif %}{{ plan_label }}</div>
         </div>
       </div>
-    </section>
+      <form method="post" action="/auth/logout" class="logout-form" style="margin-top: 12px;">
+        {{ csrf_input() }}
+        <button type="submit" style="font-family: var(--font-mono); font-size: 10px; color: var(--v-ink-4); letter-spacing: 0.08em; text-transform: uppercase;">Logga ut →</button>
+      </form>
+    </div>
+  </aside>
 
-    {# --- Two columns: signals feed + quick actions --- #}
-    <section class="dashboard-grid">
-      <div class="card card-flush dashboard-feed">
-        <div class="card-section dashboard-feed-head">
-          <div>
-            <h3>Senaste signaler</h3>
-            <p class="muted dashboard-feed-meta">Levererade till {{ user.email }}</p>
-          </div>
-          <a href="/app/subscriptions" class="btn btn-ghost btn-sm">Hantera filter</a>
-        </div>
-        {% if recent_alerts %}
-          <ul class="signal-list">
-            {% for alert in recent_alerts[:8] %}
-              <li class="signal-row">
-                <div class="signal-row-meta">
-                  <span class="badge badge-{% if alert.signal_type == 'procurement' %}accent{% elif alert.signal_type == 'job_ad' %}neutral{% else %}highlight{% endif %}">
-                    {% if alert.signal_type == "procurement" %}Upphandling
-                    {% elif alert.signal_type == "job_ad" %}Jobbannons
-                    {% elif alert.signal_type == "company_event" %}Bolagshändelse
-                    {% else %}{{ alert.signal_type }}{% endif %}
-                  </span>
-                  <span class="signal-row-date mono">{{ alert.delivered_at.strftime("%d %b · %H:%M") }}</span>
-                </div>
-                <div class="signal-row-id mono subtle">#{{ alert.signal_id }}</div>
-                <div class="signal-row-status">
-                  {% if alert.opened_at %}
-                    <span class="signal-row-pip signal-row-pip-on" aria-label="Öppnad"></span>
-                    <span class="subtle">öppnad</span>
-                  {% else %}
-                    <span class="signal-row-pip" aria-label="Olevererad"></span>
-                    <span class="subtle">levererad</span>
-                  {% endif %}
-                </div>
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <div class="card-section signal-list-empty">
-            <p class="muted">Inga signaler levererade ännu — nästa digest kl 06:30.</p>
-          </div>
-        {% endif %}
+  <!-- MAIN -->
+  <main class="dash-main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4); text-transform: uppercase; letter-spacing: 0.08em;">{{ today_weekday }}</span>
+        <span style="font-family: var(--font-display); font-size: 16px; color: var(--v-paper); font-weight: 500;">{{ today_date }}</span>
+        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--v-signal); margin-left: 8px;">● Synkad {{ last_sync_time }}</span>
       </div>
+      <form method="get" action="/app" class="search" role="search">
+        <span aria-hidden="true">⌕</span>
+        <input type="search" name="q" value="{{ search_query|default('') }}"
+               placeholder="Sök bolag, CPV, ort…" aria-label="Sök bolag, CPV eller ort">
+        <button type="submit" class="search-submit" aria-label="Sök">↵</button>
+      </form>
+      <div style="display: flex; gap: 8px;">
+        <a href="/app/export.csv" class="icon-btn">↓ Exportera CSV</a>
+        <a href="/app/subscriptions/new" class="icon-btn primary">+ Ny prenumeration</a>
+      </div>
+    </div>
 
-      <aside class="dashboard-aside">
-        <div class="card quick-action-card">
-          <div class="eyebrow">Snabbåtgärd</div>
-          <h3>Skapa ny prenumeration</h3>
-          <p class="muted">
-            Lägg till ett nytt filter för en ny region, yrkesgrupp eller signaltyp.
-          </p>
-          <a href="/app/subscriptions/new" class="btn btn-accent">Ny prenumeration</a>
-        </div>
-
-        <div class="card subs-summary">
-          <div class="eyebrow">Aktiva filter</div>
-          <ul class="subs-summary-list">
-            {% for sub in subscriptions[:5] %}
-              <li class="subs-summary-row">
-                <span class="subs-summary-name">{{ sub.name }}</span>
-                <span class="subs-summary-types">
-                  {% for st in sub.signal_types[:2] %}
-                    <span class="badge badge-neutral">
-                      {% if st == "procurement" %}Upph.
-                      {% elif st == "job_ad" %}Jobb
-                      {% elif st == "company_event" %}Bolag
-                      {% else %}{{ st }}{% endif %}
-                    </span>
-                  {% endfor %}
-                </span>
-              </li>
-            {% endfor %}
-          </ul>
-          {% if subscriptions|length > 5 %}
-            <a href="/app/subscriptions" class="subs-summary-link">
-              Visa alla {{ subscriptions|length }} →
-            </a>
+    <!-- DIGEST HEADER -->
+    <div class="digest-header">
+      <div>
+        <div class="panel-sub" style="color: var(--v-signal);">↗ DAGENS DIGEST</div>
+        <h1 class="panel-title" style="font-size: 40px; margin-top: 8px;">{{ digest_count }} {{ "ny signal" if digest_count == 1 else "nya signaler" }}</h1>
+        <div style="font-size: 14px; color: var(--v-mist); margin-top: 6px;">
+          {% if search_query %}
+            Filtrerar på <span style="color: var(--v-paper);">”{{ search_query }}”</span>.
+            <a href="/app" style="color: var(--v-ink-4); text-decoration: underline;">Rensa filter</a>
           {% else %}
-            <a href="/app/subscriptions" class="subs-summary-link">Hantera alla →</a>
+            {{ digest_focus }}.
+            <span style="color: var(--v-ink-4);">{{ priority_count }} prioriterade matchar din profil exakt.</span>
           {% endif %}
         </div>
-      </aside>
-    </section>
-  {% endif %}
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <span class="chip active">{{ priority_count }} prioriterade</span>
+          <span class="chip">{{ other_count }} övriga</span>
+          <span class="chip">{{ saved_count }} sparade</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="lbl">Senaste 7 dygn</div>
+        <div><span class="num">{{ stat_week_count }}</span><span class="delta">{{ stat_week_delta }}</span></div>
+        <svg viewBox="0 0 200 40" style="width: 100%; margin-top: 8px;">
+          <polyline points="0,30 25,28 50,24 75,26 100,18 125,20 150,12 175,14 200,8" fill="none" stroke="var(--v-signal)" stroke-width="1.4"/>
+          <circle cx="200" cy="8" r="3" fill="var(--v-signal)"/>
+        </svg>
+      </div>
+
+      <div class="stat-card">
+        <div class="lbl">Förkastat brus</div>
+        <div><span class="num">{{ stat_noise_pct }}</span></div>
+        <div style="font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4); margin-top: 8px;">av {{ stat_noise_total }} inkomna</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="lbl">Konverteringar v.{{ stat_week_num }}</div>
+        <div><span class="num">{{ stat_conversions }}</span><span class="delta">{{ stat_conversions_delta }}</span></div>
+        <div style="font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4); margin-top: 8px;">samtal → kvalif. lead</div>
+      </div>
+    </div>
+
+    <!-- FILTER -->
+    <div class="filter-bar">
+      <span style="font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4); margin-right: 8px;">FILTRERA:</span>
+      <span class="chip active">Alla typer <span class="x">×</span></span>
+      <span class="chip">Upphandlingar ({{ count_upph }})</span>
+      <span class="chip">Jobb ({{ count_jobb }})</span>
+      <span class="chip">Bolagsändringar ({{ count_bolag }})</span>
+      <span style="width: 1px; height: 18px; background: var(--v-night-3); margin: 0 8px;"></span>
+      {% for f in active_filters %}
+      <span class="chip active">{{ f }} <span class="x">×</span></span>
+      {% endfor %}
+      <span class="chip">+ filter</span>
+      <span style="margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4);">Sortera: <span style="color: var(--v-mist);">Tid ↓</span></span>
+    </div>
+
+    <!-- FEED -->
+    <div class="feed">
+      {% for signal in priority_signals %}
+      <div class="row priority" id="saved-{{ signal.id }}">
+        <span class="time">{{ signal.date }}<br><span style="color: var(--v-ink-4);">{{ signal.time }}</span></span>
+        <span class="pill-kind {{ signal.kind_class }}">{{ signal.kind }}</span>
+        <div>
+          <div class="title">{{ signal.title }}</div>
+          <div class="meta">{{ signal.meta }}</div>
+        </div>
+        <div class="src">{{ signal.source }}</div>
+        <div class="actions">
+          <form method="post" action="/app/signals/save" class="inline-form">
+            {{ csrf_input() }}
+            <input type="hidden" name="signal_type" value="{{ signal.kind_class }}">
+            <input type="hidden" name="signal_id" value="{{ signal.id }}">
+            <button type="submit" class="icon-btn" title="Spara signal">★</button>
+          </form>
+          {% if user.plan == "pro" %}
+          <button type="button" class="icon-btn" title="Skicka till HubSpot">↗ HubSpot</button>
+          {% else %}
+          <a href="/pricing" class="icon-btn" title="Pro-funktion — uppgradera för att aktivera">↗ HubSpot</a>
+          {% endif %}
+          {% if signal.url %}
+          <a class="icon-btn primary" href="{{ signal.url }}" target="_blank" rel="noopener">Öppna →</a>
+          {% else %}
+          <a class="icon-btn primary" href="/app/saved" title="Källa saknas — visa i sparat">Öppna →</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if other_signals %}
+      <div style="padding: 16px 32px; border-bottom: 1px solid var(--v-night-3); font-family: var(--font-mono); font-size: 10px; color: var(--v-ink-4); letter-spacing: 0.1em; text-transform: uppercase;">
+        ─── {{ other_count }} ÖVRIGA ───
+      </div>
+
+      {% for signal in other_signals %}
+      <div class="row" id="saved-{{ signal.id }}">
+        <span class="time">{{ signal.date }}<br><span style="color: var(--v-ink-4);">{{ signal.time }}</span></span>
+        <span class="pill-kind {{ signal.kind_class }}">{{ signal.kind }}</span>
+        <div>
+          <div class="title">{{ signal.title }}</div>
+          <div class="meta">{{ signal.meta }}</div>
+        </div>
+        <div class="src">{{ signal.source }}</div>
+        <div class="actions">
+          <form method="post" action="/app/signals/save" class="inline-form">
+            {{ csrf_input() }}
+            <input type="hidden" name="signal_type" value="{{ signal.kind_class }}">
+            <input type="hidden" name="signal_id" value="{{ signal.id }}">
+            <button type="submit" class="icon-btn" title="Spara signal">★</button>
+          </form>
+          {% if user.plan == "pro" %}
+          <button type="button" class="icon-btn" title="Skicka till HubSpot">↗</button>
+          {% else %}
+          <a href="/pricing" class="icon-btn" title="Pro-funktion — uppgradera för att aktivera">↗</a>
+          {% endif %}
+          {% if signal.url %}
+          <a class="icon-btn" href="{{ signal.url }}" target="_blank" rel="noopener" title="Öppna källa">→</a>
+          {% else %}
+          <a class="icon-btn" href="/app/saved" title="Källa saknas">→</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if digest_count == 0 %}
+      <div style="padding: 48px 32px; text-align: center; color: var(--v-ink-4);">
+        <div style="font-family: var(--font-display); font-size: 22px; color: var(--v-paper); margin-bottom: 6px;">Inga träffar</div>
+        <div style="font-family: var(--font-mono); font-size: 12px;">
+          {% if search_query %}
+            Inga signaler matchar ”{{ search_query }}”. <a href="/app" style="color: var(--v-signal);">Rensa filter</a>
+          {% else %}
+            Dagens digest är tom — kom tillbaka imorgon.
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div style="padding: 24px 32px; text-align: center; font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4);">
+        — Slut på dagens digest. Nästa hämtning {{ next_sync_time }} imorgon. —
+      </div>
+      {% endif %}
+    </div>
+  </main>
 </div>
-{% endblock %}
+
+</body>
+</html>

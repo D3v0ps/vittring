@@ -60,3 +60,30 @@ async def get_json_with_retry(
             response.raise_for_status()
             return response.json()
     raise RuntimeError("unreachable")  # pragma: no cover
+
+
+async def post_json_with_retry(
+    client: httpx.AsyncClient,
+    url: str,
+    *,
+    json_body: dict[str, Any],
+    max_attempts: int = 5,
+) -> Any:
+    """POST ``url`` with a JSON body. Same retry semantics as GET."""
+    async for attempt in AsyncRetrying(
+        retry=retry_if_exception_type((httpx.TransportError, httpx.HTTPStatusError)),
+        stop=stop_after_attempt(max_attempts),
+        wait=wait_exponential(multiplier=1, min=1, max=30),
+        reraise=True,
+    ):
+        with attempt:
+            response = await client.post(
+                url,
+                json=json_body,
+                headers={"Accept": "application/json", "Content-Type": "application/json"},
+            )
+            if _is_retryable_status(response):
+                response.raise_for_status()
+            response.raise_for_status()
+            return response.json()
+    raise RuntimeError("unreachable")  # pragma: no cover

@@ -1,0 +1,76 @@
+{% extends "_layout.html.j2" %}
+{% block content %}
+<section style="padding: 80px 48px 96px; background: var(--v-night-2);">
+  <div style="max-width: 720px; margin: 0 auto;">
+    <div class="t-eyebrow" style="margin-bottom: 16px; color: var(--v-signal);">VITTRINGBOT</div>
+    <h1 style="font-family: var(--font-display); font-size: 56px; font-weight: 400; letter-spacing: -0.03em; line-height: 1; margin: 0 0 16px; color: var(--v-paper);">
+      Vittrings webbservicebot.
+    </h1>
+    <p class="t-mono" style="font-size: 12px; color: var(--v-ink-4); margin-bottom: 48px;">SENAST UPPDATERAD {{ last_updated }}</p>
+
+    <div style="font-size: 16px; line-height: 1.7; color: var(--v-mist);">
+      <p>Vittring kör en webbservicebot (<span class="t-mono" style="color: var(--v-signal);">VittringBot</span>) som hämtar publika upphandlingsannonser från svenska aggregatorer. Boten används för att förse svenska bemanningsföretag med signaler om relevanta upphandlingar inom rekrytering och personaluthyrning.</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Identifiering</h2>
+      <p>VittringBot identifierar sig själv i varje request:</p>
+      <p class="t-mono" style="font-size: 13px; color: var(--v-signal); background: rgba(184,224,74,0.06); padding: 12px 16px; border-radius: 8px; word-break: break-all;">VittringBot/1.0 (+https://vittring.karimkhalil.se/bot; info@karimkhalil.se)</p>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Källor som scrapas idag</h2>
+      <ul style="padding-left: 20px;">
+        <li><strong style="color: var(--v-paper);">e-Avrop</strong> — <span class="t-mono" style="color: var(--v-signal);">www.e-avrop.com</span> (publika annonssidor)</li>
+        <li><strong style="color: var(--v-paper);">Kommers Annons</strong> — <span class="t-mono" style="color: var(--v-signal);">www.kommersannons.se</span> (publika annonssidor)</li>
+        <li><strong style="color: var(--v-paper);">TendSign / Opic</strong> — <span class="t-mono" style="color: var(--v-signal);">www.opic.com</span> (publika annonssidor)</li>
+        <li><strong style="color: var(--v-paper);">Mercell</strong> — <span class="t-mono" style="color: var(--v-signal);">www.mercell.com</span> (publika annonssidor)</li>
+      </ul>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Frekvens och rate-limits</h2>
+      <ul style="padding-left: 20px;">
+        <li>Minst <strong style="color: var(--v-paper);">2 sekunder</strong> mellan requests till samma domän.</li>
+        <li>Max <strong style="color: var(--v-paper);">2 000 requests per dygn</strong> per domän (lägre för mindre källor).</li>
+        <li>Aktiv endast <strong style="color: var(--v-paper);">06:00–22:00 Europe/Stockholm</strong>.</li>
+        <li>Vi följer <span class="t-mono" style="color: var(--v-signal);">robots.txt</span> och respekterar conditional GET (ETag, Last-Modified) för att inte hämta samma innehåll i onödan.</li>
+        <li>Vi hämtar endast publika fält. Inga inloggningar, inga captchas, inga API:er som kräver konto.</li>
+      </ul>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Opt-out</h2>
+      <p>Driver du en av källorna och vill att vi slutar? Fyll i din domän nedan, eller mejla <a href="mailto:info@karimkhalil.se" style="color: var(--v-signal); text-decoration: none;">info@karimkhalil.se</a>. Vi bekräftar och stoppar inom 24 timmar.</p>
+
+      {% if submitted %}
+      <div style="background: rgba(184,224,74,0.08); border: 1px solid rgba(184,224,74,0.25); border-radius: 8px; padding: 12px 16px; margin: 16px 0; font-size: 13px; color: var(--v-signal); font-family: var(--font-mono);">
+        Tack — vi har tagit emot din opt-out för <strong>{{ submitted_domain }}</strong> och stoppar boten på den domänen inom 24 timmar.
+      </div>
+      {% elif error %}
+      <div style="background: rgba(200,117,62,0.08); border: 1px solid rgba(200,117,62,0.25); border-radius: 8px; padding: 12px 16px; margin: 16px 0; font-size: 13px; color: var(--v-amber); font-family: var(--font-mono);">
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <form method="post" action="/bot/opt-out" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px;">
+        {{ csrf_input() }}
+        <input
+          type="text"
+          name="domain"
+          placeholder="exempel.se"
+          required
+          autocomplete="off"
+          pattern="[a-zA-Z0-9.\-]+"
+          maxlength="253"
+          style="flex: 1; min-width: 220px; background: var(--v-night-2); border: 1px solid var(--v-night-3); color: var(--v-paper); padding: 10px 14px; border-radius: 8px; font-size: 14px; font-family: var(--font-mono);"
+        />
+        <input
+          type="email"
+          name="contact"
+          placeholder="kontakt@exempel.se (valfritt)"
+          autocomplete="off"
+          maxlength="254"
+          style="flex: 1; min-width: 220px; background: var(--v-night-2); border: 1px solid var(--v-night-3); color: var(--v-paper); padding: 10px 14px; border-radius: 8px; font-size: 14px;"
+        />
+        <button type="submit" style="background: var(--v-signal); color: var(--v-night); border: 0; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;">Skicka</button>
+      </form>
+
+      <h2 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--v-paper); margin: 48px 0 16px; letter-spacing: -0.02em;">Kontakt</h2>
+      <p>Frågor om boten, dataskydd eller teknisk drift: <a href="mailto:info@karimkhalil.se" style="color: var(--v-signal); text-decoration: none;">info@karimkhalil.se</a>.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

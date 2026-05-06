@@ -1,493 +1,198 @@
-{% extends "_layout.html.j2" %}
-{% block content %}
-<section class="section sub-form-section">
-  <div class="container">
-    <div class="sub-form-header">
-      <span class="eyebrow">Ny prenumeration</span>
-      <h1>Bygg din bevakning</h1>
-      <p class="sub-form-lead">
-        Välj signaltyper och förfina med geografi, bransch och nyckelord.
-        Lämna fält tomma för bredare träffar — du kan alltid justera senare.
-      </p>
+{% extends "app/_app_shell.html.j2" %}
+{% set topbar_eyebrow = "Prenumerationer" %}
+{% set title = "Skapa prenumeration" %}
+{% block topbar_actions %}
+<div style="display: flex; gap: 8px;">
+  <a href="/app/subscriptions" class="v-btn v-btn--ghost">Avbryt</a>
+  <button type="submit" form="sub-form" class="v-btn v-btn--signal">Skapa prenumeration</button>
+</div>
+{% endblock %}
+{% block app_content %}
+<header class="page-head">
+  <div class="page-eyebrow">Ny prenumeration</div>
+  <h1 class="page-title">Skapa prenumeration</h1>
+  <p class="page-lead">
+    Välj signaltyper och förfina med geografi, bransch och nyckelord.
+    Lämna fält tomma för bredare träffar — du kan justera när som helst.
+  </p>
+</header>
+
+{% if error %}<div class="v-alert">{{ error }}</div>{% endif %}
+
+<form method="post" action="/app/subscriptions/" id="sub-form">
+  {{ csrf_input() }}
+
+  <section class="v-card">
+    <div class="v-card-head">
+      <div>
+        <h2>1. Namn och signaltyper</h2>
+        <p>Ge prenumerationen ett internt namn och välj minst en signaltyp.</p>
+      </div>
     </div>
 
-    {% if error %}<div class="alert-error">{{ error }}</div>{% endif %}
+    <div class="v-field">
+      <label class="v-label" for="name">Internt namn</label>
+      <input class="v-input" id="name" name="name" required maxlength="120"
+             placeholder="t.ex. Lagerarbetare Storstockholm" autocomplete="off" />
+      <p class="v-hint">Bara du ser detta — använd det för att skilja prenumerationer åt.</p>
+    </div>
 
-    <form method="post" action="/app/subscriptions/" class="sub-form" id="sub-form">
-      {{ csrf_input() }}
-      <div class="sub-form-grid">
-        <div class="sub-form-main">
+    <div class="v-field" style="margin-top: 24px;">
+      <label class="v-label">Signaltyper</label>
+      <p class="v-hint" style="margin: 0 0 12px;">Minst en. Fält längre ner visas baserat på dina val.</p>
 
-          <!-- Step 1 — Identity -->
-          <section class="card sub-form-card" data-step="1">
-            <header class="sub-form-card-head">
-              <span class="sub-step-badge">1</span>
-              <div>
-                <h2>Namn &amp; signaltyper</h2>
-                <p class="muted">Ge prenumerationen ett internt namn och välj minst en datakälla.</p>
-              </div>
-            </header>
+      <div class="signal-grid">
+        <label class="signal-card">
+          <input type="checkbox" name="signal_types" value="job" checked data-signal="job" />
+          <span class="signal-card-body">
+            <span class="signal-card-title">Jobbannonser</span>
+            <span class="signal-card-desc">Volymrekryteringar och nya tjänster — tidig signal på växande personalbehov.</span>
+          </span>
+        </label>
 
-            <div class="field">
-              <label for="name">Internt namn</label>
-              <input
-                class="input"
-                id="name"
-                name="name"
-                required
-                maxlength="120"
-                placeholder="t.ex. Lagerarbetare Storstockholm"
-                autocomplete="off"
-              />
-              <p class="field-hint">Bara du ser detta — använd det för att skilja prenumerationer åt.</p>
-            </div>
+        <label class="signal-card">
+          <input type="checkbox" name="signal_types" value="company_change" data-signal="company_change" />
+          <span class="signal-card-body">
+            <span class="signal-card-title">Bolagshändelser</span>
+            <span class="signal-card-desc">Ny VD, ny styrelse, nytt säte. Köpare som omförhandlar — fönster för dig.</span>
+          </span>
+        </label>
 
-            <fieldset class="signal-fieldset">
-              <legend>Signaltyper</legend>
-              <p class="field-hint signal-hint">Välj en eller flera. Fält nedan visas baserat på dina val.</p>
-
-              <div class="signal-options">
-                <label class="signal-option">
-                  <input type="checkbox" name="signal_types" value="job" checked data-signal="job" />
-                  <span class="signal-option-body">
-                    <span class="signal-option-title">Jobbannonser</span>
-                    <span class="signal-option-meta">JobTech &middot; offentliga annonser</span>
-                    <span class="signal-option-desc">När bolag söker personal — tidig signal på rekryteringsbehov.</span>
-                  </span>
-                </label>
-
-                <label class="signal-option">
-                  <input type="checkbox" name="signal_types" value="company_change" data-signal="company_change" />
-                  <span class="signal-option-body">
-                    <span class="signal-option-title">Bolagsändringar</span>
-                    <span class="signal-option-meta">Bolagsverket</span>
-                    <span class="signal-option-desc">Ny VD, ny adress, ny verksamhet — strukturella förändringar.</span>
-                  </span>
-                </label>
-
-                <label class="signal-option">
-                  <input type="checkbox" name="signal_types" value="procurement" data-signal="procurement" />
-                  <span class="signal-option-body">
-                    <span class="signal-option-title">Upphandlingar</span>
-                    <span class="signal-option-meta">TED &middot; EU-upphandlingar</span>
-                    <span class="signal-option-desc">Offentliga utlysningar, perfekt för bemanningsavtal.</span>
-                  </span>
-                </label>
-              </div>
-            </fieldset>
-          </section>
-
-          <!-- Step 2 — Geography & industry -->
-          <section class="card sub-form-card" data-step="2">
-            <header class="sub-form-card-head">
-              <span class="sub-step-badge">2</span>
-              <div>
-                <h2>Geografi &amp; bransch</h2>
-                <p class="muted">Begränsa till områden och branscher som matchar din affär.</p>
-              </div>
-            </header>
-
-            <div class="field" data-needs="job procurement company_change">
-              <label for="municipalities">Kommuner <span class="optional">valfritt</span></label>
-              <input
-                class="input"
-                id="municipalities"
-                name="municipalities"
-                placeholder="Stockholm, Södertälje, Botkyrka"
-                autocomplete="off"
-              />
-              <p class="field-hint">Kommaseparerat. Exakta namn — t.ex. <em>Göteborg, Mölndal</em>.</p>
-            </div>
-
-            <div class="field" data-needs="job company_change">
-              <label for="counties">Län <span class="optional">valfritt</span></label>
-              <input
-                class="input"
-                id="counties"
-                name="counties"
-                placeholder="Stockholms län, Uppsala län"
-                autocomplete="off"
-              />
-              <p class="field-hint">Bredare än kommuner. Skriv hela namnet inkl. <em>län</em>.</p>
-            </div>
-
-            <div class="field" data-needs="job">
-              <label for="occupations">Yrkesroller <span class="optional">valfritt</span></label>
-              <input
-                class="input"
-                id="occupations"
-                name="occupations"
-                placeholder="Lagerarbetare, Truckförare, Chaufför C/CE"
-                autocomplete="off"
-              />
-              <p class="field-hint">Kommaseparerat. Söker i annonsens roll- och titelfält.</p>
-            </div>
-
-            <div class="field" data-needs="company_change">
-              <label for="sni_codes">SNI-koder <span class="optional">valfritt</span></label>
-              <input
-                class="input mono"
-                id="sni_codes"
-                name="sni_codes"
-                placeholder="49410, 52100"
-                pattern="[0-9, ]*"
-                autocomplete="off"
-              />
-              <p class="field-hint">
-                Branschklassificering från SCB. Exempel: <span class="mono">49410</span> (godstrafik),
-                <span class="mono">52100</span> (lager &amp; magasin).
-              </p>
-            </div>
-          </section>
-
-          <!-- Step 3 — Keywords & procurement -->
-          <section class="card sub-form-card" data-step="3">
-            <header class="sub-form-card-head">
-              <span class="sub-step-badge">3</span>
-              <div>
-                <h2>Nyckelord &amp; finjustering</h2>
-                <p class="muted">Inkludera eller utesluta för att skala bort brus.</p>
-              </div>
-            </header>
-
-            <div class="field" data-needs="job procurement">
-              <label for="keywords_any">Inkluderande nyckelord <span class="optional">valfritt</span></label>
-              <input
-                class="input"
-                id="keywords_any"
-                name="keywords_any"
-                placeholder="bemanning, interim, konsult"
-                autocomplete="off"
-              />
-              <p class="field-hint">Träff om <strong>minst ett</strong> ord finns i texten.</p>
-            </div>
-
-            <div class="field" data-needs="job procurement">
-              <label for="keywords_none">Exkluderande nyckelord <span class="optional">valfritt</span></label>
-              <input
-                class="input"
-                id="keywords_none"
-                name="keywords_none"
-                placeholder="praktik, sommarjobb, volontär"
-                autocomplete="off"
-              />
-              <p class="field-hint">Träff <strong>filtreras bort</strong> om något av orden förekommer.</p>
-            </div>
-
-            <div class="field" data-needs="procurement">
-              <label for="cpv_codes">CPV-koder <span class="optional">valfritt</span></label>
-              <input
-                class="input mono"
-                id="cpv_codes"
-                name="cpv_codes"
-                placeholder="79600000, 79610000"
-                pattern="[0-9, ]*"
-                autocomplete="off"
-              />
-              <p class="field-hint">
-                EU:s upphandlingsklassificering.
-                <a href="https://simap.ted.europa.eu/cpv" target="_blank" rel="noopener">Vad är CPV?</a>
-              </p>
-            </div>
-
-            <div class="field" data-needs="procurement">
-              <label for="min_procurement_value_sek">Minsta upphandlingsvärde (SEK) <span class="optional">valfritt</span></label>
-              <input
-                class="input mono"
-                id="min_procurement_value_sek"
-                name="min_procurement_value_sek"
-                type="number"
-                min="0"
-                step="10000"
-                placeholder="500000"
-                inputmode="numeric"
-              />
-              <p class="field-hint">Filtrerar bort små upphandlingar. Lämna tomt för alla värden.</p>
-            </div>
-
-            <div class="sub-form-empty" data-empty-state hidden>
-              <p class="muted">
-                Välj en signaltyp ovan för att se relevanta nyckelords- och filterfält här.
-              </p>
-            </div>
-          </section>
-
-          <div class="sub-form-actions">
-            <a href="/app/subscriptions" class="btn btn-ghost">Avbryt</a>
-            <div class="sub-form-submit">
-              <p class="sub-form-submit-hint" id="submit-hint" aria-live="polite"></p>
-              <button type="submit" class="btn btn-accent btn-lg" id="submit-btn">
-                Skapa prenumeration
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right column: live preview -->
-        <aside class="sub-form-aside">
-          <div class="card sub-preview" id="sub-preview">
-            <div class="sub-preview-head">
-              <span class="eyebrow">Förhandsgranskning</span>
-              <h3 id="preview-name">Din prenumeration</h3>
-            </div>
-
-            <div class="sub-preview-section">
-              <p class="sub-preview-label">Detta kommer matcha</p>
-              <p class="sub-preview-prose" id="preview-prose">
-                Jobbannonser från hela Sverige.
-              </p>
-            </div>
-
-            <div class="sub-preview-section" id="preview-signals-block">
-              <p class="sub-preview-label">Signaltyper</p>
-              <div class="sub-preview-badges" id="preview-signals">
-                <span class="badge badge-accent">Jobbannonser</span>
-              </div>
-            </div>
-
-            <div class="sub-preview-section" id="preview-filters-block" hidden>
-              <p class="sub-preview-label">Aktiva filter</p>
-              <ul class="sub-preview-list" id="preview-filters"></ul>
-            </div>
-
-            <div class="sub-preview-tips">
-              <p class="sub-preview-label">Tips</p>
-              <p class="sub-preview-tip-text" id="preview-tip">
-                Ju mer specifika filter desto färre men vassare träffar.
-                Lämna fält tomma för att få bredare bevakning.
-              </p>
-            </div>
-          </div>
-        </aside>
+        <label class="signal-card">
+          <input type="checkbox" name="signal_types" value="procurement" data-signal="procurement" />
+          <span class="signal-card-body">
+            <span class="signal-card-title">Upphandlingar</span>
+            <span class="signal-card-desc">Offentliga ramavtal och uppdrag inom bemanning och rekrytering.</span>
+          </span>
+        </label>
       </div>
-    </form>
-  </div>
-</section>
+    </div>
+  </section>
 
+  <section class="v-card">
+    <div class="v-card-head">
+      <div>
+        <h2>2. Geografi och bransch</h2>
+        <p>Begränsa till områden och branscher som matchar din affär.</p>
+      </div>
+    </div>
+
+    <div class="v-field" data-needs="job procurement company_change">
+      <label class="v-label" for="municipalities">Kommuner <span class="opt">valfritt</span></label>
+      <input class="v-input" id="municipalities" name="municipalities"
+             placeholder="Stockholm, Södertälje, Botkyrka" autocomplete="off" />
+      <p class="v-hint">Kommaseparerat. Exakta namn — t.ex. <span class="mono">Göteborg, Mölndal</span>.</p>
+    </div>
+
+    <div class="v-field" data-needs="job company_change">
+      <label class="v-label" for="counties">Län <span class="opt">valfritt</span></label>
+      <input class="v-input" id="counties" name="counties"
+             placeholder="Stockholms län, Uppsala län" autocomplete="off" />
+      <p class="v-hint">Bredare än kommuner. Skriv hela namnet inklusive <span class="mono">län</span>.</p>
+    </div>
+
+    <div class="v-field" data-needs="job">
+      <label class="v-label" for="occupations">Yrkesroller <span class="opt">valfritt</span></label>
+      <input class="v-input" id="occupations" name="occupations"
+             placeholder="Lagerarbetare, Truckförare, Chaufför C/CE" autocomplete="off" />
+      <p class="v-hint">Kommaseparerat. Söker i annonsens roll- och titelfält.</p>
+    </div>
+
+    <div class="v-field" data-needs="company_change">
+      <label class="v-label" for="sni_codes">SNI-koder <span class="opt">valfritt</span></label>
+      <input class="v-input mono" id="sni_codes" name="sni_codes"
+             placeholder="49410, 52100" pattern="[0-9, ]*" autocomplete="off" />
+      <p class="v-hint">Branschklassificering från SCB. Exempel: <span class="mono">49410</span> (godstrafik), <span class="mono">52100</span> (lager och magasin).</p>
+    </div>
+  </section>
+
+  <section class="v-card">
+    <div class="v-card-head">
+      <div>
+        <h2>3. Nyckelord och finjustering</h2>
+        <p>Inkludera eller utesluta för att skala bort brus.</p>
+      </div>
+    </div>
+
+    <div class="v-field" data-needs="job procurement">
+      <label class="v-label" for="keywords_any">Inkluderande nyckelord <span class="opt">valfritt</span></label>
+      <input class="v-input" id="keywords_any" name="keywords_any"
+             placeholder="bemanning, interim, konsult" autocomplete="off" />
+      <p class="v-hint">Träff om <strong>minst ett</strong> ord finns i texten.</p>
+    </div>
+
+    <div class="v-field" data-needs="job procurement">
+      <label class="v-label" for="keywords_none">Exkluderande nyckelord <span class="opt">valfritt</span></label>
+      <input class="v-input" id="keywords_none" name="keywords_none"
+             placeholder="praktik, sommarjobb, volontär" autocomplete="off" />
+      <p class="v-hint">Träff <strong>filtreras bort</strong> om något av orden förekommer.</p>
+    </div>
+
+    <div class="v-field" data-needs="procurement">
+      <label class="v-label" for="cpv_codes">CPV-koder <span class="opt">valfritt</span></label>
+      <input class="v-input mono" id="cpv_codes" name="cpv_codes"
+             placeholder="79600000, 79610000" pattern="[0-9, ]*" autocomplete="off" />
+      <p class="v-hint">EU:s standardklassificering för upphandlingar. Lämna tomt för alla bemannings­relaterade.</p>
+    </div>
+
+    <div class="v-field" data-needs="procurement">
+      <label class="v-label" for="min_procurement_value_sek">Lägsta upphandlingsvärde (SEK) <span class="opt">valfritt</span></label>
+      <input class="v-input mono" id="min_procurement_value_sek" name="min_procurement_value_sek"
+             type="number" min="0" step="100000" placeholder="500000" autocomplete="off" />
+      <p class="v-hint">Filtrerar bort små ramavtal. Standardvärde är 0 (visa alla).</p>
+    </div>
+  </section>
+
+  <div style="display: flex; gap: 12px; margin-top: 24px;">
+    <button type="submit" class="v-btn v-btn--signal v-btn--lg">Skapa prenumeration</button>
+    <a href="/app/subscriptions" class="v-btn v-btn--ghost v-btn--lg">Avbryt</a>
+  </div>
+</form>
+{% endblock %}
+
+{% block head_extra %}
+<style>
+  .signal-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  }
+  @media (max-width: 880px) { .signal-grid { grid-template-columns: 1fr; } }
+  .signal-card {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 16px; border: 1px solid var(--v-night-3);
+    border-radius: 8px; cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease;
+    background: var(--v-night-2);
+  }
+  .signal-card:hover { border-color: rgba(184,224,74,0.3); }
+  .signal-card:has(input:checked) {
+    border-color: var(--v-signal); background: rgba(184,224,74,0.05);
+  }
+  .signal-card input[type="checkbox"] { margin: 2px 0 0; flex-shrink: 0; accent-color: var(--v-signal); }
+  .signal-card-body { display: flex; flex-direction: column; gap: 4px; }
+  .signal-card-title {
+    font-family: var(--font-display); font-size: 15px; font-weight: 500;
+    color: var(--v-paper); letter-spacing: -0.01em;
+  }
+  .signal-card-desc { font-size: 12px; color: var(--v-mist); line-height: 1.5; }
+</style>
 <script>
-(function () {
+(() => {
   const form = document.getElementById('sub-form');
   if (!form) return;
-
-  const SIGNAL_LABELS = {
-    job: 'Jobbannonser',
-    company_change: 'Bolagsändringar',
-    procurement: 'Upphandlingar',
-  };
-
-  const FIELD_LABELS = {
-    municipalities: 'kommuner',
-    counties: 'län',
-    occupations: 'yrkesroller',
-    sni_codes: 'SNI-koder',
-    keywords_any: 'innehåller',
-    keywords_none: 'exkluderar',
-    cpv_codes: 'CPV-koder',
-    min_procurement_value_sek: 'minsta värde',
-  };
-
-  function activeSignals() {
-    return Array.from(form.querySelectorAll('input[name="signal_types"]:checked')).map(i => i.value);
-  }
-
-  function applyVisibility() {
-    const active = new Set(activeSignals());
-    let visibleAny = false;
-
-    form.querySelectorAll('[data-needs]').forEach(el => {
-      const needed = el.dataset.needs.split(/\s+/);
-      const show = needed.some(s => active.has(s));
-      el.hidden = !show;
-      if (show) visibleAny = true;
-
-      // Don't submit values from hidden fields — clear hidden inputs
-      if (!show) {
-        el.querySelectorAll('input').forEach(input => {
-          if (input.type !== 'checkbox' && input.type !== 'radio') {
-            // keep value in DOM for re-show, but disable so it's not submitted
-            input.disabled = true;
-          }
-        });
-      } else {
-        el.querySelectorAll('input').forEach(input => { input.disabled = false; });
-      }
-    });
-
-    // Empty state on step 3 if no signal selected
-    const emptyState = form.querySelector('[data-empty-state]');
-    if (emptyState) {
-      const stepCard = emptyState.closest('.sub-form-card');
-      const fields = stepCard ? stepCard.querySelectorAll('.field[data-needs]') : [];
-      const anyVisible = Array.from(fields).some(f => !f.hidden);
-      emptyState.hidden = anyVisible;
-    }
-
-    // Submit button enabled only if at least one signal
-    const submit = document.getElementById('submit-btn');
-    const submitHint = document.getElementById('submit-hint');
-    if (submit) {
-      submit.disabled = active.size === 0;
-    }
-    if (submitHint) {
-      submitHint.textContent = active.size === 0
-        ? 'Välj minst en signaltyp för att fortsätta.'
-        : '';
-    }
-  }
-
-  function joinList(items) {
-    if (items.length === 0) return '';
-    if (items.length === 1) return items[0];
-    if (items.length === 2) return items[0] + ' och ' + items[1];
-    return items.slice(0, -1).join(', ') + ' och ' + items[items.length - 1];
-  }
-
-  function buildProse() {
-    const active = activeSignals();
-    if (active.length === 0) return 'Välj minst en signaltyp för att börja.';
-
-    const parts = [];
-    const muns = (form.elements.municipalities.value || '').trim();
-    const cnts = (form.elements.counties.value || '').trim();
-    const occ = (form.elements.occupations.value || '').trim();
-    const sni = (form.elements.sni_codes.value || '').trim();
-    const cpv = (form.elements.cpv_codes.value || '').trim();
-    const kAny = (form.elements.keywords_any.value || '').trim();
-    const kNone = (form.elements.keywords_none.value || '').trim();
-    const minVal = (form.elements.min_procurement_value_sek.value || '').trim();
-
-    const labels = active.map(s => SIGNAL_LABELS[s] || s);
-    parts.push(joinList(labels.map(l => l.toLowerCase())));
-
-    if (active.includes('job') && occ) {
-      parts.push('för roller som ' + occ);
-    }
-
-    const geo = muns || cnts;
-    if (geo) {
-      parts.push('i ' + (muns || cnts));
-    } else {
-      parts.push('i hela Sverige');
-    }
-
-    if (active.includes('company_change') && sni) {
-      parts.push('inom SNI ' + sni);
-    }
-
-    if (active.includes('procurement') && cpv) {
-      parts.push('med CPV ' + cpv);
-    }
-
-    if (active.includes('procurement') && minVal) {
-      const fmt = Number(minVal).toLocaleString('sv-SE');
-      parts.push('värda minst ' + fmt + ' kr');
-    }
-
-    if (kAny) parts.push('som innehåller "' + kAny + '"');
-    if (kNone) parts.push('utan "' + kNone + '"');
-
-    let sentence = parts.join(' ').replace(/\s+/g, ' ').trim();
-    sentence = sentence.charAt(0).toUpperCase() + sentence.slice(1) + '.';
-    return sentence;
-  }
-
-  function buildFilters() {
-    const active = new Set(activeSignals());
-    const items = [];
-
-    function add(field, label, signals) {
-      const visible = signals.some(s => active.has(s));
-      if (!visible) return;
-      const val = (form.elements[field].value || '').trim();
-      if (val) items.push({ label, value: val });
-    }
-
-    add('municipalities', FIELD_LABELS.municipalities, ['job', 'company_change', 'procurement']);
-    add('counties', FIELD_LABELS.counties, ['job', 'company_change']);
-    add('occupations', FIELD_LABELS.occupations, ['job']);
-    add('sni_codes', FIELD_LABELS.sni_codes, ['company_change']);
-    add('cpv_codes', FIELD_LABELS.cpv_codes, ['procurement']);
-    add('keywords_any', FIELD_LABELS.keywords_any, ['job', 'procurement']);
-    add('keywords_none', FIELD_LABELS.keywords_none, ['job', 'procurement']);
-
-    const minVal = (form.elements.min_procurement_value_sek.value || '').trim();
-    if (active.has('procurement') && minVal) {
-      const fmt = Number(minVal).toLocaleString('sv-SE');
-      items.push({ label: FIELD_LABELS.min_procurement_value_sek, value: fmt + ' kr' });
-    }
-    return items;
-  }
-
-  function updatePreview() {
-    const nameEl = document.getElementById('preview-name');
-    const proseEl = document.getElementById('preview-prose');
-    const signalsEl = document.getElementById('preview-signals');
-    const filtersBlock = document.getElementById('preview-filters-block');
-    const filtersEl = document.getElementById('preview-filters');
-    const tipEl = document.getElementById('preview-tip');
-
-    const name = (form.elements.name.value || '').trim();
-    nameEl.textContent = name || 'Din prenumeration';
-
-    const active = activeSignals();
-    signalsEl.innerHTML = '';
-    if (active.length === 0) {
-      const span = document.createElement('span');
-      span.className = 'badge badge-neutral';
-      span.textContent = 'Ingen vald';
-      signalsEl.appendChild(span);
-    } else {
-      active.forEach(s => {
-        const span = document.createElement('span');
-        span.className = 'badge badge-accent';
-        span.textContent = SIGNAL_LABELS[s] || s;
-        signalsEl.appendChild(span);
-      });
-    }
-
-    proseEl.textContent = buildProse();
-
-    const filters = buildFilters();
-    if (filters.length === 0) {
-      filtersBlock.hidden = true;
-      filtersEl.innerHTML = '';
-    } else {
-      filtersBlock.hidden = false;
-      filtersEl.innerHTML = '';
-      filters.forEach(f => {
-        const li = document.createElement('li');
-        const lab = document.createElement('span');
-        lab.className = 'sub-preview-list-label';
-        lab.textContent = f.label;
-        const val = document.createElement('span');
-        val.className = 'sub-preview-list-value';
-        val.textContent = f.value;
-        li.appendChild(lab);
-        li.appendChild(val);
-        filtersEl.appendChild(li);
-      });
-    }
-
-    // Adaptive tip
-    const total = filters.length;
-    if (active.length === 0) {
-      tipEl.textContent = 'Markera minst en signaltyp för att aktivera bevakningen.';
-    } else if (total === 0) {
-      tipEl.textContent = 'Inga filter — du får alla träffar för valda signaltyper. Lägg till geografi eller nyckelord för att smalna av.';
-    } else if (total >= 5) {
-      tipEl.textContent = 'Många filter aktiva — bevakningen blir smal. Bra för precision, mindre bra för täckning.';
-    } else {
-      tipEl.textContent = 'Bra balans. Du kan alltid justera filter senare från prenumerationslistan.';
-    }
-  }
-
+  const checkboxes = form.querySelectorAll('input[name="signal_types"]');
+  const fields = form.querySelectorAll('[data-needs]');
   function refresh() {
-    applyVisibility();
-    updatePreview();
+    const active = new Set(
+      Array.from(checkboxes).filter(c => c.checked).map(c => c.dataset.signal)
+    );
+    fields.forEach(f => {
+      const needs = (f.dataset.needs || '').split(' ').filter(Boolean);
+      const visible = needs.some(n => active.has(n));
+      f.style.display = visible ? '' : 'none';
+      f.querySelectorAll('input').forEach(i => { i.disabled = !visible; });
+    });
   }
-
-  form.addEventListener('input', refresh);
-  form.addEventListener('change', refresh);
+  checkboxes.forEach(c => c.addEventListener('change', refresh));
   refresh();
 })();
 </script>

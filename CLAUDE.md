@@ -227,11 +227,13 @@ vittring/
 
 > **Status: deferred.** Stripe integration is postponed. Until billing is enabled, all signups land on a permanent trial plan with no payment required. Schema, code paths, and webhook handlers should still be designed so that enabling Stripe later is purely configuration (price IDs + webhook secret).
 
-| Plan | Price | Filters | Seats | Sources |
-|---|---|---|---|---|
-| Solo | 1 500 SEK/mån | 5 | 1 | All three |
-| Team | 2 500 SEK/mån | 20 | 5 | All three |
-| Pro | 4 000 SEK/mån | Unlimited | 15 | All three + HubSpot integration |
+| Plan | Price | Filters | Seats | Sources | Notes |
+|---|---|---|---|---|---|
+| Solo | 1 500 SEK/mån | 5 | 1 | All | |
+| Team | 2 500 SEK/mån | 20 | 5 | All | CSV-export, kommentarer |
+| Pro | 4 000 SEK/mån | Obegränsat | 15 | All + HubSpot | API export, prioriterad support |
+
+All plans include: JobTech (jobs), Bolagsverket (changes), TED + scraped procurement sources (e-Avrop, Kommers, TendSign, Mercell), historical data from Upphandlingsmyndigheten. Pro adds: HubSpot two-way sync, REST API access, CSV export, priority support.
 
 All prices ex VAT. Annual billing optional with 10 % discount. 14-day free trial on all plans, no credit card required to start.
 
@@ -434,7 +436,11 @@ CREATE TABLE email_verification_tokens (
 - **Tracked change types:** `ceo`, `board_member`, `address`, `name`, `remark`, `liquidation`, `sni`.
 - **Personal data lifecycle:** names of board members and CEOs are personal data. Retain for max 30 days unless surfaced in a `delivered_alerts` row, in which case retention is `delivered_at + 30 days`. A nightly job (`scrub_personal_data`) sets `personal_data_purged_at` and nulls `old_value`/`new_value` for expired rows.
 
-### 9.3 TED (Tenders Electronic Daily)
+### 9.3 Procurement sources
+
+Vittring aggregates four procurement signal sources into the unified `procurements` table. Each source is implemented as its own adapter; users see deduplicated results.
+
+#### 9.3.1 TED (Tenders Electronic Daily) — open API
 
 - **Base URL:** `https://api.ted.europa.eu/v3/notices/search`
 - **Auth:** none
@@ -446,6 +452,50 @@ CREATE TABLE email_verification_tokens (
   - `85000000` series — health and social work services
 - **Polling:** daily at 08:00 Europe/Stockholm
 - **Source value:** `'ted'`
+
+#### 9.3.2 Upphandlingsmyndigheten — open statistical data
+
+- **Purpose:** historical Swedish procurement data for context, trend analysis, and seeding the `procurements` table with awarded contracts not present in TED.
+- **Source:** Upphandlingsmyndigheten's open statistical datasets (CSV/JSON downloads).
+- **Polling:** weekly, Sunday at 03:00 Europe/Stockholm.
+- **Implementation:** importer reads the latest published dataset, upserts into `procurements`.
+- **Source value:** `'upphandlingsmyndigheten'`.
+- **Use:** primarily backfill / historical lookups, not real-time alerts.
+
+#### 9.3.3 Scraped sources — e-Avrop, Kommers, TendSign, Mercell
+
+These four Swedish procurement portals publish active tenders that do not always appear in TED (sub-threshold, direktupphandlingar, frivilliga annonser). Vittring scrapes their public listing pages.
+
+- **Polling:** daily at 07:30 Europe/Stockholm.
+- **Architecture:** all four share a common `BaseScraper` (see 9.4). Each subclass implements `list_urls()` and `parse()`.
+- **Source values:** `'eavrop'`, `'kommers'`, `'tendsign'`, `'mercell'`.
+- **Compliance:** all scraped sources are subject to the strict good-faith policy in section 24. Failure of any compliance check (robots disallow, rate limit, blocked-domain list) halts that source's scrape immediately.
+- **Note:** TendSign and Mercell are operated by the same legal entity (Mercell Group). Treat them as separate technical endpoints but apply opt-out / take-down requests jointly.
+
+#### 9.3.4 Scraper adapter interface
+
+```python
+# src/vittring/ingest/scrapers/base.py
+from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
+
+class BaseScraper(ABC):
+    name: str               # 'eavrop', 'kommers', 'tendsign', 'mercell'
+    base_url: str
+    user_agent: str         # MUST identify Vittring + contact URL (see §24.1)
+    request_delay_s: float  # MUST be >= 2.0 (see §24.3)
+
+    @abstractmethod
+    async def list_urls(self) -> AsyncIterator[str]:
+        """Yield listing/detail URLs to fetch. MUST respect robots.txt."""
+
+    @abstractmethod
+    async def parse(self, url: str, html: str) -> dict | None:
+        """Return a normalized procurement dict, or None to skip.
+        MUST extract only public fields (no login/captcha bypass)."""
+```
+
+Every `BaseScraper` subclass MUST satisfy section 24 in full (identification, robots.txt obedience, rate limiting, caching, public-only fields, blocked-domain list, opt-out, audit log). A scraper that cannot meet these requirements MUST NOT be enabled.
 
 ### 9.4 Adapter interface
 
@@ -820,6 +870,14 @@ The full system consists of these components.
 7. JobTech adapter with retries, backoff, Sentry metrics
 8. Bolagsverket adapter with `official` and `poit` backends behind same interface
 9. TED adapter
+9a. `BaseScraper` abstract base class (see §9.3.4) with built-in robots.txt enforcement, rate limiting, caching, audit logging hooks (per §24)
+9b. e-Avrop scraper (`src/vittring/ingest/scrapers/eavrop.py`)
+9c. Kommers scraper (`src/vittring/ingest/scrapers/kommers.py`)
+9d. TendSign scraper (`src/vittring/ingest/scrapers/tendsign.py`)
+9e. Mercell scraper (`src/vittring/ingest/scrapers/mercell.py`)
+9f. Public `/bot` page describing Vittring's crawler, contact email, opt-out instructions (per §24.1, §24.7)
+9g. Opt-out email handler — incoming request to `info@karimkhalil.se` flags the source domain in `scraping_blocklist` and disables further fetches within 24 h (per §24.7)
+9h. Upphandlingsmyndigheten weekly importer (`src/vittring/ingest/upphandlingsmyndigheten.py`) — Sunday 03:00 historical/statistical data import
 10. Matching engine with 100 % test coverage
 11. Email module with Jinja2 templates: digest, welcome, verify, password-reset
 12. Resend domain verification flow (`delivery/domain_setup.py`)
@@ -870,13 +928,308 @@ The full system consists of these components.
 
 ---
 
-## 22. Design system
+## 22. Design system (companion file)
 
-All visual design follows the strict specification in `design-system.md`. No exceptions without explicit approval.
+The full visual specification lives in `design-system.md` and is summarized in section 23 below. No visual changes without explicit approval.
 
 ---
 
-## 23. Definition of done
+## 23. Design system
+
+> **Note:** current implementation uses a Night-themed variant; this spec is the canonical strict version we evolve toward.
+
+Vittring's visual language is strict, restrained, and operator-focused — Linear-style. The product is a tool for sales operators, not a marketing surface. Every pixel must justify itself.
+
+### 23.1 Principles
+
+- **Function over decoration.** No gradients, shadows, glows, blurs, parallax, animated illustrations, or hero videos.
+- **Typography carries the design.** Hierarchy is set by weight and size, not color or ornamentation.
+- **Neutral palette + a single accent.** One restrained accent for primary action and signal markers. Status colors used sparingly and only for status.
+- **Density is a feature.** Operators read fast; we present dense, scannable information without padding tables to feel "spacious".
+- **Motion is functional only.** Use motion to indicate state change (loading, success). Never decorative.
+
+### 23.2 Anti-patterns (forbidden without explicit approval)
+
+- Gradient backgrounds, gradient text, gradient borders.
+- Drop shadows beyond a single subtle elevation token.
+- Rounded corners larger than 8 px on cards, 6 px on buttons, 4 px on inputs.
+- Decorative icons (icons must label or modify a control).
+- Stock photography, hero illustrations, abstract shapes.
+- Emoji in UI, copy, or email.
+- Marketing slogans ("Empower your team!", "AI-powered", "Game-changing").
+- Animated gradients, looping animations, autoplaying media.
+- Multiple accent colors on the same screen.
+- Centered body text.
+- Full-bleed images on landing pages.
+
+### 23.3 Color tokens
+
+```
+--bg-base:        #FFFFFF        /* page background */
+--bg-subtle:      #FAFAFA        /* card / row alt */
+--bg-muted:       #F4F4F5        /* hover / pressed */
+--border-subtle:  #E4E4E7
+--border-strong:  #D4D4D8
+--text-primary:   #18181B
+--text-secondary: #52525B
+--text-tertiary:  #71717A
+--text-disabled:  #A1A1AA
+
+--accent:         #2563EB        /* single accent — primary action only */
+--accent-hover:   #1D4ED8
+--accent-fg:      #FFFFFF
+
+--status-success: #15803D
+--status-warning: #B45309
+--status-danger:  #B91C1C
+--status-info:    #1D4ED8
+```
+
+Status colors are reserved for status — never as accent or decoration. The accent is reserved for primary action and active-state indicators.
+
+### 23.4 Typography
+
+- **Sans family:** Inter (variable). Fallback: system-ui, -apple-system, "Segoe UI", sans-serif.
+- **Mono family:** JetBrains Mono. Used for orgnr, identifiers, code, CPV codes.
+- **Scale:**
+  - `text-xs`: 12 px / 16 px line height — metadata, footers
+  - `text-sm`: 13 px / 20 px — table cells, secondary copy
+  - `text-base`: 14 px / 22 px — body
+  - `text-lg`: 16 px / 24 px — section subheads
+  - `text-xl`: 20 px / 28 px — page titles
+  - `text-2xl`: 24 px / 32 px — landing hero headline
+- **Weights:** 400 regular, 500 medium (default for UI), 600 semibold (titles, emphasis). No 700/800/900.
+- **Tracking:** default 0; -0.01 em on `text-xl` and above.
+
+### 23.5 Spacing
+
+8-point grid. Tokens: `1` = 4 px, `2` = 8 px, `3` = 12 px, `4` = 16 px, `6` = 24 px, `8` = 32 px, `12` = 48 px, `16` = 64 px.
+
+- Card padding: 16 px (2× tighter than typical SaaS).
+- Table row vertical padding: 8 px.
+- Form field gap: 12 px.
+- Section gap on landing: 64 px.
+- Maximum content width: 1200 px (app), 960 px (landing/legal).
+
+### 23.6 Components
+
+- **Button.** Three variants only: primary (filled accent), secondary (border only), ghost (text only). Heights: 32 px (compact), 36 px (default). Single corner radius: 6 px. No icon-only buttons except in toolbars where every icon has a tooltip.
+- **Input.** Single border style (1 px `--border-strong`). Focus ring: 2 px accent at 25 % opacity. No inset shadow. Height matches button.
+- **Table.** Default to compact rows. Sticky header on scroll. Sort indicators are tiny chevrons next to header text. No zebra striping unless density is extreme.
+- **Card.** 1 px border, 8 px radius, 16 px padding. No shadows.
+- **Toast.** Bottom-right, 320 px wide, auto-dismiss 4 s for info/success, sticky for error.
+- **Modal.** 1 px border, 8 px radius, no backdrop blur (flat 50 % black overlay). Maximum 480 px wide for confirmations, 720 px for forms.
+- **Badge / pill.** Single height (20 px), single radius (4 px). Used only for status, never as decoration.
+
+### 23.7 Landing page rules
+
+- Hero is text-only. Headline (max 2 lines) + subhead (max 3 lines) + single primary CTA + single secondary link.
+- No screenshots above the fold. One screenshot or product still per page section, max.
+- No customer logo wall unless every logo represents a paying Vittring customer.
+- Pricing table is the same component as the rest of the product; not visually special.
+- Footer: address, organisationsnummer, legal links, contact, /bot link.
+
+### 23.8 Email digest rules
+
+- Single column, 600 px width.
+- Plain text-equivalent always sent.
+- No images except the wordmark in the header (PNG, 1× and 2×).
+- Section headers use weight, not color.
+- Source link per item is the only link styled in accent color.
+- No tracking pixels beyond Resend's open beacon.
+
+### 23.9 Acceptance checklist (every screen / template)
+
+- [ ] No gradient or shadow used outside the elevation token.
+- [ ] Single accent color on screen (or zero, if no primary action).
+- [ ] Typography uses only the defined scale and weights.
+- [ ] Spacing snaps to the 4 px grid.
+- [ ] Status color used only for status.
+- [ ] Buttons match the three allowed variants.
+- [ ] Tables are compact-by-default.
+- [ ] No emoji, no marketing slogan, no decorative illustration.
+- [ ] Copy is in Swedish, professional, direct.
+- [ ] Mobile layout collapses cleanly to a single column with the same components.
+
+---
+
+## 24. Web scraping policy — strict good-faith
+
+Vittring scrapes a small set of Swedish procurement portals (e-Avrop, Kommers, TendSign, Mercell) to surface tenders that are not present in TED. Scraping is performed in **strict good faith**: we identify ourselves clearly, we obey robots.txt where present, we rate-limit aggressively, we cache, we extract only public fields, we respect opt-outs immediately, and we keep an audit log of every fetch.
+
+This section is binding on every scraper subclass and on every operator. A scraper that cannot meet every requirement here MUST NOT be enabled.
+
+### 24.1 Identification
+
+Every outbound scraping request MUST send a `User-Agent` of the form:
+
+```
+Vittring/1.0 (+https://vittring.karimkhalil.se/bot; info@karimkhalil.se)
+```
+
+- The `/bot` page MUST exist, in Swedish, describe what Vittring's crawler does, list every domain we fetch, and provide an opt-out email and an opt-out form.
+- We never spoof browser User-Agents, never spoof Referer, never rotate UAs, never use residential proxies or browser-fingerprint evasion.
+- Requests originate from the production server's static IP (62.238.37.54) so operators can identify us at the network level.
+
+### 24.2 robots.txt
+
+Every scraper MUST consult `/robots.txt` of the target host before fetching any other URL.
+
+- Fetch `robots.txt` once per 24 h per host, cache the result.
+- Apply the rules using a strict parser (e.g., `protego` or `urllib.robotparser`).
+- The User-Agent token used for matching is `Vittring`. We respect both `Vittring`-specific and `*` rules; the more restrictive wins.
+
+**Status-code handling (REVISED):**
+
+| robots.txt status | Decision |
+|---|---|
+| 200 OK with `Disallow: /` for our UA or `*` | **disallow_all** — abort all scraping of this host. |
+| 200 OK with specific `Disallow:` rules | **partial_allow** — fetch only allowed paths. |
+| 200 OK with no rules / empty file | **allow_all** — proceed under §24.3 rate limits. |
+| 404 Not Found | **allow_all** — but log `robots_decision='allow_no_robots'` and re-check daily. Missing robots.txt is not affirmative permission (see §24.9); it means "the operator has not declared rules", which we treat as conditional consent under good-faith terms. |
+| Other 4xx (401, 403, 410, etc.) | **disallow_all** — treat as host-level refusal. Abort. |
+| 5xx | **disallow_temporary** — skip this run, retry next scheduled fetch. Do NOT fall back to "allow". |
+| Network error / timeout | **disallow_temporary** — same as 5xx. |
+| Redirect off-host | **disallow_all** — refuse to follow; treat as ambiguous. |
+
+The decision MUST be persisted to the audit log (§24.8) on every fetch.
+
+### 24.3 Rate limiting
+
+- Minimum delay between requests to the same host: **2 seconds** (configurable upward, never downward).
+- Maximum concurrent requests per host: **1**.
+- Maximum requests per host per day: **2 000** (soft cap; alert in Sentry if exceeded).
+- Maximum requests per host per minute: **20**.
+- Honor `Retry-After` headers on 429 / 503 responses; if absent, back off 60 s and double on each subsequent failure up to 1 hour.
+- Three consecutive 429s from a host → halt scraping that host for 24 h and notify Karim.
+
+### 24.4 Caching
+
+- Every fetched URL is cached on disk for **24 h minimum** (HTML, response headers, status code).
+- Re-fetches within 24 h MUST be served from cache; the network is not hit again.
+- Cache key: SHA-256 of the absolute URL.
+- Cache lives under `/opt/vittring/var/scrape_cache/` with file mode 640.
+- Cache reduces both our footprint on operators and our exposure to brittle parsers.
+
+### 24.5 Data extraction
+
+- Extract **public fields only**: title, buyer name, CPV codes, deadline, source URL, published date, public description text.
+- Never extract: contact phone numbers, individual procurement-officer email addresses, attached document text behind authentication, anything behind a login wall, anything behind a captcha, anything behind a paywall.
+- Never bypass authentication, captcha, paywall, IP block, or rate-limit barrier. If a barrier is encountered, log it and stop.
+- Never attempt to download attached documents (PDFs, DOCX) automatically. Link to the source page only.
+- Source attribution is mandatory: every procurement row MUST carry `source_url` and `source` so users (and we) can verify the origin.
+
+### 24.6 Blocked-domain list
+
+A `scraping_blocklist` table holds domains we will not fetch from. The list is checked **before** every request.
+
+```sql
+CREATE TABLE scraping_blocklist (
+  domain TEXT PRIMARY KEY,
+  reason TEXT NOT NULL,            -- 'opt_out_email', 'tos_disallow', 'manual', 'robots_disallow_all'
+  blocked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  blocked_by TEXT                  -- email address of requester, or 'system'
+);
+```
+
+Once a domain enters the blocklist, no scraper job will fetch it. Removal requires a written request and Karim's approval.
+
+### 24.7 Opt-out procedure
+
+Vittring publishes a clear opt-out path:
+
+- **Email:** `info@karimkhalil.se` with subject `Vittring opt-out: <domain>`.
+- **Form:** `/bot` page provides a one-field form that submits the domain.
+- **SLA:** opt-out requests are honored within **24 hours**. The domain is added to `scraping_blocklist` and all queued URLs for that host are dropped.
+- **Notification:** Karim replies to the requester confirming the opt-out within the same SLA.
+- **Persistence:** opt-outs are permanent unless the requester explicitly withdraws.
+- **Test data:** opt-out additions are logged to the audit log; quarterly reviews confirm the blocklist is honored in production.
+
+Operator-defense paragraph: **Vittring never treats robots.txt as the only compliance mechanism. The primary safeguards are: clear bot identification, no browser spoofing, no login/captcha/paywall bypass, low request rate, caching, public-only fields, source attribution, immediate opt-out, audit logging.** These layered controls are designed so that even if robots.txt is silent or ambiguous, our footprint stays small and our intent stays verifiable.
+
+### 24.8 Audit log
+
+Every outbound scrape request writes one row to `scraping_audit`:
+
+```sql
+CREATE TABLE scraping_audit (
+  id BIGSERIAL PRIMARY KEY,
+  scraper_name TEXT NOT NULL,           -- 'eavrop', 'kommers', 'tendsign', 'mercell'
+  host TEXT NOT NULL,
+  url TEXT NOT NULL,
+  http_status INT,
+  bytes_received INT,
+  cache_hit BOOLEAN NOT NULL,
+  robots_decision TEXT NOT NULL,        -- see enum below
+  duration_ms INT,
+  error TEXT,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_scraping_audit_host_time ON scraping_audit(host, fetched_at DESC);
+```
+
+`robots_decision` MUST be one of:
+
+- `allow_all` — robots.txt present, no rule restricts our path
+- `allow_no_robots` — robots.txt returned 404; treated as conditional allow per §24.2
+- `partial_allow` — robots.txt allows this specific path
+- `disallow_path` — robots.txt disallows this specific path; request was NOT made
+- `disallow_all` — robots.txt disallows our UA on `/`; request was NOT made
+- `disallow_temporary` — robots.txt fetch failed (5xx / network); request was NOT made
+- `cache_hit` — served from local cache (§24.4); no network request was made
+- `blocklist_hit` — domain on `scraping_blocklist` (§24.6); request was NOT made
+
+Audit log retention: **24 months**. Reviewed quarterly by Karim. Used to demonstrate good-faith conduct in the event of a dispute.
+
+### 24.9 Risks and limitations
+
+Web scraping is contentious even when done in good faith. Known risks:
+
+- **Terms of Service:** some portal ToS forbid automated access. We do not accept click-through ToS as binding without consideration, but we honor explicit operator-side opt-outs (§24.7) immediately on request.
+- **Missing robots.txt is not permission.** A 404 on `/robots.txt` does not constitute affirmative permission to crawl. Per §24.2 we treat it as conditional consent and continue under our other safeguards (low rate, cache, public-only, opt-out). If the operator later objects, we stop the same day.
+- **Page structure changes.** Scrapers will break when portals redesign. We tolerate breakage rather than aggressive retry.
+- **Personal data exposure.** If a scraper inadvertently captures personal data (e.g., a procurement officer's name in a free-text field), the same Bolagsverket-style 30-day retention rule applies, and we never surface it without active alerting.
+- **Legal exposure.** Karim accepts that scraping carries reputational and legal risk. The /bot page and audit log exist to demonstrate intent. If a portal operator sends a take-down request, we comply within 24 h and do not contest.
+
+---
+
+## 25. Risk disclosure
+
+This section documents known business and legal risks Karim has accepted by operating Vittring under its current structure.
+
+### 25.1 Legal entity
+
+Vittring is currently operated as **Karim Khalil's enskild firma** (sole proprietorship). Implications:
+
+- Karim is **personally and unlimitedly liable** for Vittring's obligations, including any damages arising from data-source disputes, GDPR enforcement, customer claims, or scraping-related disputes.
+- An **AB (aktiebolag) migration is planned** before Vittring exceeds either (a) annual recurring revenue of 1.0 MSEK, or (b) the first paying customer covered by an enterprise procurement contract — whichever comes first.
+- Until migration, all customer contracts MUST be signed in Karim's name with the enskild firma's organisationsnummer, and the privacy policy / DPA template MUST name Karim Khalil as the data controller.
+
+### 25.2 Procurement-portal concentration risk
+
+- **TendSign and Mercell are operated by the same legal entity (Mercell Group).** A dispute with one operator effectively removes both sources from Vittring's procurement coverage. The risk is operational (loss of ~40 % of scraped procurement volume) and legal (a single take-down letter can cover both portals).
+- Karim's mitigation: keep TED + Upphandlingsmyndigheten as the floor, ensure e-Avrop and Kommers stay reachable, and accept that Mercell-side coverage is fragile.
+
+### 25.3 Public crawler-disclosure page
+
+A `/bot` page MUST be published and reachable without authentication before any scraper is enabled in production. The page MUST contain, in Swedish:
+
+- A short description of Vittring's purpose.
+- The User-Agent string the crawler uses (§24.1).
+- The list of domains Vittring fetches.
+- The opt-out email address and a one-field opt-out form.
+- The 24-hour opt-out SLA.
+- A link to the privacy policy.
+
+Operating the scrapers without the /bot page reachable is a violation of section 24 and MUST cause the scheduler to refuse to start scraping jobs.
+
+### 25.4 Acceptance
+
+By deploying this system, Karim accepts the risks documented in 25.1, 25.2, and 25.3. These risks are reviewed at every AB migration milestone and at every annual security review.
+
+---
+
+## 26. Definition of done
 
 A feature is done when:
 

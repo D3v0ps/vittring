@@ -1,0 +1,133 @@
+{% extends "admin/_layout.html.j2" %}
+{% set active_nav = 'overview' %}
+{% set topbar_title = 'Översikt' %}
+
+{% block content %}
+  <div class="page-header">
+    <div class="eyebrow">Admin</div>
+    <h1>Översikt</h1>
+    <div class="subtitle">Total kontroll över plattformen.</div>
+  </div>
+
+  <div class="page-body">
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="lbl">Användare totalt</div>
+        <div class="num">{{ stats.users_total }}</div>
+        <div class="delta">{{ stats.users_active }} aktiva</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Aktiva</div>
+        <div class="num">{{ stats.users_active }}</div>
+        <div class="delta">av {{ stats.users_total }} totalt</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Verifierade</div>
+        <div class="num">{{ stats.users_verified }}</div>
+        <div class="delta">{{ stats.users_verified_pct }}%</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Aktiva prenumerationer</div>
+        <div class="num">{{ stats.subscriptions_active }}</div>
+        <div class="delta">{{ stats.subscriptions_total }} totalt</div>
+      </div>
+    </div>
+
+    <div class="section-title">Plan</div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="lbl">Trial</div>
+        <div class="num" style="font-family: var(--font-mono); font-size: 30px;">{{ stats.plan_trial }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Solo</div>
+        <div class="num" style="font-family: var(--font-mono); font-size: 30px; color: var(--v-signal);">{{ stats.plan_solo }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Team</div>
+        <div class="num" style="font-family: var(--font-mono); font-size: 30px; color: var(--v-amber);">{{ stats.plan_team }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Pro</div>
+        <div class="num" style="font-family: var(--font-mono); font-size: 30px; color: var(--v-amber);">{{ stats.plan_pro }}</div>
+      </div>
+    </div>
+
+    <div class="section-title">Aktivitet</div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="lbl">Nya användare 7d</div>
+        <div class="num">{{ stats.signups_7d }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Nya användare 30d</div>
+        <div class="num">{{ stats.signups_30d }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Digest mottagare 7d</div>
+        <div class="num">{{ stats.digest_users_7d }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Misslyckade login 24h</div>
+        <div class="num" style="color: {% if stats.failed_logins_24h > 0 %}var(--v-amber){% else %}var(--v-paper){% endif %};">{{ stats.failed_logins_24h }}</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top: 32px;">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h2 class="card-h2">Senaste användare</h2>
+          <a href="/admin/users" class="btn">Visa alla →</a>
+        </div>
+        {% if recent_users %}
+        <table class="t">
+          <thead><tr><th>E-post</th><th>Plan</th><th>Verif.</th><th>Skapad</th></tr></thead>
+          <tbody>
+            {% for u in recent_users %}
+            <tr>
+              <td><a href="/admin/users/{{ u.id }}">{{ u.email }}</a></td>
+              <td><span class="badge plan-{{ u.plan }}">{{ u.plan }}</span></td>
+              <td>{% if u.is_verified %}<span class="pip on" title="Verifierad"></span>{% else %}<span class="pip off" title="Ej verifierad"></span>{% endif %}</td>
+              <td class="mono">{{ u.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty">Inga användare ännu.</div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h2 class="card-h2">Senaste audit</h2>
+          <a href="/admin/audit" class="btn">Visa alla →</a>
+        </div>
+        {% if recent_audit %}
+        <table class="t">
+          <thead><tr><th>Tid</th><th>Användare</th><th>Händelse</th></tr></thead>
+          <tbody>
+            {% for a in recent_audit %}
+            <tr>
+              <td class="mono">{{ a.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+              <td>
+                {% if a.user_email %}
+                  <a href="/admin/users/{{ a.user_id }}">{{ a.user_email }}</a>
+                {% else %}
+                  <span class="mono">—</span>
+                {% endif %}
+              </td>
+              <td class="mono">{{ a.action }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty">Ingen aktivitet ännu.</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+{% endblock %}

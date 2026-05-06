@@ -7,6 +7,7 @@ schema without further imports.
 
 from vittring.models.audit import AuditLog, StripeWebhookEvent
 from vittring.models.company import Company
+from vittring.models.saved import SavedSignal
 from vittring.models.signals import (
     CompanyChange,
     JobPosting,
@@ -31,6 +32,7 @@ __all__ = [
     "JobPosting",
     "PasswordResetToken",
     "Procurement",
+    "SavedSignal",
     "StripeWebhookEvent",
     "Subscription",
     "User",

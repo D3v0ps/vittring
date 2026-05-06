@@ -61,21 +61,32 @@ async def stripe_webhook(
         # Still ack so Stripe (or test calls) don't retry forever.
         return {"status": "billing_not_enabled"}
 
+    # Belt-and-suspenders. billing_enabled already checks the secret is set,
+    # but a future refactor could decouple them — fail closed rather than
+    # crash if the secret is missing at this point.
+    if settings.stripe_webhook_secret is None:
+        raise HTTPException(status_code=503, detail="webhook_secret_not_configured")
+
     import stripe
 
     try:
         event = stripe.Webhook.construct_event(
             payload=body,
             sig_header=signature,
-            secret=settings.stripe_webhook_secret.get_secret_value(),  # type: ignore[union-attr]
+            secret=settings.stripe_webhook_secret.get_secret_value(),
         )
     except (ValueError, stripe.SignatureVerificationError) as exc:
         raise HTTPException(status_code=400, detail=f"invalid_signature: {exc}") from exc
 
-    record = StripeWebhookEvent(
+    # Idempotency: Stripe retries the same event id; a unique-violation on
+    # replay is expected, not exceptional. Use INSERT ... ON CONFLICT
+    # DO NOTHING so the second delivery acks cleanly.
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+    stmt = pg_insert(StripeWebhookEvent).values(
         id=event["id"],
         event_type=event["type"],
         payload=dict(event),
-    )
-    session.add(record)
+    ).on_conflict_do_nothing(index_elements=["id"])
+    await session.execute(stmt)
     return {"status": "received"}

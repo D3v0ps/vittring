@@ -1,0 +1,46 @@
+{% extends "app/_app_shell.html.j2" %}
+{% set topbar_eyebrow = "Bibliotek" %}
+{% set title = "Sparade signaler" %}
+{% block app_content %}
+<header class="page-head">
+  <div class="page-eyebrow">Bibliotek</div>
+  <h1 class="page-title">Sparade signaler</h1>
+  <p class="page-lead">
+    Signaler du stjärnmarkerat. Rör sig inte med dagens digest — stannar här tills du tar bort dem.
+  </p>
+</header>
+
+{% if items %}
+<section class="v-card" style="padding: 0;">
+  {% for item in items %}
+  <div style="display: grid; grid-template-columns: 100px 1fr auto; gap: 16px; padding: 16px 24px; align-items: center; {% if not loop.first %}border-top: 1px solid var(--v-night-3);{% endif %}">
+    <div>
+      <span class="v-pill v-pill--{% if item.kind_class == 'upph' %}amber{% elif item.kind_class == 'bolag' %}signal{% else %}neutral{% endif %}">{{ item.kind }}</span>
+    </div>
+    <div>
+      <div style="color: var(--v-paper); font-weight: 500; font-size: 14px; margin-bottom: 4px;">{{ item.title }}</div>
+      {% if item.meta %}<div style="font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4);">{{ item.meta }}</div>{% endif %}
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <span style="font-family: var(--font-mono); font-size: 11px; color: var(--v-ink-4);">{{ item.saved_at.strftime("%d %b %H:%M") }}</span>
+      <form method="post" action="/app/signals/save" style="display: inline;">
+        {{ csrf_input() }}
+        <input type="hidden" name="signal_type" value="{{ item.signal_type }}" />
+        <input type="hidden" name="signal_id" value="{{ item.signal_id }}" />
+        <button type="submit" class="v-btn v-btn--ghost" style="padding: 6px 10px; font-size: 11px;">Ta bort</button>
+      </form>
+      {% if item.url %}<a href="{{ item.url }}" target="_blank" rel="noopener" class="v-btn v-btn--signal" style="padding: 6px 12px; font-size: 11px;">Öppna →</a>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+{% else %}
+<section class="v-card" style="text-align: center; padding: 48px 24px;">
+  <div style="font-family: var(--font-display); font-size: 22px; color: var(--v-paper); margin-bottom: 8px;">Inga sparade signaler ännu</div>
+  <p style="color: var(--v-mist); font-size: 14px; max-width: 420px; margin: 0 auto 20px;">
+    Klicka på stjärnan ★ bredvid en signal i din digest för att lägga den här. Bra för uppslag som väntar på uppföljning.
+  </p>
+  <a href="/app" class="v-btn v-btn--ghost">← Tillbaka till digesten</a>
+</section>
+{% endif %}
+{% endblock %}

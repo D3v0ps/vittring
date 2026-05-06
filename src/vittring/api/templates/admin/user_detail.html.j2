@@ -1,0 +1,218 @@
+{% extends "admin/_layout.html.j2" %}
+{% set active_nav = 'users' %}
+{% set topbar_title = subject.email %}
+
+{% block content %}
+  <div class="page-header">
+    <div class="eyebrow">Admin · Användare</div>
+    <h1>{{ subject.email }}</h1>
+    <div class="subtitle">
+      <a href="/admin/users" style="color: var(--v-amber);">← Tillbaka till alla användare</a>
+    </div>
+  </div>
+
+  <div class="page-body stack">
+
+    {% if flash %}<div class="alert {{ flash_kind|default('ok') }}">{{ flash }}</div>{% endif %}
+
+    <!-- Profile + Edit -->
+    <div class="grid-2">
+      <div class="card">
+        <h2 class="card-h2">Profil</h2>
+        <table class="t" style="margin-top: 8px;">
+          <tbody>
+            <tr><td class="mono">id</td><td class="mono">{{ subject.id }}</td></tr>
+            <tr><td class="mono">e-post</td><td>{{ subject.email }}</td></tr>
+            <tr><td class="mono">namn</td><td>{{ subject.full_name or '—' }}</td></tr>
+            <tr><td class="mono">företag</td><td>{{ subject.company_name or '—' }}</td></tr>
+            <tr><td class="mono">plan</td><td><span class="badge plan-{{ subject.plan }}">{{ subject.plan }}</span></td></tr>
+            <tr><td class="mono">trial slutar</td><td class="mono">{% if subject.trial_ends_at %}{{ subject.trial_ends_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}</td></tr>
+            <tr><td class="mono">verifierad</td><td>{% if subject.is_verified %}<span class="pip on"></span> ja{% else %}<span class="pip off"></span> nej{% endif %}</td></tr>
+            <tr><td class="mono">aktiv</td><td>{% if subject.is_active %}<span class="pip on"></span> ja{% else %}<span class="pip off"></span> nej{% endif %}</td></tr>
+            <tr><td class="mono">superuser</td><td>{% if subject.is_superuser %}<span class="badge amber">Admin</span>{% else %}—{% endif %}</td></tr>
+            <tr><td class="mono">2fa</td><td>{% if subject.totp_enabled_at %}aktiverad {{ subject.totp_enabled_at.strftime('%Y-%m-%d') }}{% else %}—{% endif %}</td></tr>
+            <tr><td class="mono">misslyckade login</td><td class="mono">{{ subject.failed_login_count }}</td></tr>
+            <tr><td class="mono">låst till</td><td class="mono">{% if subject.locked_until %}{{ subject.locked_until.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}</td></tr>
+            <tr><td class="mono">skapad</td><td class="mono">{{ subject.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+            <tr><td class="mono">senast inloggad</td><td class="mono">{% if subject.last_login_at %}{{ subject.last_login_at.strftime('%Y-%m-%d %H:%M') }}{% else %}aldrig{% endif %}</td></tr>
+            <tr><td class="mono">senaste IP</td><td class="mono">{{ subject.last_login_ip or '—' }}</td></tr>
+            <tr><td class="mono">radering begärd</td><td class="mono">{% if subject.deletion_requested_at %}<span style="color: #e89595;">{{ subject.deletion_requested_at.strftime('%Y-%m-%d %H:%M') }}</span>{% else %}—{% endif %}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2 class="card-h2">Redigera</h2>
+        <form method="post" action="/admin/users/{{ subject.id }}/edit" class="admin-form" style="max-width: none; margin-top: 8px;">
+          {{ csrf_input() }}
+
+          <div class="field">
+            <label for="plan">Plan</label>
+            <select id="plan" name="plan">
+              {% for p in ['trial', 'solo', 'team', 'pro'] %}
+              <option value="{{ p }}" {% if subject.plan == p %}selected{% endif %}>{{ p }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="trial_ends_at">Trial slutar (ISO-format eller tomt)</label>
+            <input type="text" id="trial_ends_at" name="trial_ends_at" placeholder="2026-05-19T12:00" value="{% if subject.trial_ends_at %}{{ subject.trial_ends_at.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+          </div>
+
+          <div class="field">
+            <label for="locked_until">Låst till (lämna tomt för att låsa upp)</label>
+            <input type="text" id="locked_until" name="locked_until" placeholder="2026-05-19T12:00" value="{% if subject.locked_until %}{{ subject.locked_until.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+          </div>
+
+          <div class="field-row">
+            <input type="checkbox" id="is_active" name="is_active" value="1" {% if subject.is_active %}checked{% endif %}>
+            <label for="is_active" style="font-family: var(--font-sans); text-transform: none; letter-spacing: 0; color: var(--v-mist); font-size: 13px;">Aktiv</label>
+          </div>
+          <div class="field-row">
+            <input type="checkbox" id="is_verified" name="is_verified" value="1" {% if subject.is_verified %}checked{% endif %}>
+            <label for="is_verified" style="font-family: var(--font-sans); text-transform: none; letter-spacing: 0; color: var(--v-mist); font-size: 13px;">Verifierad</label>
+          </div>
+          <div class="field-row">
+            <input type="checkbox" id="is_superuser" name="is_superuser" value="1" {% if subject.is_superuser %}checked{% endif %}>
+            <label for="is_superuser" style="font-family: var(--font-sans); text-transform: none; letter-spacing: 0; color: var(--v-mist); font-size: 13px;">Superuser</label>
+          </div>
+
+          <div class="btn-row" style="margin-top: 8px;">
+            <button type="submit" class="btn primary">Spara</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="card">
+      <h2 class="card-h2">Snabbåtgärder</h2>
+      <div class="btn-row" style="margin-top: 10px;">
+
+        <form method="post" action="/admin/users/{{ subject.id }}/promote" class="inline">
+          {{ csrf_input() }}
+          <button class="btn signal" type="submit">⬆ Ge premium (Pro + verifiera)</button>
+        </form>
+
+        <form method="post" action="/admin/users/{{ subject.id }}/unlock" class="inline">
+          {{ csrf_input() }}
+          <button class="btn" type="submit">🔓 Lås upp konto</button>
+        </form>
+
+        <form method="post" action="/admin/users/{{ subject.id }}/resend-verify" class="inline">
+          {{ csrf_input() }}
+          <button class="btn" type="submit">✉ Skicka verifieringslänk</button>
+        </form>
+
+        {% if subject.deletion_requested_at %}
+        <form method="post" action="/admin/users/{{ subject.id }}/cancel-delete" class="inline">
+          {{ csrf_input() }}
+          <button class="btn" type="submit">⤺ Ångra radering</button>
+        </form>
+        {% else %}
+        <form method="post" action="/admin/users/{{ subject.id }}/schedule-delete" class="inline" onsubmit="return confirm('Schemalägg radering om 30 dagar?');">
+          {{ csrf_input() }}
+          <button class="btn danger" type="submit">⏱ Schemalägg radering</button>
+        </form>
+        {% endif %}
+
+        <form method="post" action="/admin/users/{{ subject.id }}/hard-delete" class="inline" onsubmit="return confirm('HÅRD-RADERA {{ subject.email }} omedelbart? Detta kan inte ångras.');">
+          {{ csrf_input() }}
+          <button class="btn danger" type="submit">✕ Hård-radera nu</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Subscriptions -->
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <h2 class="section-title" style="margin: 0;">Prenumerationer ({{ subscriptions|length }})</h2>
+      </div>
+      {% if subscriptions %}
+      <div class="card" style="padding: 0; margin-top: 12px;">
+        <table class="t">
+          <thead><tr><th>Namn</th><th>Signaltyper</th><th>Aktiv</th><th>Skapad</th><th></th></tr></thead>
+          <tbody>
+            {% for s in subscriptions %}
+            <tr>
+              <td>{{ s.name }}</td>
+              <td class="mono">{{ s.signal_types|join(', ') }}</td>
+              <td>{% if s.active %}<span class="pip on"></span> aktiv{% else %}<span class="pip off"></span> pausad{% endif %}</td>
+              <td class="mono">{{ s.created_at.strftime('%Y-%m-%d') }}</td>
+              <td style="text-align:right;">
+                <form method="post" action="/admin/subscriptions/{{ s.id }}/toggle" class="inline">
+                  {{ csrf_input() }}
+                  <input type="hidden" name="redirect_to" value="/admin/users/{{ subject.id }}">
+                  <button class="btn" type="submit">{{ 'Pausa' if s.active else 'Aktivera' }}</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty">Användaren har inga prenumerationer.</div>
+      {% endif %}
+    </div>
+
+    <!-- Audit log -->
+    <div>
+      <h2 class="section-title">Senaste aktivitet (audit)</h2>
+      {% if audit_rows %}
+      <div class="card" style="padding: 0;">
+        <table class="t">
+          <thead><tr><th>Tid</th><th>Händelse</th><th>IP</th><th>Metadata</th></tr></thead>
+          <tbody>
+            {% for a in audit_rows %}
+            <tr>
+              <td class="mono">{{ a.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+              <td class="mono">{{ a.action }}</td>
+              <td class="mono">{{ a.ip or '—' }}</td>
+              <td>
+                {% if a.audit_metadata %}
+                <details class="json-cell">
+                  <summary>{{ a.audit_metadata|tojson|truncate(60) }}</summary>
+                  <pre>{{ a.audit_metadata|tojson(indent=2) }}</pre>
+                </details>
+                {% else %}<span class="mono">—</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty">Ingen aktivitet registrerad.</div>
+      {% endif %}
+    </div>
+
+    <!-- Delivered alerts -->
+    <div>
+      <h2 class="section-title">Senaste leveranser</h2>
+      {% if delivered %}
+      <div class="card" style="padding: 0;">
+        <table class="t">
+          <thead><tr><th>Levererad</th><th>Typ</th><th>Signal-id</th><th>Öppnad</th><th>Klickad</th><th>Resend-id</th></tr></thead>
+          <tbody>
+            {% for d in delivered %}
+            <tr>
+              <td class="mono">{{ d.delivered_at.strftime('%Y-%m-%d %H:%M') }}</td>
+              <td class="mono">{{ d.signal_type }}</td>
+              <td class="mono">{{ d.signal_id }}</td>
+              <td class="mono">{% if d.opened_at %}{{ d.opened_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}</td>
+              <td class="mono">{% if d.clicked_at %}{{ d.clicked_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}</td>
+              <td class="mono">{{ d.resend_message_id or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty">Inga e-postleveranser ännu.</div>
+      {% endif %}
+    </div>
+
+  </div>
+{% endblock %}

@@ -12,10 +12,13 @@ from starlette.requests import Request
 from starlette.types import ASGIApp
 
 
+# Stripe + unpkg.com used to be whitelisted here, but neither is loaded by
+# any current template (Stripe billing is deferred per CLAUDE.md §7) and a
+# stale whitelist creates a false sense of safety — re-add only when those
+# integrations actually ship and have been re-reviewed.
 CSP = (
     "default-src 'self'; "
-    "script-src 'self' https://js.stripe.com https://unpkg.com; "
-    "frame-src https://js.stripe.com https://hooks.stripe.com; "
+    "script-src 'self'; "
     "img-src 'self' data:; "
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     "font-src 'self' https://fonts.gstatic.com; "

@@ -21,6 +21,7 @@ class AuditAction(StrEnum):
     LOGOUT = "logout"
     SIGNUP = "signup"
     EMAIL_VERIFIED = "email_verified"
+    VERIFICATION_RESENT = "verification_resent"
     PASSWORD_CHANGE = "password_change"
     PASSWORD_RESET_REQUESTED = "password_reset_requested"
     PASSWORD_RESET_COMPLETED = "password_reset_completed"
@@ -35,6 +36,26 @@ class AuditAction(StrEnum):
     SUBSCRIPTION_UPDATED = "subscription_updated"
     SUBSCRIPTION_DELETED = "subscription_deleted"
     DEPLOY = "deploy"
+
+    # Admin / superadmin actions
+    ADMIN_USER_CREATE = "admin_user_create"
+    ADMIN_USER_EDIT = "admin_user_edit"
+    ADMIN_USER_DELETE = "admin_user_delete"
+    ADMIN_USER_PROMOTE = "admin_user_promote"
+    ADMIN_USER_UNLOCK = "admin_user_unlock"
+    ADMIN_USER_VERIFICATION_RESEND = "admin_user_verification_resend"
+    ADMIN_USER_DELETE_REQUEST = "admin_user_delete_request"
+    ADMIN_USER_DELETE_CANCEL = "admin_user_delete_cancel"
+    ADMIN_PLAN_CHANGE = "admin_plan_change"
+    ADMIN_SUBSCRIPTION_TOGGLE = "admin_subscription_toggle"
+    ADMIN_TRIGGER_INGEST = "admin_trigger_ingest"
+    ADMIN_TRIGGER_DIGEST = "admin_trigger_digest"
+    ADMIN_TRIGGER_GDPR_SCRUB = "admin_trigger_gdpr_scrub"
+
+    # Scraper compliance actions (see CLAUDE.md §24)
+    SCRAPER_REQUEST = "scraper_request"
+    SCRAPER_OPT_OUT_RECEIVED = "scraper_opt_out_received"
+    SCRAPER_BLOCKED_DOMAIN_ADDED = "scraper_blocked_domain_added"
 
 
 async def audit(
