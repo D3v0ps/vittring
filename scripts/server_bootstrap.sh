@@ -230,22 +230,46 @@ systemctl reload fail2ban
 SUDOERS_DST="/etc/sudoers.d/vittring-systemctl"
 cat > "${SUDOERS_DST}" <<'EOF'
 Cmnd_Alias VITTRING_SVC = \
+    /usr/bin/systemctl reload vittring-api, \
     /usr/bin/systemctl reload vittring-api.service, \
+    /usr/bin/systemctl reload-or-restart vittring-api, \
     /usr/bin/systemctl reload-or-restart vittring-api.service, \
+    /usr/bin/systemctl restart vittring-api, \
     /usr/bin/systemctl restart vittring-api.service, \
+    /usr/bin/systemctl restart vittring-scheduler, \
     /usr/bin/systemctl restart vittring-scheduler.service, \
+    /usr/bin/systemctl restart vittring-api vittring-scheduler, \
     /usr/bin/systemctl restart vittring-api.service vittring-scheduler.service, \
+    /usr/bin/systemctl status vittring-api, \
     /usr/bin/systemctl status vittring-api.service, \
+    /usr/bin/systemctl status vittring-scheduler, \
     /usr/bin/systemctl status vittring-scheduler.service, \
+    /bin/systemctl reload vittring-api, \
     /bin/systemctl reload vittring-api.service, \
+    /bin/systemctl reload-or-restart vittring-api, \
     /bin/systemctl reload-or-restart vittring-api.service, \
+    /bin/systemctl restart vittring-api, \
     /bin/systemctl restart vittring-api.service, \
+    /bin/systemctl restart vittring-scheduler, \
     /bin/systemctl restart vittring-scheduler.service, \
+    /bin/systemctl restart vittring-api vittring-scheduler, \
     /bin/systemctl restart vittring-api.service vittring-scheduler.service, \
+    /bin/systemctl status vittring-api, \
     /bin/systemctl status vittring-api.service, \
+    /bin/systemctl status vittring-scheduler, \
     /bin/systemctl status vittring-scheduler.service
 
-vittring ALL=(root) NOPASSWD: VITTRING_SVC
+Cmnd_Alias VITTRING_LOG = \
+    /usr/bin/journalctl -u vittring-api *, \
+    /usr/bin/journalctl -u vittring-api.service *, \
+    /usr/bin/journalctl -u vittring-scheduler *, \
+    /usr/bin/journalctl -u vittring-scheduler.service *, \
+    /bin/journalctl -u vittring-api *, \
+    /bin/journalctl -u vittring-api.service *, \
+    /bin/journalctl -u vittring-scheduler *, \
+    /bin/journalctl -u vittring-scheduler.service *
+
+vittring ALL=(root) NOPASSWD: VITTRING_SVC, VITTRING_LOG
 EOF
 chown root:root "${SUDOERS_DST}"
 chmod 440 "${SUDOERS_DST}"
